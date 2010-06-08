@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+jython2.5.1/jython -J-classpath jice.jar icp_example.py

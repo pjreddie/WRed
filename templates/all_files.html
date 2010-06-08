@@ -1,0 +1,200 @@
+<html>
+<head>
+  <title>Files</title>
+  <link rel="stylesheet" type="text/css" href="/media/JavaScript/ext-3.2.1/resources/css/ext-all.css" />
+  <script type="text/javascript" src="/media/JavaScript/ext-3.2.1/adapter/ext/ext-base.js"></script>
+  <script type="text/javascript" src="/media/JavaScript/ext-3.2.1/ext-all.js"></script>
+  <script type="text/javascript" src="/media/JavaScript/jquery-1.4.2/jquery-1.4.2.js"></script>
+  <link rel="stylesheet" type="text/css" href="/media/JavaScript/ext-3.2.1/ux/fileuploadfield/css/fileuploadfield.css"/>
+  <script type="text/javascript" src="/media/JavaScript/ext-3.2.1/ux/fileuploadfield/FileUploadField.js"></script>
+
+  <script>
+/*!
+ * Ext JS Library 3.2.1
+ * Copyright(c) 2006-2010 Ext JS, Inc.
+ * licensing@extjs.com
+ * http://www.extjs.com/license
+ */
+
+Ext.onReady(function(){
+
+
+    // NOTE: This is an example showing simple state management. During development,
+    // it is generally best to disable state management as dynamically-generated ids
+    // can change across page loads, leading to unpredictable results.  The developer
+    // should ensure that stable state ids are set for stateful components in real apps.    
+    Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
+
+    var maxvals = [];
+    var minvals = [];
+    function vrange(val, meta, record, rI, cI, store){
+        var range = maxvals[cI] - minvals[cI];
+        var spl = val.split(',');
+        var low = parseFloat(spl[0]);
+        var high = parseFloat(spl[1]);
+        var roffset = 0;
+        var loffset = 0;
+        if(range != 0){
+        loffset = ((low-minvals[cI])/range)*100-1;
+        roffset = ((maxvals[cI]-high)/range) * 100-1;
+        }
+        var ret = high+low;
+        return '<div style="border: 1px red solid;"><div style = "border:1px black solid;background-color:black;height:1.5ex;margin-right:'+roffset+'%; margin-left:'+loffset+'%;"></div></div>';
+    }
+    var dataArray = [];
+    function update(){
+    var fieldData = dataArray[0];
+    maxvals = dataArray[1];
+    minvals = dataArray[2];
+    dataArray.splice(0,3);
+    var gridColumns = [];
+    var storeFields = [];
+    gridColumns.push({header: fieldData[0], width: 150, sortable: true, dataIndex: fieldData[0]});
+    storeFields.push({name: fieldData[0]});
+    gridColumns.push({header: fieldData[1], width: 150,hidden:true, sortable: true, dataIndex: fieldData[1]});
+    storeFields.push({name: fieldData[1]});
+
+    for(var i = 2; i < fieldData.length; ++i){
+        gridColumns.push({header: fieldData[i], width: 100, renderer:vrange, sortable: true, dataIndex: fieldData[i]});
+        storeFields.push({name: fieldData[i]});
+    }
+
+    var store = new Ext.data.ArrayStore({
+        fields: storeFields,
+    });
+    
+    var msg = function(title, msg){
+        Ext.Msg.show({
+            title: title,
+            msg: msg,
+            minWidth: 200,
+            modal: true,
+            icon: Ext.Msg.INFO,
+            buttons: Ext.Msg.OK
+        });
+    };
+    // create the data store
+
+    store.loadData(dataArray);
+    // create the Grid
+
+    var fbutton = new Ext.ux.form.FileUploadField({
+        //renderTo: 'uploadfiles',
+        buttonOnly: true,
+        listeners: {
+            'fileselected': function(fb, v){
+                var el = Ext.fly('fi-button-msg');
+                el.update('<b>Selected:</b> '+v);
+                if(!el.isVisible()){
+                    el.slideIn('t', {
+                        duration: .2,
+                        easing: 'easeIn',
+                        callback: function(){
+                            el.highlight();
+                        }
+                    });
+                }else{
+                    el.highlight();
+                }
+            }
+        }
+    });
+
+    var fp = new Ext.FormPanel({
+        //renderTo: 'uploadfiles',
+        //standardSubmit:true,
+        fileUpload: true,
+        width: 500,
+        frame: true,
+        title: 'File Upload Form',
+        autoHeight: true,
+        bodyStyle: 'padding: 10px 10px 0 10px;',
+        labelWidth: 50,
+        defaults: {
+            anchor: '95%',
+            allowBlank: false,
+            msgTarget: 'side',
+        },
+        items: [{
+            xtype: 'fileuploadfield',
+            id: 'form-file',
+            emptyText: 'Select a file...',
+            fieldLabel: 'File',
+            name: 'file',
+            buttonText: 'Browse...',
+        }],
+        buttons: [{
+            text: 'Save',
+            handler: function(){
+                if(fp.getForm().isValid()){
+	                fp.getForm().submit({
+	                    url: '../forms/upload/',
+	                    waitMsg: 'Uploading your file...',
+	                    success: function(fp, o){
+	                        msg('Success', 'Processed file "'+o.result.file+'" on the server');
+	                    }
+	                });
+                }
+            }
+        },'-',{
+            text: 'Reset',
+            handler: function(){
+                fp.getForm().reset();
+            }
+        }]
+    });
+    var rowRightClicked = 0;
+    var grid = new Ext.grid.GridPanel({
+        tbar:[fp,'-'],
+        store: store,
+        columns: gridColumns,
+        
+        stripeRows: true,
+        //autoWidth: true,
+        height: 500,
+        width: 900,
+        title: 'Available Files',
+        // config options for stateful behavior
+        //stateful: true,
+        //stateId: 'grid'        
+    });
+    grid.on('rowdblclick', function(grid, rowIndex, e){
+         window.location = '../' + (store.getAt(rowIndex).get('md5'));
+    });
+    var rowMenu = new Ext.menu.Menu({
+        id:'rowMenu',
+        items:[
+            {
+                text: 'Delete', handler:deleteRow,
+            },
+        ],
+    });
+    function deleteRow(){
+        var conn = new Ext.data.Connection();
+        conn.request({
+            url: '../forms/delete/',
+            method: 'POST',
+            params: {'md5': store.getAt(rowRightClicked).get('md5')},
+            success: function(responseObject) {
+                //showHistoryDialog(responseObject.responseText);
+            },
+             failure: function() {
+                 //Ext.Msg.alert('Status', 'Unable to show history at this time. Please try again later.');
+             }
+        });
+    }
+    grid.on('rowcontextmenu', function(grid, rowIndex, e){e.stopEvent();rowMenu.showAt(e.getXY());rowRightClicked = rowIndex;});
+    // render the grid to the specified div in the page
+    grid.render('allfiles');
+    }
+    function cb(data){dataArray = data; update();}
+    function reload(){jQuery.getJSON('json/', cb);}
+    reload();
+});
+</script>
+</head>
+<body>
+    <div id = "uploadfiles"></div>
+    <div id = "allfiles"></div>
+</body>
+</html>

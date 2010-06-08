@@ -1,0 +1,797 @@
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/640/trunk/tripleaxisproject/eclipse/src/utilities
+END
+psdorder_new.py
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/psdorder_new.py
+END
+camnsb2_orderfinal_meanfield.py
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/camnsb2_orderfinal_meanfield.py
+END
+__init__.py
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/__init__.py
+END
+magstruct_tut.py
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/magstruct_tut.py
+END
+order.py
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/order.py
+END
+Copy of respython.py
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/Copy%20of%20respython.py
+END
+bfo_cycloid.py
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_cycloid.py
+END
+twodarray.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/twodarray.py
+END
+test_mpfit.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/test_mpfit.py
+END
+linegen.py
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/linegen.py
+END
+nimn2o4_order.py
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/nimn2o4_order.py
+END
+sqlreader.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/sqlreader.py
+END
+scanparser2.py
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/scanparser2.py
+END
+meanfield.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/meanfield.py
+END
+findpeaktest.m
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/findpeaktest.m
+END
+bfo_film_test_flip.py
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_film_test_flip.py
+END
+cartoons.py
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/cartoons.py
+END
+reducefiles.py
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/reducefiles.py
+END
+magstruct_nd1kd.py
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/!svn/ver/634/trunk/tripleaxisproject/eclipse/src/utilities/magstruct_nd1kd.py
+END
+spacegroups.py
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/spacegroups.py
+END
+maxent_test.py
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/maxent_test.py
+END
+psd_subtract.py
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/psd_subtract.py
+END
+maxent_test_iter2.py
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/maxent_test_iter2.py
+END
+pb.py
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/pb.py
+END
+bfofilm_cartoon.py
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfofilm_cartoon.py
+END
+locator.py
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/locator.py
+END
+bfo_film_mesh_111.py
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_film_mesh_111.py
+END
+polcorrect.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/polcorrect.py
+END
+readncnr2.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/readncnr2.py
+END
+linedemo2.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/linedemo2.py
+END
+icpformat.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/icpformat.py
+END
+bfo_film_fig2.py
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_film_fig2.py
+END
+bt7meshdemo1p3pos.py
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bt7meshdemo1p3pos.py
+END
+readbt7.py
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/readbt7.py
+END
+findpeak3.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/findpeak3.py
+END
+bfo_film_test_flip3.py
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_film_test_flip3.py
+END
+bfo_film_mesh_100.py
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_film_mesh_100.py
+END
+dct.py
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/dct.py
+END
+polfigure2.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/polfigure2.py
+END
+maxent_test_iter.py
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/maxent_test_iter.py
+END
+orderfinal.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/orderfinal.py
+END
+simple_combine.py
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/simple_combine.py
+END
+magstruct_nd1k.py
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/magstruct_nd1k.py
+END
+bfo_film_polarized.py
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_film_polarized.py
+END
+magstruct_nd1kb.py
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/magstruct_nd1kb.py
+END
+icep
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/icep
+END
+readicp4.py
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/readicp4.py
+END
+sqlreadernew.py
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/sqlreadernew.py
+END
+costrans.py
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/costrans.py
+END
+plot_bifeo3_prbrc.py
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/plot_bifeo3_prbrc.py
+END
+testwarren.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/testwarren.py
+END
+reslattice.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/reslattice.py
+END
+sequenceloader.py
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/sequenceloader.py
+END
+data_abstraction.py
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/!svn/ver/640/trunk/tripleaxisproject/eclipse/src/utilities/data_abstraction.py
+END
+bfo_cube.py
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_cube.py
+END
+refine.py
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/refine.py
+END
+refine_twin.py
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/refine_twin.py
+END
+polcorrect_old.py
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/polcorrect_old.py
+END
+readfile.py
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/readfile.py
+END
+psdorder_clarina.py
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/psdorder_clarina.py
+END
+bfo_2dfit_110.py
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_2dfit_110.py
+END
+xbrilsolve.ps
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/xbrilsolve.ps
+END
+scanparser3.py
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/scanparser3.py
+END
+cmd3.py
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/cmd3.py
+END
+bfo_film_mesh.py
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_film_mesh.py
+END
+respython.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/respython.py
+END
+readice.py
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/!svn/ver/643/trunk/tripleaxisproject/eclipse/src/utilities/readice.py
+END
+order2.py
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/order2.py
+END
+readibuf.file.py
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/readibuf.file.py
+END
+plot_bifeo3.py
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/plot_bifeo3.py
+END
+explore_order.py
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/explore_order.py
+END
+err1d.py
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/err1d.py
+END
+readncnr3.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/readncnr3.py
+END
+refine_noncol.py
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/refine_noncol.py
+END
+bfo_2dfit_110_p2.py
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_2dfit_110_p2.py
+END
+findpeaktest.py
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/findpeaktest.py
+END
+polfigure_asses.py
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/polfigure_asses.py
+END
+PointRotate2.py
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/PointRotate2.py
+END
+linedemo.py
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/linedemo.py
+END
+bfo_3d.py
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_3d.py
+END
+readncnr.py
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/readncnr.py
+END
+Buffers.py
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/Buffers.py
+END
+nature_cover.py
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/nature_cover.py
+END
+testsql.py
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/testsql.py
+END
+split_file_seq.py
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/split_file_seq.py
+END
+readnewbt7.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/readnewbt7.py
+END
+findpeak4.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/findpeak4.py
+END
+readicp.py
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/readicp.py
+END
+formatnum.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/636/trunk/tripleaxisproject/eclipse/src/utilities/formatnum.py
+END
+plot_bifeo3_demo.py
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/plot_bifeo3_demo.py
+END
+meshdemoca3comno6.py
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/meshdemoca3comno6.py
+END
+quickread_psd.py
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/quickread_psd.py
+END
+srfe2as2_caxis.py
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/srfe2as2_caxis.py
+END
+findpeak.py
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/findpeak.py
+END
+psdorder.py
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/psdorder.py
+END
+annulus_integrator.py
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/annulus_integrator.py
+END
+fig3_test.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/fig3_test.py
+END
+test_mpfit_bounds.py
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/test_mpfit_bounds.py
+END
+magstruct_nd1kc.py
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/!svn/ver/634/trunk/tripleaxisproject/eclipse/src/utilities/magstruct_nd1kc.py
+END
+polfigure.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/polfigure.py
+END
+bfo_2dfit_110_p.py
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_2dfit_110_p.py
+END
+magstruct_fe10k.py
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/magstruct_fe10k.py
+END
+ss2009.py
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/ss2009.py
+END
+uncertainty.py
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/uncertainty.py
+END
+denplot.py
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/denplot.py
+END
+srfeas_as.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/srfeas_as.py
+END
+icpformat2.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/icpformat2.py
+END
+orderjason.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/orderjason.py
+END
+nxs.py
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/nxs.py
+END
+plot_orthogonal.py
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/plot_orthogonal.py
+END
+bfo_film_mesh_110.py
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_film_mesh_110.py
+END
+canvas.py
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/canvas.py
+END
+findpeak4_mine.py
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/findpeak4_mine.py
+END
+dispatcher.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/dispatcher.py
+END
+meshgen.py
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/meshgen.py
+END
+bt7meshdemoadd.py
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bt7meshdemoadd.py
+END
+cafe4as3.py
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/cafe4as3.py
+END
+sgolay.py
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/sgolay.py
+END
+anneal.py
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/anneal.py
+END
+scanparser.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/scanparser.py
+END
+scriptutil.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/scriptutil.py
+END
+testsqldict.py
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/testsqldict.py
+END
+findpeak2.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/findpeak2.py
+END
+writebt7.py
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/writebt7.py
+END
+icp_example2.py
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/icp_example2.py
+END
+bfo_film_test_flip2.py
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_film_test_flip2.py
+END
+bt7meshdemo.py
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bt7meshdemo.py
+END
+classify_files_structure.py
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/classify_files_structure.py
+END
+xbrilsolve.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/xbrilsolve.c
+END
+chiparam.py
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/chiparam.py
+END
+bfo_film_fig4.py
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bfo_film_fig4.py
+END
+bonnerfischer.py
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/!svn/ver/631/trunk/tripleaxisproject/eclipse/src/utilities/bonnerfischer.py
+END
