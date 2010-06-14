@@ -1,13 +1,25 @@
 <html>
 <head>
   <title>Files</title>
+  <script type="text/javascript" src="/media/JavaScript/orbited-0.7/Orbited.js"></script>
+  <script type="text/javascript" src="/media/JavaScript/orbited-0.7/protocols/stomp/stomp.js"></script>
   <link rel="stylesheet" type="text/css" href="/media/JavaScript/ext-3.2.1/resources/css/ext-all.css" />
   <script type="text/javascript" src="/media/JavaScript/ext-3.2.1/adapter/ext/ext-base.js"></script>
   <script type="text/javascript" src="/media/JavaScript/ext-3.2.1/ext-all.js"></script>
   <script type="text/javascript" src="/media/JavaScript/jquery-1.4.2/jquery-1.4.2.js"></script>
   <link rel="stylesheet" type="text/css" href="/media/JavaScript/ext-3.2.1/ux/fileuploadfield/css/fileuploadfield.css"/>
   <script type="text/javascript" src="/media/JavaScript/ext-3.2.1/ux/fileuploadfield/FileUploadField.js"></script>
-
+  <script>
+    // set the orbited settings and port
+    Orbited.settings.port = 9000;
+    Orbited.settings.hostname = "localhost";
+    //Orbited.settings.streaming = false;
+    TCPSocket = Orbited.TCPSocket;
+  </script>
+  <script>
+    document.domain = document.domain; // I don't know why
+    // we need to do this, but we just need to
+  </script>
   <script>
 /*!
  * Ext JS Library 3.2.1
@@ -15,6 +27,7 @@
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
+
 
 Ext.onReady(function(){
 
@@ -42,27 +55,8 @@ Ext.onReady(function(){
         return '<div style="border: 1px red solid;"><div style = "border:1px black solid;background-color:black;height:1.5ex;margin-right:'+roffset+'%; margin-left:'+loffset+'%;"></div></div>';
     }
     var dataArray = [];
-    function update(){
-    var fieldData = dataArray[0];
-    maxvals = dataArray[1];
-    minvals = dataArray[2];
-    dataArray.splice(0,3);
-    var gridColumns = [];
-    var storeFields = [];
-    gridColumns.push({header: fieldData[0], width: 150, sortable: true, dataIndex: fieldData[0]});
-    storeFields.push({name: fieldData[0]});
-    gridColumns.push({header: fieldData[1], width: 150,hidden:true, sortable: true, dataIndex: fieldData[1]});
-    storeFields.push({name: fieldData[1]});
-
-    for(var i = 2; i < fieldData.length; ++i){
-        gridColumns.push({header: fieldData[i], width: 100, renderer:vrange, sortable: true, dataIndex: fieldData[i]});
-        storeFields.push({name: fieldData[i]});
-    }
-
-    var store = new Ext.data.ArrayStore({
-        fields: storeFields,
-    });
-    
+    var store = new Ext.data.ArrayStore();
+    gridColumns = [];
     var msg = function(title, msg){
         Ext.Msg.show({
             title: title,
@@ -73,12 +67,8 @@ Ext.onReady(function(){
             buttons: Ext.Msg.OK
         });
     };
-    // create the data store
 
-    store.loadData(dataArray);
-    // create the Grid
-
-    var fbutton = new Ext.ux.form.FileUploadField({
+ var fbutton = new Ext.ux.form.FileUploadField({
         //renderTo: 'uploadfiles',
         buttonOnly: true,
         listeners: {
@@ -131,7 +121,7 @@ Ext.onReady(function(){
 	                    url: '../forms/upload/',
 	                    waitMsg: 'Uploading your file...',
 	                    success: function(fp, o){
-	                        msg('Success', 'Processed file "'+o.result.file+'" on the server');
+	                        //msg('Success', 'Processed file "'+o.file+'" on the server');
 	                    }
 	                });
                 }
@@ -148,7 +138,6 @@ Ext.onReady(function(){
         tbar:[fp,'-'],
         store: store,
         columns: gridColumns,
-        
         stripeRows: true,
         //autoWidth: true,
         height: 500,
@@ -159,7 +148,7 @@ Ext.onReady(function(){
         //stateId: 'grid'        
     });
     grid.on('rowdblclick', function(grid, rowIndex, e){
-         window.location = '../' + (store.getAt(rowIndex).get('md5'));
+         window.location = '../' + (store.getAt(rowIndex).get('id'));
     });
     var rowMenu = new Ext.menu.Menu({
         id:'rowMenu',
@@ -184,13 +173,82 @@ Ext.onReady(function(){
         });
     }
     grid.on('rowcontextmenu', function(grid, rowIndex, e){e.stopEvent();rowMenu.showAt(e.getXY());rowRightClicked = rowIndex;});
-    // render the grid to the specified div in the page
     grid.render('allfiles');
+
+
+    function reload_data(){
+    var fieldData = dataArray[0];
+    maxvals = dataArray[1];
+    minvals = dataArray[2];
+    dataArray.splice(0,3);
+    var gridColumns = [];
+    var storeFields = [];
+    gridColumns.push({header: fieldData[0], width: 150, sortable: true, dataIndex: fieldData[0]});
+    storeFields.push({name: fieldData[0]});
+    gridColumns.push({header: fieldData[1], width: 150,hidden:true, sortable: true, dataIndex: fieldData[1]});
+    storeFields.push({name: fieldData[1]});
+    gridColumns.push({header: fieldData[2], width: 150,hidden:true, sortable: true, dataIndex: fieldData[2]});
+    storeFields.push({name: fieldData[2]});
+    for(var i = 3; i < fieldData.length; ++i){
+        gridColumns.push({header: fieldData[i], width: 100, renderer:vrange, sortable: true, dataIndex: fieldData[i]});
+        storeFields.push({name: fieldData[i]});
     }
-    function cb(data){dataArray = data; update();}
-    function reload(){jQuery.getJSON('json/', cb);}
-    reload();
+
+    store = new Ext.data.ArrayStore({
+        fields: storeFields,
+    });
+
+    // create the data store
+
+    store.loadData(dataArray);
+    colModel = new Ext.grid.ColumnModel({columns: gridColumns});
+    grid.reconfigure(store, colModel);
+
+    }
+
+    function update(){
+    var conn = new Ext.data.Connection();
+        conn.request({
+            url: 'json/',
+            method: 'GET',
+            params: {},
+            success: function(responseObject) {
+                dataArray = Ext.decode(responseObject.responseText);
+                reload_data();
+            },
+             failure: function() {
+             }
+        });
+    }
+    update();
+
+
+
+        stomp = new STOMPClient();
+        stomp.onopen = function(){};
+        stomp.onclose = function(c){
+            alert('Lost Connection, Code: ' + c);
+        };
+        stomp.onerror = function(error){
+            alert("Error: " + error);
+        };
+        stomp.onerrorframe = function(frame){
+            alert("Error: " + frame.body);
+        };
+        stomp.onconnectedframe = function(){
+            stomp.subscribe("/updates/files/all");
+        };
+        stomp.onmessageframe = function(frame){
+            // Presumably we should only receive message frames with the
+            // destination "/topic/shouts" because that's the only destination
+            // to which we've subscribed. To handle multiple destinations we
+            // would have to check frame.headers.destination.
+            //add_message(frame.body);
+            update();
+        };
+        stomp.connect('localhost', 61613);
 });
+
 </script>
 </head>
 <body>

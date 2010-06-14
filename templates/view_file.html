@@ -1,14 +1,27 @@
 <html>
 <head>
   <title>FileViewer</title>
+  <script type="text/javascript" src="/media/JavaScript/orbited-0.7/Orbited.js"></script>
+  <script type="text/javascript" src="/media/JavaScript/orbited-0.7/protocols/stomp/stomp.js"></script>
   <link rel="stylesheet" type="text/css" href="/media/JavaScript/ext-3.2.1/resources/css/ext-all.css" />
   <script type="text/javascript" src="/media/JavaScript/ext-3.2.1/adapter/ext/ext-base.js"></script>
   <script type="text/javascript" src="/media/JavaScript/ext-3.2.1/ext-all.js"></script>
   <script type="text/javascript" src="/media/JavaScript/jquery-1.4.2/jquery-1.4.2.js"></script>
-<script type="text/javascript" src="/media/JavaScript/flot-0.6/jquery.js"></script>
-<!-- FOR IE <script type="text/javascript" src="./flot/excanvas.js"></script> -->
-<script type="text/javascript" src="/media/JavaScript/flot-0.6/jquery.flot.js"></script>
-<script src="/media/JavaScript/flot-0.6/jquery.flot.errorbars.js" type="text/javascript" language="javascript"></script>
+  <script type="text/javascript" src="/media/JavaScript/flot-0.6/jquery.js"></script>
+  <!-- FOR IE <script type="text/javascript" src="./flot/excanvas.js"></script> -->
+  <script type="text/javascript" src="/media/JavaScript/flot-0.6/jquery.flot.js"></script>
+  <script src="/media/JavaScript/flot-0.6/jquery.flot.errorbars.js" type="text/javascript" language="javascript"></script>
+  <script>
+    // set the orbited settings and port
+    Orbited.settings.port = 9000;
+    Orbited.settings.hostname = "localhost";
+    //Orbited.settings.streaming = false;
+    TCPSocket = Orbited.TCPSocket;
+  </script>
+  <script>
+    document.domain = document.domain; // I don't know why
+    // we need to do this, but we just need to
+  </script>
   <script>
 Ext.onReady(function(){
     
@@ -18,38 +31,23 @@ Ext.onReady(function(){
     // can change across page loads, leading to unpredictable results.  The developer
     // should ensure that stable state ids are set for stateful components in real apps.    
     Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
-
+    var store = new Ext.data.ArrayStore();
+    var fieldData = [];
+    var gridColumns = [];
+    var storeFields = [];
     var dataArray = [];
-    function update(){
-        var fieldData = dataArray[0];
-        dataArray.splice(0,1);
-        var gridColumns = [];
-        var storeFields = [];
-        for(var i = 0; i < fieldData.length; ++i){
-            gridColumns.push({header: fieldData[i], width: 70, sortable: true, dataIndex: fieldData[i]});
-            storeFields.push({name: fieldData[i]});
-        }
 
-        var store = new Ext.data.ArrayStore({
-            fields: storeFields,
-        });
 
-        // create the data store
-    
-        store.loadData(dataArray);
-        // create the Grid
-        var grid = new Ext.grid.GridPanel({
+
+
+var grid = new Ext.grid.GridPanel({
             store: store,
             columns: gridColumns,
             stripeRows: true,
             height: 300,
             autoWidth:true,
-            //autoHeight:true,
             title: 'File Data',
-            horizontalScroll: true,
-            // config options for stateful behavior
-            //stateful: true,
-            //stateId: 'grid'        
+            horizontalScroll: true,        
         });
         var commonChartStyle = {"margin": "10px 10px 10px 10px"};
 
@@ -94,14 +92,11 @@ Ext.onReady(function(){
            renderTo: 'tabs',
            activeTab:0,
            defaults:{autoHeight: true, autoWidth: true},
-           //width:900,
-           //height:900,
            layoutOnTabChange:true,
         });
     tabs.add({
         id:'file',
         title: "View File",
-        //xtype:"panel",
         items:[grid],
     }).show();
     tabs.add({
@@ -109,22 +104,92 @@ Ext.onReady(function(){
         id:'chart',
         title:"View Chart",
         items:[ChartTab],
-    })
-        // render the grid to the specified div in the page
-        tabs.render();
+    });
+
 function handleActivate(tab){
-    drawChart(store, 'A4','Detector', 'ChartContainer');
+            if(xChoice.getValue() != "" && yChoice.getValue !="") drawChart(store, xChoice.getValue(), yChoice.getValue(), 'ChartContainer');
+            else drawChart(store, 'A4', 'Detector', 'ChartContainer');
 }
 function selection(selectedstore, value){
     drawChart(store, xChoice.getValue(), yChoice.getValue(), 'ChartContainer');
 }
+        tabs.render();
+var first = true;
+    function reloadData(){
+        fieldData = dataArray[0];
+        if (first){
+            xChoice.store = fieldData;
+            yChoice.store = fieldData;
+        }
+        first = false;
+        dataArray.splice(0,1);
+        gridColumns = [];
+        storeFields = [];
+        for(var i = 0; i < fieldData.length; ++i){
+            gridColumns.push({header: fieldData[i], width: 70, sortable: true, dataIndex: fieldData[i]});
+            storeFields.push({name: fieldData[i]});
+        }
+
+        store = new Ext.data.ArrayStore({
+            fields: storeFields,
+        });
+    
+        store.loadData(dataArray);
+
+        colModel = new Ext.grid.ColumnModel({columns: gridColumns});
+
+            grid.reconfigure(store, colModel);
+        if(tabs.getActiveTab().getId() == 'chart'){
+            if(xChoice.getValue() != "" && yChoice.getValue !="") drawChart(store, xChoice.getValue(), yChoice.getValue(), 'ChartContainer');
+            else drawChart(store, 'A4', 'Detector', 'ChartContainer');
+        }
     }
-    function cb(data){
-        dataArray = data;
+
+    var jsonpoints = {}
+    //var jsonpoints = jQuery.getJSON('json/{{ params.id }}', cb);
+    function update(){
+    var conn = new Ext.data.Connection();
+        conn.request({
+            url: 'json/{{ params.id }}',
+            method: 'GET',
+            params: {},
+            success: function(responseObject) {
+                jsonpoints = Ext.decode(responseObject.responseText);
+                dataArray = jsonpoints;
+                reloadData();
+            },
+             failure: function() {
+                 alert('Failed Request');
+             }
+        });
+}
+        stomp = new STOMPClient();
+        stomp.onopen = function(){};
+        stomp.onclose = function(c){
+            alert('Lost Connection, Code: ' + c);
+        };
+        stomp.onerror = function(error){
+            alert("Error: " + error);
+        };
+        stomp.onerrorframe = function(frame){
+            alert("Error: " + frame.body);
+        };
+        stomp.onconnectedframe = function(){
+            stomp.subscribe("/updates/files/{{ params.id }}");
+        };
+        stomp.onmessageframe = function(frame){
+            // Presumably we should only receive message frames with the
+            // destination "/topic/shouts" because that's the only destination
+            // to which we've subscribed. To handle multiple destinations we
+            // would have to check frame.headers.destination.
+            // add_message(frame.body);
+            //alert('OMG we got updates!!!!1!!!111');
+            update();
+
+        };
+        stomp.connect('localhost', 61613);
         update();
-    }
-    var jsonpoints = jQuery.getJSON('json/{{ params.md5 }}', cb);
-    //drawChart(store, 'A4','Detector', 'ChartContainer');
+
 });
 function getData(store, xcol, ycol) {
     var dataResults = [];
@@ -145,6 +210,8 @@ function drawChart(store, xcol, ycol, chart) {
     var options = {series:{points:{show:true, radius:3}}}
     $.plot($("#"+chart), [{data: chartInfo, points:data_points, lines:{show:false}}], options);
 }
+
+
 </script>
 </head>
 <body>
