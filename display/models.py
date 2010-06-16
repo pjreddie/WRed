@@ -8,6 +8,7 @@ import sys
 class DataFile(models.Model):
     md5 = models.CharField(max_length = 32)
     name = models.CharField(max_length = 50)
+    proposal_id = models.CharField(max_length = 50)
     dirty = models.BooleanField()
 class MetaData(models.Model):
     dataFile = models.ForeignKey(DataFile)

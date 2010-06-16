@@ -1,6 +1,7 @@
 from django.conf.urls.defaults import *
 from django.views.generic.simple import direct_to_template
 from fileviewer.orbited_views import *
+from fileviewer.display.views import *
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 
@@ -25,5 +26,5 @@ urlpatterns = patterns('',
 
     # Remove below when moving to production server
     (r'^media/(?P<path>.*)$', 'django.views.static.serve', static_files_dict),
-
+    (r'^accounts/login/$', login),
 )

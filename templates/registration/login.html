@@ -1,0 +1,16 @@
+
+{% block content %}
+
+{% if form.errors %}
+<p class='error'>Invalid username/password</p>
+{% endif %}
+<form action = "" method = 'post'>
+ <label for = "username">Proposal ID:</label>
+ <input type = "text" name = "username" id = "username" value = "">
+ <label for = "password">Tag:</label>
+ <input type = "text" name = "password" id = "password" value = "">
+
+ <input type = "submit" value = "login" />
+ <input type = "hidden" name = "next" value = "{{ next|escape }}"/>
+</form>
+{% endblock %}

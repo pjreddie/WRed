@@ -3,25 +3,24 @@ from display.models import *
 from django.db import models, transaction
 from utilities import data_abstraction
 
-def handle_uploaded_file(files):
+def handle_uploaded_file(files, proposal_id):
     filename = files.name
     tempfile = file('db/temp', 'wb+')
     for chunk in files.chunks():
         tempfile.write(chunk)
     tempfile.close()
-    addfile('db/temp', filename, False)
+    addfile('db/temp', filename, proposal_id, False)
 
-def handle_uploaded_live_file(files, _filename):
-    filename = _filename
+def handle_uploaded_live_file(files, filename, proposal_id):
     print '*******livefile: ',filename
     tempfile = file('db/temp', 'wb+')
     for chunk in files.chunks():
         tempfile.write(chunk)
     tempfile.close()
-    addfile('db/temp', filename, True)
+    addfile('db/temp', filename, proposal_id, True)
 
 @transaction.commit_manually
-def addfile(filestr, filename, dirtiness):
+def addfile(filestr, filename, proposal_id, dirty):
     m = md5.new()
     filein = file(filestr, 'rb') # open in binary mode
     
@@ -31,16 +30,25 @@ def addfile(filestr, filename, dirtiness):
         m.update(t)
     print m.hexdigest()
     filein.close()
-    f, created = DataFile.objects.get_or_create(
-        name = filename, 
-        dirty = True, 
-        defaults = {'md5': m.hexdigest()}
-    )
-    if not created:
-        os.remove(os.path.join('db', f.md5)+ '.file')
-        f.md5 = m.hexdigest()
-        f.metadata_set.all().delete()
-
+    f = DataFile()
+    if dirty:
+        f, created = DataFile.objects.get_or_create(
+            name = filename, 
+            dirty = True,
+            proposal_id = proposal_id,
+            defaults = {'md5': m.hexdigest()}
+        )
+        if not created:
+            os.remove(os.path.join('db', f.md5)+ '.file')
+            f.md5 = m.hexdigest()
+            f.metadata_set.all().delete()
+    else:
+        f, created = DataFile.objects.get_or_create(
+            md5 = m.hexdigest(),
+            defaults = {'dirty': False, 'name': filename,'proposal_id':proposal_id},
+        )
+        if not created:
+            f.dirty = False
     filein = file(filestr, 'rb') # open in binary mode
     fileout = file('db/' + m.hexdigest() + '.file', 'wb')
     while True:
@@ -59,6 +67,7 @@ def addfile(filestr, filename, dirtiness):
             break
 
     for lines in fd:
+        if lines[0] == '#': break
         t.append(lines.split())
     fd.close()
     rows = t[1:]

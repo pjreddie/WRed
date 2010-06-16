@@ -3,6 +3,8 @@ from multiprocessing import Queue
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 import simplejson
+from django.contrib import auth
+from django.contrib.auth.decorators import login_required
 
 from fileviewer.fileRead import *
 from fileToJson import displayfile
@@ -22,16 +24,26 @@ class DeleteFileForm(forms.Form):
     md5 = forms.CharField(max_length = 32)
 class WaitForUpdateForm(forms.Form):
     pass
+@login_required
 def json_file_display(request, idNum):
-    try:
-        md5 = DataFile.objects.get(id = idNum).md5
-        all_objects = displayfile('db/' + md5 + '.file')
-        data = simplejson.dumps(all_objects)
-        return HttpResponse(data)
-    except ObjectDoesNotExist:
-        return HttpResponse('Oops! Datafile Does Not Exist')
+    print 'USERNAME: ',request.user.username
+    print 'Authenticated: ', request.user.is_authenticated()
+    if request.user.is_authenticated() and (request.user.username == str(idNum) or request.user.is_superuser):
+        print 'Good To Go!'
+        try:
+            md5 = DataFile.objects.get(id = idNum).md5
+            all_objects = displayfile('db/' + md5 + '.file')
+            data = simplejson.dumps(all_objects)
+            return HttpResponse(data)
+        except ObjectDoesNotExist:
+            return HttpResponse('Oops! Datafile Does Not Exist')
+    else: print 'No!'
+    return HttpResponse('Go Login!')
+
+@login_required
 def json_all_files(request):
-    files = DataFile.objects.all()
+    files = DataFile.objects.filter(proposal_id = request.user.username)
+    if request.user.is_superuser: files = DataFile.objects.all()
     variables = [['File Name','md5', 'id']]
     maxv = []
     minv = []
@@ -66,6 +78,7 @@ def json_all_files(request):
     for row in variables[1:]:
         row.extend(['N/A']*(len(variables[0]) - len(row)))
     return HttpResponse(simplejson.dumps(variables))
+@login_required
 def upload_file(request):
     json = {
         'errors': {},
@@ -75,8 +88,9 @@ def upload_file(request):
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            print '**********VALID********'
-            handle_uploaded_file(request.FILES['file'])
+            print '**********VALID********, User Name:', request.user.username
+
+            handle_uploaded_file(request.FILES['file'], request.user.username)
             json['success'] = True
             json['text'] = {'file':request.FILES['file'].name}
         else:
@@ -98,7 +112,7 @@ def upload_file_live(request):
         form = UploadLiveFileForm(request.POST, request.FILES)
         if form.is_valid():
             print '**********Live Data:VALID********'
-            handle_uploaded_live_file(request.FILES['file'], request.POST['filename'])
+            handle_uploaded_live_file(request.FILES['file'], request.POST['filename'], request.POST['proposalid'])
             json['success'] = True
             json['text'] = {'file':request.FILES['file'].name}
         else:
@@ -127,16 +141,24 @@ def delete_file(request):
     else:
         return HttpResponse('Go Away!')
     return HttpResponse(simplejson.dumps(json))
-def view_file(request):
-    json = {
-        'success': False,
-        'text':{},
-    }
-    if request.method == 'GET':
-        form = ViewFileForm(request.GET)
-        if form.is_valid():
-            return render_to_response('view_file.html',{'params.md5':request.GET['md5']})
-            json['success'] = True
-
-    return HttpResponse(simplejson.dumps(json))
-
+@login_required
+def all_files(request):
+    return render_to_response('all_files.html')
+@login_required
+def view_file(request, idNum):
+    return render_to_response('view_file.html', {'id': idNum})
+def login(request):
+    if request.method == 'POST':
+        username = request.POST.get('username', '')
+        password = request.POST.get('password', '')
+        print 'Proposal ID: ', username, 'Tag: ', password
+        user = auth.authenticate(username = username, password = password)
+        if user is not None and user.is_active:
+            print '********LOGIN SUCCESSFUL*********'
+            auth.login(request, user)
+            return HttpResponseRedirect('/fileviewer/files/all/')
+        else:
+            return HttpResponse('Go Away!')
+    elif request.method == 'GET':
+        return render_to_response('registration/login.html')
+    
