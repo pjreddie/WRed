@@ -1,3 +1,6 @@
+#Author: Joe Redmon
+#fileRead.py
+
 import md5, os
 from display.models import *
 from django.db import models, transaction

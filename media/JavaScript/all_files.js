@@ -1,22 +1,11 @@
-/*!
- * Ext JS Library 3.2.1
- * Copyright(c) 2006-2010 Ext JS, Inc.
- * licensing@extjs.com
- * http://www.extjs.com/license
- */
+//Author: Joe Redmon
+//all_files.js
 
 
 Ext.onReady(function(){
-
-
-    // NOTE: This is an example showing simple state management. During development,
-    // it is generally best to disable state management as dynamically-generated ids
-    // can change across page loads, leading to unpredictable results.  The developer
-    // should ensure that stable state ids are set for stateful components in real apps.    
-    Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
-
     var maxvals = [];
     var minvals = [];
+/*Handles rendering of ArrayGrid to show range of parameters in data files*/
     function vrange(val, meta, record, rI, cI, store){
         var range = maxvals[cI] - minvals[cI];
         var spl = val.split(',');
@@ -45,31 +34,8 @@ Ext.onReady(function(){
         });
     };
 
- var fbutton = new Ext.ux.form.FileUploadField({
-        //renderTo: 'uploadfiles',
-        buttonOnly: true,
-        listeners: {
-            'fileselected': function(fb, v){
-                var el = Ext.fly('fi-button-msg');
-                el.update('<b>Selected:</b> '+v);
-                if(!el.isVisible()){
-                    el.slideIn('t', {
-                        duration: .2,
-                        easing: 'easeIn',
-                        callback: function(){
-                            el.highlight();
-                        }
-                    });
-                }else{
-                    el.highlight();
-                }
-            }
-        }
-    });
-
+/*FormPanel to enable file uploads. Sends POST request to server w/ file information*/
     var fp = new Ext.FormPanel({
-        //renderTo: 'uploadfiles',
-        //standardSubmit:true,
         fileUpload: true,
         width: 500,
         frame: true,
@@ -98,7 +64,6 @@ Ext.onReady(function(){
 	                    url: '../forms/upload/',
 	                    waitMsg: 'Uploading your file...',
 	                    success: function(fp, o){
-	                        //msg('Success', 'Processed file "'+o.file+'" on the server');
 	                    }
 	                });
                 }
@@ -110,23 +75,23 @@ Ext.onReady(function(){
             }
         }]
     });
-    var rowRightClicked = 0;
+    var rowRightClicked = 0; //variable to store index of row that is right clicked
+
+/*GridPanel that displays the data*/
     var grid = new Ext.grid.GridPanel({
         tbar:[fp,'-'],
         store: store,
         columns: gridColumns,
         stripeRows: true,
-        //autoWidth: true,
         height: 500,
         width: 900,
-        title: 'Available Files',
-        // config options for stateful behavior
-        //stateful: true,
-        //stateId: 'grid'        
+        title: 'Available Files',    
     });
     grid.on('rowdblclick', function(grid, rowIndex, e){
          window.location = '../' + (store.getAt(rowIndex).get('id'));
     });
+
+/*Menu that shows up on right click to delete a file from the database*/
     var rowMenu = new Ext.menu.Menu({
         id:'rowMenu',
         items:[
@@ -135,6 +100,7 @@ Ext.onReady(function(){
             },
         ],
     });
+/*Sends a POST request to server to delete a file*/
     function deleteRow(){
         var conn = new Ext.data.Connection();
         conn.request({
@@ -142,24 +108,26 @@ Ext.onReady(function(){
             method: 'POST',
             params: {'md5': store.getAt(rowRightClicked).get('md5')},
             success: function(responseObject) {
-                //showHistoryDialog(responseObject.responseText);
             },
              failure: function() {
-                 //Ext.Msg.alert('Status', 'Unable to show history at this time. Please try again later.');
              }
         });
     }
-    grid.on('rowcontextmenu', function(grid, rowIndex, e){e.stopEvent();rowMenu.showAt(e.getXY());rowRightClicked = rowIndex;});
+    grid.on('rowcontextmenu', function(grid, rowIndex, e){e.stopEvent();rowRightClicked = rowIndex;rowMenu.showAt(e.getXY());});
     grid.render('allfiles');
 
-
+/*After data is retrieved from server, we have to reinitiallize the Store reconfigure the ArrayGrid
+so that the new data is displayed on the page*/
     function reload_data(){
-    var fieldData = dataArray[0];
-    maxvals = dataArray[1];
-    minvals = dataArray[2];
-    dataArray.splice(0,3);
+    var fieldData = dataArray[0]; //First row is the parameters of the data file (e.g. ['X', 'Y', 'Z', 'Temp'])
+    maxvals = dataArray[1];       //Second row is the max values of the parameters over all files (used for rendering ranges)
+    minvals = dataArray[2];       //Third row is min values of parameters
+    dataArray.splice(0,3);        //The rest is the actual data
     var gridColumns = [];
     var storeFields = [];
+/*The first three parameters (File Name, database ID, and md5 sum) aren't renedered using the
+standard renderer and the ID and md5 sum aren't displayed at all, they are only used for server
+requests later, so we add them to the Store differently*/
     gridColumns.push({header: fieldData[0], width: 150, sortable: true, dataIndex: fieldData[0]});
     storeFields.push({name: fieldData[0]});
     gridColumns.push({header: fieldData[1], width: 150,hidden:true, sortable: true, dataIndex: fieldData[1]});
@@ -170,19 +138,16 @@ Ext.onReady(function(){
         gridColumns.push({header: fieldData[i], width: 100, renderer:vrange, sortable: true, dataIndex: fieldData[i]});
         storeFields.push({name: fieldData[i]});
     }
-
     store = new Ext.data.ArrayStore({
         fields: storeFields,
     });
-
-    // create the data store
-
     store.loadData(dataArray);
     colModel = new Ext.grid.ColumnModel({columns: gridColumns});
     grid.reconfigure(store, colModel);
 
     }
-
+/*Retrieve data in json format via a GET request to the server. This is used
+anytime there is new data, and initially to populate the table.*/
     function update(){
     var conn = new Ext.data.Connection();
         conn.request({
@@ -190,8 +155,8 @@ Ext.onReady(function(){
             method: 'GET',
             params: {},
             success: function(responseObject) {
-                dataArray = Ext.decode(responseObject.responseText);
-                reload_data();
+                dataArray = Ext.decode(responseObject.responseText);//decodes the response
+                reload_data();                                      //resets the store and grids
             },
              failure: function() {
              }
@@ -199,8 +164,8 @@ Ext.onReady(function(){
     }
     update();
 
-
-
+/*Sets up the stomp connection, subscribes to the 'all' channel, and updates 
+whenever any message comes through (whenever files are added, removed, or changed)*/
         stomp = new STOMPClient();
         stomp.onopen = function(){};
         stomp.onclose = function(c){
@@ -216,11 +181,6 @@ Ext.onReady(function(){
             stomp.subscribe("/updates/files/all");
         };
         stomp.onmessageframe = function(frame){
-            // Presumably we should only receive message frames with the
-            // destination "/topic/shouts" because that's the only destination
-            // to which we've subscribed. To handle multiple destinations we
-            // would have to check frame.headers.destination.
-            //add_message(frame.body);
             update();
         };
         stomp.connect('localhost', 61613);

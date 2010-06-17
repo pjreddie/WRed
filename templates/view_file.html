@@ -1,3 +1,5 @@
+<!--Author: Joe Redmon-->
+<!--view_file.html-->
 <html>
 <head>
   <title>FileViewer</title>
@@ -8,7 +10,7 @@
   <script type="text/javascript" src="/media/JavaScript/ext-3.2.1/ext-all.js"></script>
   <script type="text/javascript" src="/media/JavaScript/jquery-1.4.2/jquery-1.4.2.js"></script>
   <script type="text/javascript" src="/media/JavaScript/flot-0.6/jquery.js"></script>
-  <!-- FOR IE <script type="text/javascript" src="./flot/excanvas.js"></script> -->
+  <!-- FOR IE <script type="text/javascript" src="./flot/excanvas.js"></script> --><!--Yuck who uses IE?!-->
   <script type="text/javascript" src="/media/JavaScript/flot-0.6/jquery.flot.js"></script>
   <script src="/media/JavaScript/flot-0.6/jquery.flot.errorbars.js" type="text/javascript" language="javascript"></script>
   <script>
@@ -20,11 +22,11 @@
   </script>
   <script>
     document.domain = document.domain; // I don't know why
-    // we need to do this, but we just need to
+    // we need to do this, but we just need to (I didn't write this comment but i'll take his word for it ~joe)
   </script>
   <script type="text/javascript">
     <!--// 
-    idNum = {{ id }}
+    idNum = {{ id }} //gotta pass in the id number (in the database) to the script through this variable.
     //-->
 </script>
   <script src="/media/JavaScript/view_file.js" type="text/javascript" language="javascript"></script>

@@ -1,3 +1,6 @@
+#Author: Joe Redmon
+#fileToJson.py
+
 import md5, os
 from display.models import MetaData, DataFile
 from django.db import models

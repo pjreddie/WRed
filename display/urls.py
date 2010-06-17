@@ -1,3 +1,6 @@
+#Author: Joe Redmon
+#urls.py
+
 from django.conf.urls.defaults import *
 from django.views.generic.simple import direct_to_template
 from fileviewer.display.views import *
@@ -13,7 +16,6 @@ urlpatterns = patterns('',
     (r'^files/all$',all_files),
     (r'^files/all/$',all_files),
     (r'^files/(\w+)$', view_file),
-    #(r'^chart/(?P<id>\w+)/$', direct_to_template,{'template':'view_chart.html'}),
     (r'^files/json/(\w+)/$', json_file_display),
     (r'^files/all/json/$', json_all_files),
     (r'^files/forms/upload/$', upload_file),

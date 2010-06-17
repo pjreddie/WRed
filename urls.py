@@ -1,14 +1,17 @@
+#Author: Joe Redmon
+#urls.py
+
 from django.conf.urls.defaults import *
 from django.views.generic.simple import direct_to_template
-from fileviewer.orbited_views import *
 from fileviewer.display.views import *
 # Uncomment the next two lines to enable the admin:
-from django.contrib import admin
 
+from django.contrib import admin
 admin.autodiscover()
 
+SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 static_files_dict = {
-    'document_root': '/home/jredmon/SURF/fileviewer/media/',
+    'document_root': os.path.join(SITE_ROOT, 'media/'),
 }
 
 urlpatterns = patterns('',

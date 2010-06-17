@@ -1,3 +1,7 @@
+#Script written by Paul Kienzle with some additions by me for retrieving data from the ipeek stream
+#Fairly sure you have to be local to use it, but you can see how it is used to send the POST request
+#to the server to update live data.
+
 import sys
 import os
 import logging

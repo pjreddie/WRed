@@ -1,3 +1,6 @@
+#Author: Joe Redmon
+#settings.py
+
 # Django settings for fileviewer project.
 import os
 import django

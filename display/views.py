@@ -1,3 +1,6 @@
+#Author: Joe Redmon
+#views.py
+
 import os
 from multiprocessing import Queue
 from django.http import HttpResponse, HttpResponseRedirect
@@ -24,6 +27,7 @@ class DeleteFileForm(forms.Form):
     md5 = forms.CharField(max_length = 32)
 class WaitForUpdateForm(forms.Form):
     pass
+#Handles GET requests for individual files, returns a json object of the data file
 @login_required
 def json_file_display(request, idNum):
     print 'USERNAME: ',request.user.username
@@ -40,6 +44,7 @@ def json_file_display(request, idNum):
     else: print 'No!'
     return HttpResponse('Go Login!')
 
+#Handles GET requests for all file information, returns a json object of the files
 @login_required
 def json_all_files(request):
     files = DataFile.objects.filter(proposal_id = request.user.username)
@@ -78,6 +83,7 @@ def json_all_files(request):
     for row in variables[1:]:
         row.extend(['N/A']*(len(variables[0]) - len(row)))
     return HttpResponse(simplejson.dumps(variables))
+#Handles POST requests to upload static files (cannot be update or changed later)
 @login_required
 def upload_file(request):
     json = {
@@ -99,7 +105,7 @@ def upload_file(request):
 
         return HttpResponse('Get Outta Here!')
     return HttpResponse(simplejson.dumps(json))
-
+#Handles POST requests to upload live files (files that may be updated or changed later)
 def upload_file_live(request):
     print "Live Data Request"
     json = {
@@ -121,7 +127,8 @@ def upload_file_live(request):
 
         return HttpResponse('Get Outta Here!')
     return HttpResponse(simplejson.dumps(json))
-
+#handles POST requests to delete files from the database
+@login_required
 def delete_file(request):
     json = {
         'file': {},

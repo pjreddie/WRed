@@ -1,3 +1,8 @@
+//Author: Joe Redmon
+//pipeline.js
+/*This mainly deals with animating the pipeline and is not close to being finished,
+since I think you're more interested in the other aspects, I'm going to leave out comments
+until it is further along...*/
 function PlusBox(x, y, width, height){
   this.x = x;
   this.y = y;
@@ -28,15 +33,18 @@ function MinusBox(x, y, width, height){
   }
 }
 
-function FileBox(x, y, width, height){
-  this.x = x;
-  this.y = y;
-  this.width = width;
-  this.height = height;
-  this.files = [];
+function TextBox(text){
+  this.text = text;
+  this.width = 0;
+  this.update = function(ctx){
+
+    var size = ctx.measureText(this.text);
+    this.width = size.width;
+  }
   this.selected = false;
-  this.draw = function(ctx){
-    drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(0,255,0)');
+  this.draw = function(ctx, x, y, width, height){
+    drawBox(ctx, x, y, width, height, 'rgb(100,100,255)');
+    ctx.fillText(this.text, x - width/2, y + height/2);
     if (this.selected) this.highlight(ctx);
   }
   this.highlight = function(ctx){
@@ -44,9 +52,36 @@ function FileBox(x, y, width, height){
   }
 }
 
-
-function FileBox(x,y,width,height){
-  
+function FileBox(x,y){
+  this.files = [];
+  this.x = x;
+  this.y = y;
+  this.width = 30;
+  this.height = 30;
+  this.tbwidth = 0;
+  this.tbheight = 12;
+  this.selected = false;
+  this.update = function(ctx){
+    if(this.files.length != 0){
+    this.tbwidth = 0;
+    for(i = 0; i < this.files.length; ++i){this.files[i].update(ctx); this.tbwidth = Math.max(this.tbwidth, this.files[i].width+4);}
+    this.height = this.tbheight * this.files.length+ 4*(this.files.length + 1);
+    this.width = this.tbwidth;
+    }
+  }
+  this.draw = function(ctx){
+    this.update(ctx);
+    var cury = this.y - this.height/2 + this.tbheight/2 + 4;
+    drawBox(ctx, this.x, this.y, this.width + 10, this.height, 'rgb(0,0,255)');
+    for(i = 0; i < this.files.length; ++i){
+      this.files[i].draw(ctx, this.x, cury, this.tbwidth, this.tbheight);
+      cury+=this.tbheight + 4;
+    }
+    if (this.selected) this.highlight(ctx);
+  }
+  this.highlight = function(ctx){
+    drawBox(ctx, this.x, this.y, this.width+4, this.height+8*(this.files.length+1), 'rgb(0,0,0)');
+  }
 }
 
 function drawBox(ctx,_x,_y,_width,_height, _color){
@@ -54,7 +89,7 @@ function drawBox(ctx,_x,_y,_width,_height, _color){
   var height = _height;
   var x = _x - width/2;
   var y = _y - height/2;
-  var radius = Math.max(width/10, height/10);
+  var radius = Math.min(width/10, height/10);
   ctx.beginPath();
   ctx.strokeStyle = _color;
   ctx.moveTo(x,y+radius);
@@ -70,9 +105,7 @@ function drawBox(ctx,_x,_y,_width,_height, _color){
 }
 
 //*******EXT Stuff***********
-
 Ext.onReady(function(){
-
 var plMenu = new Ext.menu.Menu({
     id:'plMenu',
     items:[
@@ -97,6 +130,13 @@ toolbar.add({
  },{
         text: '----',
         id: 'minus',
+        enableToggle: true,
+        toggleGroup: 'toggle',
+        toggleHandler: onItemToggle,
+        pressed: false
+ },{
+        text: 'File',
+        id: 'file',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
@@ -140,6 +180,19 @@ function redraw(e){
   ctx.clearRect(0,0, 500,500);
 
   switch(selected){
+    case 'file':
+     var fb = new FileBox(coords[0], coords[1]);
+     var a = new TextBox('file1argergare');
+     var b = new TextBox('fileaewfas2');
+     var c = new TextBox('files2');
+     var d = new TextBox('fileaswe2');
+     var e = new TextBox('file2afasg');
+     fb.files = [a,b,c,d,e,a,b,c,d];
+     fb.draw(ctx);
+      for (i = 0; i < boxes.length; ++i){
+      boxes[i].draw(ctx);
+  }
+break;
     case 'plus':
   for (i = 0; i < boxes.length; ++i){
      boxes[i].draw(ctx);
