@@ -3,14 +3,14 @@
 
 from django.conf.urls.defaults import *
 from django.views.generic.simple import direct_to_template
-from fileviewer.display.views import *
+from WRed.display.views import *
 from django.contrib.auth.views import login, logout
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 
 admin.autodiscover()
 
-from fileviewer.display.models import DataFile, MetaData
+from WRed.display.models import DataFile, MetaData
 
 urlpatterns = patterns('',
     (r'^files/all$',all_files),

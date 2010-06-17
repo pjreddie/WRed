@@ -19,7 +19,7 @@ import urllib2, urllib2_file
 INSTRUMENT_KEY="~/.ssh/livedatakey"
 INSTRUMENT_COMPUTER="bt7@bach.ncnr.nist.gov"
 INSTRUMENT = "BT7"
-UPDATEURL="http://localhost:8000/fileviewer/files/forms/upload/live/"
+UPDATEURL="http://localhost:8000/WRed/files/forms/upload/live/"
 PROPOSAL="http://www-i.ncnr.nist.gov/schedule"
 
 def instrument_command(cmd):

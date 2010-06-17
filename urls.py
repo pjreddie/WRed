@@ -3,7 +3,7 @@
 
 from django.conf.urls.defaults import *
 from django.views.generic.simple import direct_to_template
-from fileviewer.display.views import *
+from WRed.display.views import *
 # Uncomment the next two lines to enable the admin:
 
 from django.contrib import admin
@@ -16,9 +16,9 @@ static_files_dict = {
 
 urlpatterns = patterns('',
     # (r'^$', direct_to_template, {'template':'index.html'}),
-    (r'^fileviewer/', include('fileviewer.display.urls')),
+    (r'^WRed/', include('WRed.display.urls')),
     # Example:
-    # (r'^fileviewer/', include('fileviewer.foo.urls')),
+    # (r'^WRed/', include('WRed.foo.urls')),
 
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs' 
     # to INSTALLED_APPS to enable admin documentation:

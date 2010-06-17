@@ -1,7 +1,7 @@
 #Author: Joe Redmon
 #settings.py
 
-# Django settings for fileviewer project.
+# Django settings for WRed project.
 import os
 import django
 
@@ -75,7 +75,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
 )
 
-ROOT_URLCONF = 'fileviewer.urls'
+ROOT_URLCONF = 'WRed.urls'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
@@ -92,5 +92,5 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
-    'fileviewer.display',
+    'WRed.display',
 )

@@ -9,9 +9,9 @@ import simplejson
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 
-from fileviewer.fileRead import *
+from WRed.fileRead import *
 from fileToJson import displayfile
-from fileviewer.display.models import *
+from WRed.display.models import *
 from django import forms
 
 
@@ -163,7 +163,7 @@ def login(request):
         if user is not None and user.is_active:
             print '********LOGIN SUCCESSFUL*********'
             auth.login(request, user)
-            return HttpResponseRedirect('/fileviewer/files/all/')
+            return HttpResponseRedirect('/WRed/files/all/')
         else:
             return HttpResponse('Go Away!')
     elif request.method == 'GET':
