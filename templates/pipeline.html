@@ -11,6 +11,17 @@
   <script type="text/javascript" src="/media/JavaScript/jquery-1.4.2/jquery-1.4.2.js"></script>
   <link rel="stylesheet" type="text/css" href="/media/JavaScript/ext-3.2.1/ux/fileuploadfield/css/fileuploadfield.css"/>
   <script type="text/javascript" src="/media/JavaScript/ext-3.2.1/ux/fileuploadfield/FileUploadField.js"></script>
+  <script>
+    //set the orbited settings and port
+    Orbited.settings.port = 9000;
+    Orbited.settings.hostname = "localhost";
+    //Orbited.settings.streaming = false;
+    TCPSocket = Orbited.TCPSocket;
+  </script>
+  <script>
+    document.domain = document.domain; // I don't know why
+    // we need to do this, but we just need to (I didn't write this comment but i'll take his word for it ~joe)
+  </script>
   <script src="/media/JavaScript/pipeline.js" type="text/javascript" language="javascript"></script>
 </head>
 <body>
