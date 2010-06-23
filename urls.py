@@ -29,5 +29,6 @@ urlpatterns = patterns('',
 
     # Remove below when moving to production server
     (r'^media/(?P<path>.*)$', 'django.views.static.serve', static_files_dict),
-    (r'^accounts/login/$', login),
+    (r'^accounts/login/$', login_view),
+    (r'^accounts/logout/$', logout_view),
 )

@@ -268,7 +268,7 @@ Ext.onReady(function(){
              }
         });
     }
-    grid.on('rowcontextmenu', function(grid, rowIndex, e){rowRightClicked = rowIndex;rowMenu.showAt(e.getXY());});
+    grid.on('rowcontextmenu', function(grid, rowIndex, e){rowRightClicked = rowIndex;rowMenu.showAt(e.getXY());e.stopEvent();});
 
 /*After data is retrieved from server, we have to reinitiallize the Store reconfigure the ArrayGrid
 so that the new data is displayed on the page*/
@@ -346,24 +346,75 @@ var plMenu = new Ext.menu.Menu({
     id:'plMenu',
     items:[
         {
-            text: 'Connect',handler: connector,
+            text: 'Connect',handler: connector,id: 'connect',
+        },
+        {
+           text: 'Disconnect', handler: disconnector, id: 'disconnect',
         },
     ],
 });
-function connector(){
+function connected(){
   var count = 0;
-  var from;
-  var to;
-  for(var i = 0; i < boxes.length; ++i){
+  for(var i = 0; i < boxes.length && count < 3; ++i){
     if(boxes[i].selected){
       if (count === 0) from = boxes[i];
       else if (count == 1) to = boxes[i];
       ++count;
     }
   }
-   if (count == 2){
+  if (count != 2){
+    return false;
+  }else{
+    var connected = false;
+    for(var j = 0; j < from.connectedBoxes.length; ++j){
+      if (from.connectedBoxes[j] == to) connected = true;
+    }
+    for(var j = 0; j < to.connectedBoxes.length; ++j){
+      if (to.connectedBoxes[j] == from) connected = true;
+    }
+    return connected;
+  }
+  return false;
+}
+function disconnected(){
+  var count = 0;
+  for(var i = 0; i < boxes.length && count < 3; ++i){
+    if(boxes[i].selected){
+      if (count === 0) from = boxes[i];
+      else if (count == 1) to = boxes[i];
+      ++count;
+    }
+  }
+  if (count != 2){
+    return false;
+  }else{
+    var connected = false;
+    for(var j = 0; j < from.connectedBoxes.length; ++j){
+      if (from.connectedBoxes[j] == to) connected = true;
+    }
+    for(var j = 0; j < to.connectedBoxes.length; ++j){
+      if (to.connectedBoxes[j] == from) connected = true;
+    }
+    return !connected;
+  }
+  return false;
+}
+
+function disconnector(){
+  if(connected()){
+    for(var j = 0; j < from.connectedBoxes.length; ++j){
+      if (from.connectedBoxes[j] == to) from.connectedBoxes.splice(j,1);
+    }
+    for(var j = 0; j < to.connectedBoxes.length; ++j){
+      if (to.connectedBoxes[j] == from) to.connectedBoxes.splice(j,1);
+    }
+  }
+}
+
+function connector(){
+  if(disconnected()){
      from.connectedBoxes.push(to);
-   }
+  }
 }
 var canvasContainer = new Ext.BoxComponent({
     el: 'myCanvas',
@@ -475,6 +526,7 @@ function imgCoords(e) {
   toReturn[1] -= canvasContainer.getPosition()[1];
   return toReturn;
 }
+var from, to;
 function mouseUp(e){
   canvas.un('mousemove', moveSelected);
   if(e.button === 0){
@@ -506,8 +558,17 @@ function mouseUp(e){
     default:
   }
 
-  }else if(e.button == 2){
-  var coords = imgCoords(e);
+  }else if(e.button == 2||e.button == 1){
+    if(connected()){
+      plMenu.items.get('connect').disable();
+      plMenu.items.get('disconnect').enable();
+    }else if(disconnected()){
+      plMenu.items.get('connect').enable();
+      plMenu.items.get('disconnect').disable();
+    }else{
+      plMenu.items.get('disconnect').disable();
+      plMenu.items.get('connect').disable();
+    }
   plMenu.showAt(e.getXY());
   e.stopEvent();
   }
@@ -554,7 +615,7 @@ function mouseDown(e){
       break;
     default:
   }
-  }else if(e.button == 2){
+  }else if(e.button == 2||e.button == 1){
   e.stopEvent();
   }
 redraw(e);
@@ -562,19 +623,37 @@ redraw(e);
 function rightClick(e){
 e.stopEvent();
 }
+
 function keyUp(e){
   if (e.getKey() == 8 || e.getKey() == 46){
     for (var i = 0; i < boxes.length; ++i){
-      if(boxes[i].selected) boxes.splice(i, 1);
+      if(boxes[i].selected){
+        var temp = boxes[i];
+        boxes.splice(i, 1);
+        for (var j = 0; j < boxes.length; ++j){
+          for (var k = 0; k < boxes[j].connectedBoxes.length; ++k){
+            if (boxes[j].connectedBoxes[k] == temp){
+              boxes[j].connectedBoxes.splice(k,1);
+              --k;
+            }
+          }
+        }
+        --i;
+      }
     }
    redraw(e);
+  }else if(e.getKey() == 67 && e.ctrlKey){
+    connector();
+    e.stopEvent();
+  }else if(e.getKey() == 68 && e.ctrlKey){
+    disconnector();
+    e.stopEvent();
   }
 }
 
 function mouseOver(e){
   if(selected == 'file'){
     selectedFiles = grid.getSelectionModel().getSelections();
-    console.log(selectedFiles[0].data['File Name']);
   }
   canvas.on('mousemove', redraw);
 }
@@ -586,6 +665,8 @@ canvas.on({'mousedown': mouseDown,
           'mouseup': mouseUp});
 documentExt = Ext.get(document);
 documentExt.on('keyup', keyUp);
+/*documentExt.on({'mousedown': function(e){if(e.button == 2){e.stopEvent();}},
+         'mouseup': function(e){if(e.button == 2) e.stopEvent();}});*/
   var viewport = new Ext.Viewport({
     layout: 'border',
     items:[pipelinePanel,grid],        

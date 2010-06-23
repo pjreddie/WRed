@@ -32,10 +32,11 @@ class WaitForUpdateForm(forms.Form):
 def json_file_display(request, idNum):
     print 'USERNAME: ',request.user.username
     print 'Authenticated: ', request.user.is_authenticated()
-    if request.user.is_authenticated() and (request.user.username == str(idNum) or request.user.is_superuser):
+    rFile = DataFile.objects.get(id = idNum)
+    if request.user.is_authenticated() and (request.user.username == str(rFile.proposal_id) or request.user.is_superuser):
         print 'Good To Go!'
         try:
-            md5 = DataFile.objects.get(id = idNum).md5
+            md5 = rFile.md5
             all_objects = displayfile('db/' + md5 + '.file')
             data = simplejson.dumps(all_objects)
             return HttpResponse(data)
@@ -154,7 +155,7 @@ def all_files(request):
 @login_required
 def view_file(request, idNum):
     return render_to_response('view_file.html', {'id': idNum})
-def login(request):
+def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username', '')
         password = request.POST.get('password', '')
@@ -168,4 +169,6 @@ def login(request):
             return HttpResponse('Go Away!')
     elif request.method == 'GET':
         return render_to_response('registration/login.html')
-    
+def logout_view(request):
+    auth.logout(request)
+    return HttpResponseRedirect('/accounts/login')
