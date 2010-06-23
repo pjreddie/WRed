@@ -22,12 +22,18 @@ function drawBox(ctx,_x,_y,_width,_height, _color){
   ctx.quadraticCurveTo(x,y,x,y+radius);
   ctx.stroke();
 }
-
+function clearBox(ctx, _x, _y, _width, _height){
+  var width = _width;
+  var height = _height;
+  var x = _x - width/2;
+  var y = _y - height/2;
+  ctx.clearRect(x,y,width,height);
+}
 function connect(ctx, from, to){
   ctx.beginPath();
   ctx.strokeStyle = 'rgb(0,0,0)';
   ctx.moveTo(from.x, from.y)
-  ctx.lineTo(to.x, to.y);
+  ctx.bezierCurveTo(to.x, from.y, from.x, to.y, to.x, to.y);
   ctx.stroke();
 }
 
@@ -42,6 +48,7 @@ function PlusBox(x, y, width, height){
   this.selected = false;
   this.connectedBoxes = [];
   this.draw = function(ctx){
+    clearBox(ctx, this.x, this.y, this.width, this.height);
     drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(255,0,0)');
     if (this.selected) {this.highlight(ctx);}
   };
@@ -61,6 +68,7 @@ function MinusBox(x, y, width, height){
   this.selected = false;
   this.connectedBoxes = [];
   this.draw = function(ctx){
+    clearBox(ctx, this.x, this.y, this.width, this.height);
     drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(0,255,0)');
     if (this.selected) {this.highlight(ctx);}
   };
@@ -86,6 +94,7 @@ function TextBox(file){
     this.y = y;
     this.width = width;
     this.height = height;
+    clearBox(ctx, this.x, this.y, this.width, this.height);
     drawBox(ctx, x, y, width, height, 'rgb(100,100,255)');
     ctx.fillText(this.text, x - width/2, y + height/2);
     if (this.selected) this.highlight(ctx);
@@ -114,13 +123,14 @@ function FileBox(x,y){
       this.tbwidth = 0;
       for(var i = 0; i < this.files.length; ++i){this.files[i].update(ctx); this.tbwidth = Math.max(this.tbwidth, this.files[i].width+4);}
       this.height = this.tbheight * this.files.length+ 4*(this.files.length + 1);
-      this.width = this.tbwidth;
+      this.width = this.tbwidth + 10;
     }
   };
   this.draw = function(ctx){
     this.update(ctx);
     var cury = this.y - this.height/2 + this.tbheight/2 + 4;
-    drawBox(ctx, this.x, this.y, this.width + 10, this.height, 'rgb(0,0,255)');
+    clearBox(ctx, this.x, this.y, this.width, this.height);
+    drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(0,0,255)');
     for(var i = 0; i < this.files.length; ++i){
       this.files[i].draw(ctx, this.x, cury, this.tbwidth, this.tbheight);
       cury+=this.tbheight + 4;
@@ -128,7 +138,7 @@ function FileBox(x,y){
     if (this.selected) this.highlight(ctx);
   };
   this.highlight = function(ctx){
-    drawBox(ctx, this.x, this.y, this.width+10+4, this.height+4, 'rgb(0,0,0)');
+    drawBox(ctx, this.x, this.y, this.width+4, this.height+4, 'rgb(0,0,0)');
   };
 }
 
@@ -313,7 +323,7 @@ whenever any message comes through (whenever files are added, removed, or change
         stomp = new STOMPClient();
         stomp.onopen = function(){};
         stomp.onclose = function(c){
-            alert('Lost Connection, Code: ' + c);
+            //alert('Lost Connection, Code: ' + c);
         };
         stomp.onerror = function(error){
             alert("Error: " + error);
@@ -419,10 +429,13 @@ function redraw(e){
   ctx.clearRect(0,0, 500,500);
   
   for (var i = 0; i < boxes.length; ++i){
-    boxes[i].draw(ctx);
+    //boxes[i].draw(ctx);
     for(var j = 0; j < boxes[i].connectedBoxes.length; ++j){
       connect(ctx, boxes[i], boxes[i].connectedBoxes[j]);
     }
+  }
+  for (var i = 0; i < boxes.length; ++i){
+    boxes[i].draw(ctx);
   }
   switch(selected){
     case 'file':
