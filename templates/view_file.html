@@ -5,22 +5,25 @@
   <title>WRed: View File</title>
   <script type="text/javascript" src="/media/JavaScript/orbited-0.7/Orbited.js"></script>
   <script type="text/javascript" src="/media/JavaScript/orbited-0.7/protocols/stomp/stomp.js"></script>
-  <link rel="stylesheet" type="text/css" href="/media/JavaScript/ext-3.2.1/resources/css/ext-all.css" />
+  <link   type="text/css" rel="stylesheet" href="/media/JavaScript/ext-3.2.1/resources/css/ext-all.css" />
   <script type="text/javascript" src="/media/JavaScript/ext-3.2.1/adapter/ext/ext-base.js"></script>
   <script type="text/javascript" src="/media/JavaScript/ext-3.2.1/ext-all.js"></script>
   <script type="text/javascript" src="/media/JavaScript/jquery-1.4.2/jquery-1.4.2.js"></script>
+
   <script type="text/javascript" src="/media/JavaScript/flot-0.6/jquery.js"></script>
-  <!-- FOR IE <script type="text/javascript" src="./flot/excanvas.js"></script> --><!--Yuck who uses IE?!-->
+  <!--[if IE]><script type="text/javascript" src="./flot/excanvas.js"></script> --><![endif]-->
   <script type="text/javascript" src="/media/JavaScript/flot-0.6/jquery.flot.js"></script>
-  <script src="/media/JavaScript/flot-0.6/jquery.flot.errorbars.js" type="text/javascript" language="javascript"></script>
-  <script>
+  <script type="text/javascript" src="/media/JavaScript/flot-0.6/jquery.mousehold.js"></script>
+  <script type="text/javascript" src="/media/JavaScript/flot-0.6/jquery.flot.navigate.js"></script>
+  <script type="text/javascript" src="/media/JavaScript/flot-0.6/jquery.flot.errorbars.js"></script>
+  <script type="text/javascript">
     // set the orbited settings and port
     Orbited.settings.port = 9000;
     Orbited.settings.hostname = "localhost";
     //Orbited.settings.streaming = false;
     TCPSocket = Orbited.TCPSocket;
   </script>
-  <script>
+  <script type="text/javascript">
     document.domain = document.domain; // I don't know why
     // we need to do this, but we just need to (I didn't write this comment but i'll take his word for it ~joe)
   </script>
@@ -28,11 +31,13 @@
     <!--// 
     idNum = {{ id }} //gotta pass in the id number (in the database) to the script through this variable.
     //-->
-</script>
-  <script src="/media/JavaScript/view_file.js" type="text/javascript" language="javascript"></script>
+  </script>
+
+  <link   type="text/css" rel="stylesheet" href="/media/css/WRed-common.css" />
+  <script type="text/javascript" src="/media/JavaScript/view_file.js"></script>
 </head>
 <body>
     <h3>View Some Files</h3>
-    <div id = "tabs"></div>
+    <div id="tabs"></div>
 </body>
 </html>

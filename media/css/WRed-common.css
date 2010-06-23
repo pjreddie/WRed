@@ -1,0 +1,38 @@
+#ChartTab {
+
+
+}
+
+.ChoiceContainer {
+  margin:         10px;
+}
+
+#xChoiceContainer {
+  width:          500px;
+  margin-left:    240px; /* 10 + 210 + 10 + ... + 10 */
+  clear:          left;
+  padding-left:   160px; /* Horizontal centering (approximate) */
+}
+
+#yChoiceContainer {
+  width:          210px; /* 210 */
+  height:         260px; /* 500 - 240 */
+  float:          left;
+  padding-top:    240px; /* Vertical centering (approximate) */
+}
+
+/* Vertical text
+#yChoiceContainer, .yChoiceList {
+      -webkit-transform: rotate(-90deg); 
+      -moz-transform: rotate(-90deg);
+      filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+}*/
+
+#ChartContainer {
+  width:          500px;
+  height:         500px;
+  margin:         10px;
+  float:          left;
+  
+
+}
