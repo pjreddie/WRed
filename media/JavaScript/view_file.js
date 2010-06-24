@@ -12,7 +12,7 @@ Ext.onReady(function() {
     var gridColumns = [];
     var storeFields = [];
     var dataArray = [];
-    
+
     // Initialize grid for file view
     var grid = new Ext.grid.GridPanel({
         store:          store,
@@ -22,7 +22,11 @@ Ext.onReady(function() {
         autoWidth:      true,
         title:          'File Data',
         horizontalScroll: true,
+        
+        id:             'GridPanel',
     });
+
+// [ CHART PANEL ]
 
     /* ComboBoxes allow user to specify X and Y cooordinates for the graph, they are populated with field data when the file is initially loaded and do not get updated if the file is changed, since it is unlikely that new parameters will be added, even in live data. */
     var xChoice = new Ext.form.ComboBox({
@@ -68,23 +72,120 @@ Ext.onReady(function() {
         items:          [yChoice],
     });
     
+    
     /* Holds the flot plot */
-    var ChartContainer = new Ext.Panel({
+    var PlotContainer = new Ext.Container({
+        id:             'PlotContainer',
+    });
+    
+    var ChartContainer = new Ext.Container({
      // height:         500,
+        valueField:     'id',
+        displayField:   'name',
      // width:          500,
         
         id:             'ChartContainer',
+        items:          ['PlotContainer'],
+    });
+      
+    
+
+    var FunctionSelectStore = new Ext.data.ArrayStore({
+        data:           [ [1, 'Gaussian'], [2, '...'] ],
+        fields:         ['id', 'name'],
+    });
+    var FunctionSelect = new Ext.form.ComboBox({
+        fieldLabel:     'Function',
+        emptyText:      'Select a fitting function...',
+        hiddenName:     'function',
+        
+        store:          FunctionSelectStore,
+        valueField:     'id',
+        displayField:   'name',
+        
+        typeAhead:      true,
+        mode:           'local',
+        triggerAction:  'all',
+        selectOnFocus:  true,
+        listeners:      {},
+        
+        id:             'FunctionSelect',
     });
     
-    /* Holds the chart container and the combo boxes */
-    var ChartTab = new Ext.Panel({
-        title:          'Chart',
+    var FitCurrentGroupButton = new Ext.Button({
+        text:           'Fit current group',
+        handler:        function(button, event) { alert(button); },
+        
+        id:             'FitCurrentGroupButton',
+    });
+    var ClearCurrentCurvesButton = new Ext.Button({
+        text:           'Clear ',
+    
+    });
+        
+    var FittingPanel = new Ext.FormPanel({
+        title:          'Fitting Tools',
+        
+        defaults:       { anchor: '0', },
+        defaultType:    'textfield',
+        labelWidth:     80,
+        
+        id:             'FittingPanel',
+        items:          [FunctionSelect, FitCurrentGroupButton, ClearCurrentCurvesButton],
+    });
+
+
+    
+    
+    
+    
+    
+// [ TAB PANELS ]
+
+    var ToolsPanel = new Ext.Panel({
         autoWidth:      true,
         autoHeight:     true,
         
-        id:             'ChartTab',
+        id:             'ToolsPanel',
+        items:          [FittingPanel],
+    });
+
+    
+    /* Holds the chart and the two combo boxes */
+    var ChartPanel = new Ext.Panel({
+        autoWidth:      true,
+        autoHeight:     true,
+        
+        id:             'ChartPanel',
         items:          [yChoiceContainer, ChartContainer, xChoiceContainer], // Originally [xChoice, yChoice, ChartContainer], but this order is better
     });
+    
+    /* Holds the chart container and the other tool panels */
+    var ChartTab = new Ext.Panel({
+//      title:          'Chart Tab',
+        autoWidth:      true,
+//      autoHeight:     true,      
+        height:         600, // why not auto!?
+        
+        layout:         'border',
+        defaults:       { split: true, },
+        
+        id:             'ChartTabPanel',
+        items:          [{
+                            title: 'Chart',
+                            region: 'center',
+                            items: [ChartPanel],
+                        },
+                        {
+                            title: 'Tools',
+                            region: 'east',
+                            width: 300,
+                            collapsible: true,
+                            items: [ToolsPanel],
+                        }],
+    });
+    
+    
 
     /* Create and initialize tabs */
     var tabs = new Ext.TabPanel({
@@ -94,16 +195,18 @@ Ext.onReady(function() {
        layoutOnTabChange: true,
     });
     tabs.add({
-        id:             'file',
+        id:             'FileTab',
         title:          'View File',
         items:          [grid],
     }).show();
     tabs.add({
         listeners:      {activate: activateChart},
-        id:             'chart',
+        id:             'ChartTab',
         title:          'View Chart',
         items:          [ChartTab],
     }).show();
+    
+
 
 
     /* Draws the chart when the user activates the chart tab. If no choice is specified for the graph, it defaults to A4 and Detector */
@@ -112,12 +215,12 @@ Ext.onReady(function() {
             xChoice.setValue('A4');
             yChoice.setValue('Detector');
         }
-        drawChart(store, xChoice.getValue(), yChoice.getValue(), 'ChartContainer');
+        drawChart(store, xChoice.getValue(), yChoice.getValue(), 'PlotContainer');
     }
 
     /* When the user selects a new parameter from the comboboxes, the chart is redrawn with that choice in mind */
     function selection(selectedstore, value) {
-        drawChart(store, xChoice.getValue(), yChoice.getValue(), 'ChartContainer');
+        drawChart(store, xChoice.getValue(), yChoice.getValue(), 'PlotContainer');
     }
 
 
@@ -201,7 +304,7 @@ function drawChart(store, xChoice, yChoice, chart) {
     var chartInfo = getData(store, xChoice, yChoice);
 
 
-    var chartContainer = $('#' + chart);
+    var plotContainer = $('#' + chart);
 
     var datapoints = {
       errorbars: 'y',
@@ -219,7 +322,7 @@ function drawChart(store, xChoice, yChoice, chart) {
         amount: 1.5,
       },
       pan: { // plugin
-        interactive: false
+        interactive: true
       },
       grid: {hoverable: true, clickable: true},
       //yaxis: {autoscaleMargin: null},
@@ -227,7 +330,7 @@ function drawChart(store, xChoice, yChoice, chart) {
 
 
     var plot = $.plot(
-      chartContainer,
+      plotContainer,
       [{
         label:    xChoice + ' vs. ' + yChoice + ': Series 1',
         data:     chartInfo,
