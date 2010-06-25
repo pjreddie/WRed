@@ -4,7 +4,7 @@
 /* This is where the fun begins, now we have a Tab panel where you can see both the actual data
 displayed in an GridPanel, and the chart of the data, rendered with flot */
 
-Ext.onReady(function() {
+Ext.onReady(function () {
     Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
     var conn = new Ext.data.Connection();
     var store = new Ext.data.ArrayStore();
@@ -20,7 +20,7 @@ Ext.onReady(function() {
         store:          store,
         columns:        gridColumns,
         stripeRows:     true,
-        height:         600,
+        height:         588,
         autoWidth:      true,
         horizontalScroll: true,
         
@@ -138,9 +138,11 @@ Ext.onReady(function() {
     function fitCurrentGroup(button, event) {
         fittingFunction = FunctionSelect.getValue();
         if (fittingFunction === '' || fittingFunction == '-1')
-            Ext.Msg.show({ title: 'Form incomplete', msg: 'Please select a function.', buttons: Ext.Msg.OK, icon: Ext.Msg.ERROR, fn: function() {} } );
+            Ext.Msg.show({ title: 'Form incomplete', msg: 'Please select a function.', buttons: Ext.Msg.OK, icon: Ext.Msg.ERROR, fn: function () {} } );
         else {
-            Ext.Msg.alert('Form complete', 'Submitting form...');
+            Ext.Msg.alert('Form complete', 'Submitting function...');
+            
+            
             
         }
     }
@@ -262,12 +264,12 @@ Ext.onReady(function() {
             url: 'json/' + idNum,
             method: 'GET',
             params: {},
-            success: function(responseObject) {
+            success: function (responseObject) {
                 jsonpoints = Ext.decode(responseObject.responseText);
                 dataArray = jsonpoints;
                 reloadData();
             },
-            failure: function() {
+            failure: function () {
                 alert('Failed Request');
             }
         });
@@ -306,20 +308,20 @@ Ext.onReady(function() {
 
     /* Set up the stomp client, subscribe to channel of individual file ID so that we only receive update information about our specific file. */
     stomp = new STOMPClient();
-    stomp.onopen = function() {};
-    stomp.onclose = function(c) {
+    stomp.onopen = function () {};
+    stomp.onclose = function (c) {
         alert('Lost Connection, Code: ' + c);
     };
-    stomp.onerror = function(error) {
+    stomp.onerror = function (error) {
         alert('Error: ' + error);
     };
-    stomp.onerrorframe = function(frame) {
+    stomp.onerrorframe = function (frame) {
         alert('Error: ' + frame.body);
     };
-    stomp.onconnectedframe = function() {
+    stomp.onconnectedframe = function () {
         stomp.subscribe('/updates/files/' + idNum);
     };
-    stomp.onmessageframe = function(frame) {
+    stomp.onmessageframe = function (frame) {
         //alert('OMG we got updates!!!!1!!!111');
         update();
     };
@@ -349,7 +351,7 @@ function drawChart(store, xChoice, yChoice, chart) {
     var chartInfo = getData(store, xChoice, yChoice);
 
     var plotContainer = $('#' + chart);
-
+    
     var datapoints = {
         errorbars: 'y',
         yerr: { show: true, upperCap: '-', lowerCap: '-' },
@@ -383,4 +385,30 @@ function drawChart(store, xChoice, yChoice, chart) {
         }],
         options); //.addRose(); // Compass rose for panning
 
+    plotContainer.bind('plothover', function (event, pos, item) {
+        dataX = pos.x;
+        dataY = pos.y;
+        
+        if (item) {
+            mouseX = item.pageX;
+            mouseY = item.pageY;
+            
+            $('#pX').text(dataX);
+            $('#pY').text(dataY);
+            
+            $('#dX').text(item.datapoint[0]);
+            $('#dY').text(item.datapoint[1]);
+            $('#dE').text(item.datapoint[2]);
+            $('#tt').css({ left: mouseX + 3, top: mouseY + 3 });
+        }
+    });
+    
+    plotContainer.bind('plotclick', function (event, pos, item) {
+        if (item) {
+            $('#cX').text(item.datapoint[0]);
+            $('#cY').text(item.datapoint[1]);
+            
+            plot.highlight(item.series, item.datapoint);
+        }
+    });
 }
