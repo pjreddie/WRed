@@ -20,8 +20,13 @@ Ext.onReady(function(){
         var ret = high+low;
         return '<div style="border: 1px red solid;"><div style = "border:1px black solid;background-color:black;height:1.5ex;margin-right:'+roffset+'%; margin-left:'+loffset+'%;"></div></div>';
     }
+    var storeFields = [];
     var dataArray = [];
-    var store = new Ext.data.ArrayStore();
+    var store = new Ext.data.Store({
+        proxy: new Ext.ux.data.PagingMemoryProxy(dataArray),
+        reader: new Ext.data.ArrayReader({},storeFields),
+        remoteSort: true,
+    });
     gridColumns = [];
     var msg = function(title, msg){
         Ext.Msg.show({
@@ -80,12 +85,13 @@ Ext.onReady(function(){
 /*GridPanel that displays the data*/
     var grid = new Ext.grid.GridPanel({
         tbar:[fp,'-'],
-        store: store,
+        ds: store,
         columns: gridColumns,
         stripeRows: true,
         height: 500,
         width: 900,
-        title: 'Available Files',    
+        title: 'Available Files',
+        bbar: [],
     });
     grid.on('rowdblclick', function(grid, rowIndex, e){
          window.location = '../' + (store.getAt(rowIndex).get('id'));
@@ -113,6 +119,7 @@ Ext.onReady(function(){
              }
         });
     }
+
     grid.on('rowcontextmenu', function(grid, rowIndex, e){e.stopEvent();rowRightClicked = rowIndex;rowMenu.showAt(e.getXY());});
     grid.render('allfiles');
 
@@ -124,7 +131,7 @@ so that the new data is displayed on the page*/
     minvals = dataArray[2];       //Third row is min values of parameters
     dataArray.splice(0,3);        //The rest is the actual data
     var gridColumns = [];
-    var storeFields = [];
+    storeFields = [];
 /*The first three parameters (File Name, database ID, and md5 sum) aren't renedered using the
 standard renderer and the ID and md5 sum aren't displayed at all, they are only used for server
 requests later, so we add them to the Store differently*/
@@ -138,14 +145,26 @@ requests later, so we add them to the Store differently*/
         gridColumns.push({header: fieldData[i], width: 100, renderer:vrange, sortable: true, dataIndex: fieldData[i]});
         storeFields.push({name: fieldData[i]});
     }
-    store = new Ext.data.ArrayStore({
-        fields: storeFields,
+    store = new Ext.data.Store({
+        proxy: new Ext.ux.data.PagingMemoryProxy(dataArray),
+        reader: new Ext.data.ArrayReader({},storeFields),
+        remoteSort: true,
     });
-    store.loadData(dataArray);
+
     colModel = new Ext.grid.ColumnModel({columns: gridColumns});
+    store.load({params:{start:0, limit:10}});
+    grid.getBottomToolbar().removeAll();
+    grid.getBottomToolbar().add(new Ext.PagingToolbar({
+            store:store,
+            pageSize: 10,
+            displayInfo: false,
+            displayMsg: 'Displaying topics {0} - {1} of {2}',
+            emptyMsg: "No topics to display",
+        }))
+    grid.getBottomToolbar().doLayout();
     grid.reconfigure(store, colModel);
 
-    }
+}
 /*Retrieve data in json format via a GET request to the server. This is used
 anytime there is new data, and initially to populate the table.*/
     function update(){
