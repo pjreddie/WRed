@@ -5,6 +5,9 @@
 displayed in an GridPanel, and the chart of the data, rendered with flot */
 
 Ext.onReady(function () {
+    loadMask = new Ext.LoadMask(Ext.getBody(), { msg: 'Please wait a moment while the page loads...' } );
+    loadMask.show();
+    
     Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
     var conn = new Ext.data.Connection();
     var store = new Ext.data.ArrayStore();
@@ -12,10 +15,11 @@ Ext.onReady(function () {
     var gridColumns = [];
     var storeFields = [];
     var dataArray = [];
+    var plot;
 
-    // Initialize grid for file view
-    var FileTab = new Ext.grid.GridPanel({
-        title:          'File Data',
+    // Initialize grid for data view
+    var DataTab = new Ext.grid.GridPanel({
+        title:          'Data table',
     
         store:          store,
         columns:        gridColumns,
@@ -24,14 +28,32 @@ Ext.onReady(function () {
         autoWidth:      true,
         horizontalScroll: true,
         
-        id:             'FileTabPanel',
+        id:             'DataTabPanel',
+        listeners:      { rowcontextmenu: { fn: displayGridRowContextMenu } }, // DataTab.on('rowcontextmenu', displayGridRowContextMenu);
     });
+    
+    var GridRowContextMenu = new Ext.menu.Menu({
+        id:             'GridRowContextMenu',
+        items:          [{
+                            text:       'Highlight this point on chart',
+                            icon:       'http://famfamfam.com/lab/icons/silk/icons/tag_yellow.png',
+                            handler:    function() { alert('Not yet...'); }
+                        }],
+    });
+    
+    function displayGridRowContextMenu (grid, rowIndex, event) {
+        GridRowContextMenu.showAt(event.getXY());
+        event.stopEvent();
+    }
+
+
+
 
 // [ CHART PANEL ]
 
     /* ComboBoxes allow user to specify X and Y cooordinates for the graph, they are populated with field data when the file is initially loaded and do not get updated if the file is changed, since it is unlikely that new parameters will be added, even in live data. */
     var xChoice = new Ext.form.ComboBox({
-        fieldLabel:     'X Axis',
+        fieldLabel:     'X axis',
         hiddenName:     'xchoice',
         store:          fieldData,
         typeAhead:      true,
@@ -45,7 +67,7 @@ Ext.onReady(function () {
         listClass:      'xChoiceList', /* Apply class to dropdown menu list */
     });
     var yChoice = new Ext.form.ComboBox({
-        fieldLabel:     'Y Axis',
+        fieldLabel:     'Y axis',
         hiddenName:     'ychoice',
         store:          fieldData,
         typeAhead:      true,
@@ -53,7 +75,7 @@ Ext.onReady(function () {
         triggerAction:  'all',
         emptyText:      'Select Y axis...',
         selectOnFocus:  true,
-        listeners:      { select: { fn: selection} },
+        listeners:      { select: { fn: selection } },
         
         id:             'yTitle',
         listClass:      'yChoiceList', /* Apply class to dropdown menu list */
@@ -88,7 +110,32 @@ Ext.onReady(function () {
         id:             'ChartContainer',
         items:          [ PlotContainer ],
     });
-      
+    
+    var PlotContextMenu = new Ext.menu.Menu({
+        id:             'PlotContextMenu',
+        items:          [{
+                            text:       'Zoom reset',
+                            icon:       'http://famfamfam.com/lab/icons/silk/icons/zoom.png',
+                            //handler:    zoomPlot(0.0),
+                        },
+                        {
+                            text:       'Zoom in (25%)',
+                            icon:       'http://famfamfam.com/lab/icons/silk/icons/zoom_in.png',
+                            //handler:    zoomPlot(1.25),
+                        },
+                        {
+                            text:       'Zoom out (25%)',
+                            icon:       'http://famfamfam.com/lab/icons/silk/icons/zoom_out.png',
+                            //handler:    zoomPlot(1.0 / 1.25),
+                        }],
+    });
+    
+    function displayPlotContextMenu () {
+        PlotContextMenu.showAt(event2.getXY());
+        event2.stopEvent();
+    }
+
+
 
 // [ TOOLS PANEL ]
 
@@ -118,35 +165,33 @@ Ext.onReady(function () {
         itemCls:        'formSelect',
     });
     
-    var FitCurrentGroupButton = new Ext.Button({
-        text:           'Fit current group',
+    var FitThisSeriesButton = new Ext.Button({
+        text:           'Fit this series',
         type:           'submit',
-        handler:        fitCurrentGroup,
+        handler:        fitSeries,
         
-        id:             'FitCurrentGroupButton',
+        id:             'FitThisSeriesButton',
         cls:            'submitButton',
     });
-    var ClearCurrentCurvesButton = new Ext.Button({
-        text:           'Clear current curves',
+    var ClearThisCurveButton = new Ext.Button({
+        text:           'Clear this curve',
         type:           'reset',
-        handler:        clearCurrentCurves,
+        handler:        clearCurve,
         
-        id:             'ClearCurrentCurvesButton',
+        id:             'ClearThisCurveButton',
         cls:            'resetButton',
     });
 
-    function fitCurrentGroup(button, event) {
+    function fitSeries (button, event) {
         fittingFunction = FunctionSelect.getValue();
         if (fittingFunction === '' || fittingFunction == '-1')
             Ext.Msg.show({ title: 'Form incomplete', msg: 'Please select a function.', buttons: Ext.Msg.OK, icon: Ext.Msg.ERROR, fn: function () {} } );
         else {
             Ext.Msg.alert('Form complete', 'Submitting function...');
-            
-            
-            
+
         }
     }
-    function clearCurrentCurves (button, event) {
+    function clearCurve (button, event) {
 
 
     }
@@ -164,11 +209,9 @@ Ext.onReady(function () {
         bodyStyle:      'padding: 10px;',
 
         id:             'FittingPanel',
-        items:          [ FunctionSelect, FitCurrentGroupButton, ClearCurrentCurvesButton ],
+        items:          [ FunctionSelect, FitThisSeriesButton, ClearThisCurveButton ],
         tools:          [ { id: 'gear' }, { id: 'help' }, ],
     });
-
-
     
     
     
@@ -229,16 +272,21 @@ Ext.onReady(function () {
        layoutOnTabChange: true,
     });
     tabs.add({
-        id:             'FileTab',
-        title:          'View File',
-        items:          [ FileTab ],
+        id:             'DataTab',
+        title:          'Data',
+        items:          [ DataTab ],
     }).show();
     tabs.add({
         listeners:      { activate: activateChart },
         id:             'ChartTab',
-        title:          'View Chart',
+        title:          'Chart',
         items:          [ ChartTab ],
     }).show();
+    
+    tabs.setActiveTab('DataTab');
+
+
+
 
 
     /* Draws the chart when the user activates the chart tab. If no choice is specified for the graph, it defaults to A4 and Detector */
@@ -268,6 +316,7 @@ Ext.onReady(function () {
                 jsonpoints = Ext.decode(responseObject.responseText);
                 dataArray = jsonpoints;
                 reloadData();
+                loadMask.hide();
             },
             failure: function () {
                 alert('Failed Request');
@@ -297,7 +346,7 @@ Ext.onReady(function () {
 
         store.loadData(dataArray);
         colModel = new Ext.grid.ColumnModel({columns: gridColumns});
-        FileTab.reconfigure(store, colModel);
+        DataTab.reconfigure(store, colModel);
 
         if (tabs.getActiveTab().getId() == 'chart') {
             activateChart(tabs.getActiveTab());
@@ -307,7 +356,7 @@ Ext.onReady(function () {
     var jsonpoints = {};
 
     /* Set up the stomp client, subscribe to channel of individual file ID so that we only receive update information about our specific file. */
-    stomp = new STOMPClient();
+    var stomp = new STOMPClient();
     stomp.onopen = function () {};
     stomp.onclose = function (c) {
         alert('Lost Connection, Code: ' + c);
@@ -327,88 +376,91 @@ Ext.onReady(function () {
     };
     stomp.connect('localhost', 61613);
     update();
-});
 
 
-/* Gets data from the Store to draw the chart */
-function getData(store, xChoice, yChoice) {
-    var dataResults = [];
+    /* Gets data from the Store to draw the chart */
+    function getData(store, xChoice, yChoice) {
+        var dataResults = [];
 
-    for (var recordIndex = 0; recordIndex < store.getCount(); recordIndex++ ) {
-        var record = store.getAt(recordIndex);
+        for (var recordIndex = 0; recordIndex < store.getCount(); recordIndex++ ) {
+            var record = store.getAt(recordIndex);
+            
+            // Calculate error bars with square roots; not included in data file as it should be
+            var data = [ record.get(xChoice), record.get(yChoice), Math.sqrt(record.get(yChoice)) ];
+            
+            dataResults.push(data);
+        }
         
-        // Calculate error bars with square roots; not included in data file as it should be
-        var data = [record.get(xChoice), record.get(yChoice), Math.sqrt(record.get(yChoice))];
-        
-        dataResults.push(data);
+        return dataResults;
     }
-    
-    return dataResults;
-}
 
-/* Initialize Flot generation, draw the chart with error bars */
-function drawChart(store, xChoice, yChoice, chart) {
-    var chartInfo = getData(store, xChoice, yChoice);
+    /* Initialize Flot generation, draw the chart with error bars */
+    function drawChart(store, xChoice, yChoice, chart) {
+        var chartInfo = getData(store, xChoice, yChoice);
 
-    var plotContainer = $('#' + chart);
-    
-    var datapoints = {
-        errorbars: 'y',
-        yerr: { show: true, upperCap: '-', lowerCap: '-' },
-    };
-    
-    var options = {
-      series: { points: { show: true, radius: 3 } },
-      selection: { mode: 'xy' },
-      zoom: { // plugin
-          interactive: true,
-          //recenter: false,
-          //selection: 'xy',
-          //trigger: null,
-          amount: 1.5,
-      },
-      pan: { // plugin
-          interactive: true
-      },
-      grid: { hoverable: true, clickable: true },
-      //yaxis: { autoscaleMargin: null },
-    };
-
-
-    var plot = $.plot(
-        plotContainer,
-        [{
-            label:    xChoice + ' vs. ' + yChoice + ': Series 1',
-            data:     chartInfo,
-            points:   datapoints,
-            lines:    { show: false }
-        }],
-        options); //.addRose(); // Compass rose for panning
-
-    plotContainer.bind('plothover', function (event, pos, item) {
-        dataX = pos.x;
-        dataY = pos.y;
+        var plotContainer = $('#' + chart);
         
-        if (item) {
-            mouseX = item.pageX;
-            mouseY = item.pageY;
+        var datapoints = {
+            errorbars: 'y',
+            yerr: { show: true, upperCap: '-', lowerCap: '-' },
+        };
+        
+        var options = {
+          series: { points: { show: true, radius: 3 } },
+          selection: { mode: 'xy' },
+          zoom: { // plugin
+              interactive: true,
+              //recenter: false,
+              //selection: 'xy',
+              //trigger: null,
+              amount: 1.25,
+          },
+          pan: { // plugin
+              interactive: true
+          },
+          grid: { hoverable: true, clickable: true },
+          //yaxis: { autoscaleMargin: null },
+        };
+
+
+        plot = $.plot(
+            plotContainer,
+            [{
+                label:    xChoice + ' vs. ' + yChoice + ': Series 1',
+                data:     chartInfo,
+                points:   datapoints,
+                lines:    { show: false }
+            }],
+            options); //.addRose(); // Compass rose for panning
+
+        plotContainer.bind('plothover', function (event, pos, item) {
+            dataX = pos.x;
+            dataY = pos.y;
             
-            $('#pX').text(dataX);
-            $('#pY').text(dataY);
-            
-            $('#dX').text(item.datapoint[0]);
-            $('#dY').text(item.datapoint[1]);
-            $('#dE').text(item.datapoint[2]);
-            $('#tt').css({ left: mouseX + 3, top: mouseY + 3 });
-        }
-    });
-    
-    plotContainer.bind('plotclick', function (event, pos, item) {
-        if (item) {
-            $('#cX').text(item.datapoint[0]);
-            $('#cY').text(item.datapoint[1]);
-            
-            plot.highlight(item.series, item.datapoint);
-        }
-    });
-}
+            if (item) {
+                mouseX = item.pageX;
+                mouseY = item.pageY;
+                
+                $('#pX').text(dataX);
+                $('#pY').text(dataY);
+                
+                $('#dX').text(item.datapoint[0]);
+                $('#dY').text(item.datapoint[1]);
+                $('#dE').text(item.datapoint[2]);
+                $('#tt').css({ display: 'block', left: mouseX + 3, top: mouseY + 3 });
+            }
+            else
+                $('#tt').css({ display: 'none' });
+        });
+        
+        plotContainer.bind('plotclick', function (event, pos, item) {
+            if (item) {
+                $('#cX').text(item.datapoint[0]);
+                $('#cY').text(item.datapoint[1]);
+                
+                plot.highlight(item.series, item.datapoint);
+            }
+        });
+    }
+
+});

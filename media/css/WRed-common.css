@@ -38,3 +38,11 @@
 .submitButton button {
   font-weight:    bold;
 }
+
+
+
+.ext-el-mask-msg div {
+  font-size:      1.1em;
+  padding:        8px 12px 8px 32px;
+  background-position: 8px center;
+}
