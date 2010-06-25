@@ -15,7 +15,6 @@ Ext.onReady(function () {
     var gridColumns = [];
     var storeFields = [];
     var dataArray = [];
-    var plot;
 
     // Initialize grid for data view
     var DataTab = new Ext.grid.GridPanel({
@@ -29,7 +28,6 @@ Ext.onReady(function () {
         horizontalScroll: true,
         
         id:             'DataTabPanel',
-        listeners:      { rowcontextmenu: { fn: displayGridRowContextMenu } }, // DataTab.on('rowcontextmenu', displayGridRowContextMenu);
     });
     
     var GridRowContextMenu = new Ext.menu.Menu({
@@ -114,25 +112,39 @@ Ext.onReady(function () {
     var PlotContextMenu = new Ext.menu.Menu({
         id:             'PlotContextMenu',
         items:          [{
-                            text:       'Zoom reset',
+                            text:       '<s>Zoom reset<\/s>',
                             icon:       'http://famfamfam.com/lab/icons/silk/icons/zoom.png',
-                            //handler:    zoomPlot(0.0),
+                            handler:    zoomPlot,
+                            data:       0.0,
                         },
                         {
-                            text:       'Zoom in (25%)',
+                            text:       'Zoom <u>i</u>n (+25%)',
                             icon:       'http://famfamfam.com/lab/icons/silk/icons/zoom_in.png',
-                            //handler:    zoomPlot(1.25),
+                            handler:    zoomPlot,
+                            data:       1.25,
                         },
                         {
-                            text:       'Zoom out (25%)',
+                            text:       'Zoom out (\u201325%)',
                             icon:       'http://famfamfam.com/lab/icons/silk/icons/zoom_out.png',
-                            //handler:    zoomPlot(1.0 / 1.25),
+                            handler:    zoomPlot,
+                            data:       0.8,
+                        },
+                        new Ext.menu.Separator(),
+                        {
+                            text:       'Drag and select to zoom',
+                            icon:       'http://famfamfam.com/lab/icons/silk/icons/magnifier.png',
+                            handler:    dragRadio,
+                        },
+                        {
+                            text:       'Drag to pan',
+                            icon:       'http://sexybuttons.googlecode.com/svn-history/r2/trunk/images/icons/silk/arrow_nsew.png',
+                            handler:    dragRadio,
                         }],
     });
     
-    function displayPlotContextMenu () {
-        PlotContextMenu.showAt(event2.getXY());
-        event2.stopEvent();
+    function displayPlotContextMenu (event) {
+        PlotContextMenu.showAt(event.getXY());
+        event.stopEvent();
     }
 
 
@@ -210,7 +222,7 @@ Ext.onReady(function () {
 
         id:             'FittingPanel',
         items:          [ FunctionSelect, FitThisSeriesButton, ClearThisCurveButton ],
-        tools:          [ { id: 'gear' }, { id: 'help' }, ],
+        tools:          [ { id: 'gear' }, { id: 'help' } ],
     });
     
     
@@ -267,7 +279,7 @@ Ext.onReady(function () {
     /* Create and initialize tabs */
     var tabs = new Ext.TabPanel({
        renderTo:        'tabs',
-       activeTab:       0, // CHANGE BACK TO 0
+       activeTab:       0,
        defaults:        { autoWidth: true, autoHeight: true },
        layoutOnTabChange: true,
     });
@@ -285,7 +297,12 @@ Ext.onReady(function () {
     
     tabs.setActiveTab('DataTab');
 
+    tabs.render();
+    var first = true;
 
+
+    DataTab.on('rowcontextmenu', displayGridRowContextMenu);
+    PlotContainer.getEl().on('contextmenu', displayPlotContextMenu);
 
 
 
@@ -302,9 +319,6 @@ Ext.onReady(function () {
     function selection(selectedstore, value) {
         activateChart();
     }
-
-    tabs.render();
-    var first = true;
 
     /* Retrieve data in json format via a GET request to the server. This is used anytime there is new data, and initially to populate the table. */
     function update() {
@@ -376,91 +390,101 @@ Ext.onReady(function () {
     };
     stomp.connect('localhost', 61613);
     update();
-
-
-    /* Gets data from the Store to draw the chart */
-    function getData(store, xChoice, yChoice) {
-        var dataResults = [];
-
-        for (var recordIndex = 0; recordIndex < store.getCount(); recordIndex++ ) {
-            var record = store.getAt(recordIndex);
-            
-            // Calculate error bars with square roots; not included in data file as it should be
-            var data = [ record.get(xChoice), record.get(yChoice), Math.sqrt(record.get(yChoice)) ];
-            
-            dataResults.push(data);
-        }
-        
-        return dataResults;
-    }
-
-    /* Initialize Flot generation, draw the chart with error bars */
-    function drawChart(store, xChoice, yChoice, chart) {
-        var chartInfo = getData(store, xChoice, yChoice);
-
-        var plotContainer = $('#' + chart);
-        
-        var datapoints = {
-            errorbars: 'y',
-            yerr: { show: true, upperCap: '-', lowerCap: '-' },
-        };
-        
-        var options = {
-          series: { points: { show: true, radius: 3 } },
-          selection: { mode: 'xy' },
-          zoom: { // plugin
-              interactive: true,
-              //recenter: false,
-              //selection: 'xy',
-              //trigger: null,
-              amount: 1.25,
-          },
-          pan: { // plugin
-              interactive: true
-          },
-          grid: { hoverable: true, clickable: true },
-          //yaxis: { autoscaleMargin: null },
-        };
-
-
-        plot = $.plot(
-            plotContainer,
-            [{
-                label:    xChoice + ' vs. ' + yChoice + ': Series 1',
-                data:     chartInfo,
-                points:   datapoints,
-                lines:    { show: false }
-            }],
-            options); //.addRose(); // Compass rose for panning
-
-        plotContainer.bind('plothover', function (event, pos, item) {
-            dataX = pos.x;
-            dataY = pos.y;
-            
-            if (item) {
-                mouseX = item.pageX;
-                mouseY = item.pageY;
-                
-                $('#pX').text(dataX);
-                $('#pY').text(dataY);
-                
-                $('#dX').text(item.datapoint[0]);
-                $('#dY').text(item.datapoint[1]);
-                $('#dE').text(item.datapoint[2]);
-                $('#tt').css({ display: 'block', left: mouseX + 3, top: mouseY + 3 });
-            }
-            else
-                $('#tt').css({ display: 'none' });
-        });
-        
-        plotContainer.bind('plotclick', function (event, pos, item) {
-            if (item) {
-                $('#cX').text(item.datapoint[0]);
-                $('#cY').text(item.datapoint[1]);
-                
-                plot.highlight(item.series, item.datapoint);
-            }
-        });
-    }
-
 });
+
+/* Gets data from the Store to draw the chart */
+function getData(store, xChoice, yChoice) {
+    var dataResults = [];
+
+    for (var recordIndex = 0; recordIndex < store.getCount(); recordIndex++ ) {
+        var record = store.getAt(recordIndex);
+        
+        // Calculate error bars with square roots; not included in data file as it should be
+        var data = [ record.get(xChoice), record.get(yChoice), Math.sqrt(record.get(yChoice)) ];
+        
+        dataResults.push(data);
+    }
+    
+    return dataResults;
+}
+
+/* Initialize Flot generation, draw the chart with error bars */
+function drawChart(store, xChoice, yChoice, chart) {
+    var chartInfo = getData(store, xChoice, yChoice);
+
+    var plotContainer = $('#' + chart);
+    
+    var datapoints = {
+        errorbars: 'y',
+        yerr: { show: true, upperCap: '-', lowerCap: '-' },
+    };
+    
+    var options = {
+      series: { points: { show: true, radius: 3 } },
+      selection: { mode: 'xy' },
+      zoom: { // plugin
+          interactive: true,
+          //recenter: false,
+          //selection: 'xy',
+          //trigger: null,
+          amount: 1.25,
+      },
+      crosshair: { mode: 'xy' },
+      pan: { // plugin
+          interactive: true
+      },
+      grid: { hoverable: true, clickable: true },
+      //yaxis: { autoscaleMargin: null },
+    };
+
+
+    plot = $.plot(
+        plotContainer,
+        [{
+            label:    xChoice + ' vs. ' + yChoice + ': Series 1',
+            data:     chartInfo,
+            points:   datapoints,
+            lines:    { show: false }
+        }],
+        options); //.addRose(); // Compass rose for panning
+
+    plotContainer.bind('plothover', function (event, pos, item) {
+        dataX = pos.x;
+        dataY = pos.y;
+        
+        if (item) {
+            mouseX = item.pageX;
+            mouseY = item.pageY;
+            
+            $('#pX').text(dataX);
+            $('#pY').text(dataY);
+            
+            $('#dX').text(item.datapoint[0]);
+            $('#dY').text(item.datapoint[1]);
+            $('#dE').text(item.datapoint[2]);
+            $('#tt').css({ display: 'block', left: mouseX + 3, top: mouseY + 3 });
+        }
+        else
+            $('#tt').css({ display: 'none' });
+    });
+    
+    plotContainer.bind('plotclick', function (event, pos, item) {
+        if (item) {
+            $('#cX').text(item.datapoint[0]);
+            $('#cY').text(item.datapoint[1]);
+            
+            plot.highlight(item.series, item.datapoint);
+        }
+    });
+
+}
+
+function zoomPlot (menuItem, event) {
+    if (menuItem.data == 0) {
+        // something?
+    }
+    else
+        plot.zoom({ amount: menuItem.data, recenter: true });
+}
+
+function dragRadio() {}
