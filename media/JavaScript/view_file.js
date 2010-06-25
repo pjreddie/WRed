@@ -15,16 +15,16 @@ Ext.onReady(function() {
 
     // Initialize grid for file view
     var FileTab = new Ext.grid.GridPanel({
-//      title:          'File Tab',
+        title:          'File Data',
+    
         store:          store,
         columns:        gridColumns,
         stripeRows:     true,
         height:         600,
         autoWidth:      true,
-        title:          'File Data',
         horizontalScroll: true,
         
-        id:             'FileTab',
+        id:             'FileTabPanel',
     });
 
 // [ CHART PANEL ]
@@ -89,16 +89,20 @@ Ext.onReady(function() {
         items:          [ PlotContainer ],
     });
       
-    
+
+// [ TOOLS PANEL ]
 
     var FunctionSelectStore = new Ext.data.ArrayStore({
-        data:           [ [ 1, 'Gaussian' ], [ 2, '...' ] ],
+        data:           [ [ 1, 'Gaussian' ], [ -1, '...' ] ],
         fields:         [ 'id', 'name' ],
     });
     var FunctionSelect = new Ext.form.ComboBox({
         fieldLabel:     'Function',
         emptyText:      'Select a fitting function...',
         hiddenName:     'function',
+        
+        allowBlank:     false,
+        anchor:         '-20',
         
         store:          FunctionSelectStore,
         valueField:     'id',
@@ -111,27 +115,47 @@ Ext.onReady(function() {
         listeners:      {},
         
         id:             'FunctionSelect',
+        itemCls:        'formSelect',
     });
     
     var FitCurrentGroupButton = new Ext.Button({
         text:           'Fit current group',
-        handler:        function(button, event) { alert(button); },
+        type:           'submit',
+        handler:        fitCurrentGroup,
         
         id:             'FitCurrentGroupButton',
+        cls:            'submitButton',
     });
     var ClearCurrentCurvesButton = new Ext.Button({
         text:           'Clear current curves',
-        handler:        function(button, event) { alert(button); },
-    
-        id:             'ClearCurrentCurvesButton',
-    });
+        type:           'reset',
+        handler:        clearCurrentCurves,
         
+        id:             'ClearCurrentCurvesButton',
+        cls:            'resetButton',
+    });
+
+    function fitCurrentGroup(button, event) {
+        fittingFunction = FunctionSelect.getValue();
+        if (fittingFunction === '' || fittingFunction == '-1')
+            Ext.Msg.show({ title: 'Form incomplete', msg: 'Please select a function.', buttons: Ext.Msg.OK, icon: Ext.Msg.ERROR, fn: function() {} } );
+        else {
+            Ext.Msg.alert('Form complete', 'Submitting form...');
+            
+        }
+    }
+    function clearCurrentCurves (button, event) {
+
+
+    }
+
+
     var FittingPanel = new Ext.FormPanel({
         title:          'Fitting Tools',
         
-        defaults:       { anchor: '0', },
         defaultType:    'textfield',
         labelWidth:     80,
+        defaults:       { anchor: '-20', msgTarget: 'side' },
         
         autoWidth:      true,
         autoHeight:     true,
@@ -172,7 +196,7 @@ Ext.onReady(function() {
         width:          900,
         
         id:             'ChartPanel',
-        items:          [ yChoiceContainer, ChartContainer, xChoiceContainer ], // Originally [xChoice, yChoice, ChartContainer], but this order is better
+        items:          [ yChoiceContainer, ChartContainer, xChoiceContainer ],
         tools:          [{
                             id: 'refresh',
                             qtip: 'Refresh chart',
@@ -213,7 +237,6 @@ Ext.onReady(function() {
         title:          'View Chart',
         items:          [ ChartTab ],
     }).show();
-    
 
 
     /* Draws the chart when the user activates the chart tab. If no choice is specified for the graph, it defaults to A4 and Detector */
@@ -227,14 +250,11 @@ Ext.onReady(function() {
 
     /* When the user selects a new parameter from the comboboxes, the chart is redrawn with that choice in mind */
     function selection(selectedstore, value) {
-        drawChart(store, xChoice.getValue(), yChoice.getValue(), 'PlotContainer');
+        activateChart();
     }
-
 
     tabs.render();
     var first = true;
-
-
 
     /* Retrieve data in json format via a GET request to the server. This is used anytime there is new data, and initially to populate the table. */
     function update() {
@@ -265,8 +285,8 @@ Ext.onReady(function() {
         gridColumns = [];
         storeFields = [];
         for (var i = 0; i < fieldData.length; ++ i) {
-            gridColumns.push({header: fieldData[i], width: 70, sortable: true, dataIndex: fieldData[i]});
-            storeFields.push({name: fieldData[i]});
+            gridColumns.push({ header: fieldData[i], width: 70, sortable: true, dataIndex: fieldData[i] });
+            storeFields.push({ name: fieldData[i] });
         }
 
         store = new Ext.data.ArrayStore({
@@ -281,6 +301,7 @@ Ext.onReady(function() {
             activateChart(tabs.getActiveTab());
         }
     }
+    
     var jsonpoints = {};
 
     /* Set up the stomp client, subscribe to channel of individual file ID so that we only receive update information about our specific file. */
@@ -290,13 +311,13 @@ Ext.onReady(function() {
         alert('Lost Connection, Code: ' + c);
     };
     stomp.onerror = function(error) {
-        alert("Error: " + error);
+        alert('Error: ' + error);
     };
     stomp.onerrorframe = function(frame) {
-        alert("Error: " + frame.body);
+        alert('Error: ' + frame.body);
     };
     stomp.onconnectedframe = function() {
-        stomp.subscribe("/updates/files/"+ idNum);
+        stomp.subscribe('/updates/files/' + idNum);
     };
     stomp.onmessageframe = function(frame) {
         //alert('OMG we got updates!!!!1!!!111');
@@ -306,6 +327,23 @@ Ext.onReady(function() {
     update();
 });
 
+
+/* Gets data from the Store to draw the chart */
+function getData(store, xChoice, yChoice) {
+    var dataResults = [];
+
+    for (var recordIndex = 0; recordIndex < store.getCount(); recordIndex++ ) {
+        var record = store.getAt(recordIndex);
+        
+        // Calculate error bars with square roots; not included in data file as it should be
+        var data = [record.get(xChoice), record.get(yChoice), Math.sqrt(record.get(yChoice))];
+        
+        dataResults.push(data);
+    }
+    
+    return dataResults;
+}
+
 /* Initialize Flot generation, draw the chart with error bars */
 function drawChart(store, xChoice, yChoice, chart) {
     var chartInfo = getData(store, xChoice, yChoice);
@@ -313,22 +351,22 @@ function drawChart(store, xChoice, yChoice, chart) {
     var plotContainer = $('#' + chart);
 
     var datapoints = {
-      errorbars: 'y',
-      yerr: { show: true, upperCap: '-', lowerCap: '-' },
+        errorbars: 'y',
+        yerr: { show: true, upperCap: '-', lowerCap: '-' },
     };
     
     var options = {
       series: { points: { show: true, radius: 3 } },
       selection: { mode: 'xy' },
       zoom: { // plugin
-        interactive: true,
-        //recenter: false,
-        //selection: 'xy',
-        //trigger: null,
-        amount: 1.5,
+          interactive: true,
+          //recenter: false,
+          //selection: 'xy',
+          //trigger: null,
+          amount: 1.5,
       },
       pan: { // plugin
-        interactive: true
+          interactive: true
       },
       grid: { hoverable: true, clickable: true },
       //yaxis: { autoscaleMargin: null },
@@ -336,26 +374,13 @@ function drawChart(store, xChoice, yChoice, chart) {
 
 
     var plot = $.plot(
-      plotContainer,
-      [{
-        label:    xChoice + ' vs. ' + yChoice + ': Series 1',
-        data:     chartInfo,
-        points:   datapoints,
-        lines:    { show: false }
-      }],
-      options); //.addRose(); // Compass rose for panning
+        plotContainer,
+        [{
+            label:    xChoice + ' vs. ' + yChoice + ': Series 1',
+            data:     chartInfo,
+            points:   datapoints,
+            lines:    { show: false }
+        }],
+        options); //.addRose(); // Compass rose for panning
 
 }
-
-/* Gets data from the Store to draw the chart */
-function getData(store, xcol, ycol) {
-    var dataResults = [];
-
-    for (var recordIndex = 0; recordIndex < store.getCount(); recordIndex++ ) {
-        var record = store.getAt(recordIndex);
-        var data = [record.get(xcol), record.get(ycol), Math.sqrt(record.get(ycol))]; // Calculate error bars with square roots; not included in data file as it should be
-        dataResults.push(data);
-    }
-    return dataResults;
-}
-
