@@ -31,18 +31,28 @@ def fitting_request_action(request, idNum):
             y = simplejson.loads(request.POST['y'])
             request.session['x'] = x
             request.session['y'] = y
+            
             # FIXME
             background = 0
             request.session['background'] = background
             
             return HttpResponse('X: ' + str(x) + "\n" + 'Y: ' + str(y))
+            
         elif actionID == '1':
             peakX = float(request.POST['peakX'])
             peakY = float(request.POST['peakY'])
             request.session['peakX'] = peakX
             request.session['peakY'] = peakY
             
-            return HttpResponse('Peak X: ' + str(peakX) + "\n" + 'Peak Y: ' + str(peakY))
+            #guess width
+            x = request.session['x']
+            y = request.session['y']
+            background = request.session['background']
+            guessWidth = guess_width(x, y, peakX, peakY, background)
+            
+            
+            return HttpResponse('Peak X: ' + str(peakX) + "\n" + 'Peak Y: ' + str(peakY) + "\n" + 'Guess width: ' + str(guessWidth))
+            
         elif actionID == '2':
             widthX = float(request.POST['widthX'])
             widthY = float(request.POST['widthY'])
@@ -50,6 +60,7 @@ def fitting_request_action(request, idNum):
             request.session['widthY'] = widthY
             
             x = request.session['x']
+            y = request.session['y']
             background = request.session['background']
             peakX = request.session['peakX']
             peakY = request.session['peakY']
@@ -72,24 +83,34 @@ def fitting_request_action(request, idNum):
         return HttpResponse('Not authenticated.')
 
 
-def find_area(x, y, height, center, width, background):
-    width = 0
-    return width
-
-
-
-
-
-
-
-
-
-def foo():
-        try:
-            md5 = DataFile.objects.get(id = idNum).md5
-            all_objects = displayfile('db/' + md5 + '.file')
-            data = simplejson.dumps(all_objects)
-            return HttpResponse(data)
-        except ObjectDoesNotExist:
-            return HttpResponse('Oops! Datafile Does Not Exist')
-
+def guess_width(x, y, peakX, peakY, background):
+    halfMax = (peakY - background) / 2.
+    print halfMax
+    print
+    
+    x_i = 0
+    while x_i < len(x) and y[x_i] <= peakY and y[x_i] < halfMax:
+        print str(x_i) + ' (' + str(x[x_i]) + ', ' + str(y[x_i]) + ')'
+        x_i += 1
+    leftGreater = y[x_i]
+    leftLesser = y[x_i - 1]
+    leftPercent = (halfMax - leftLesser) / (leftGreater - leftLesser)
+    leftX = x[x_i - 1] + (leftPercent * (x[x_i] - x[x_i - 1]))
+    print leftX
+    print
+    
+    x_i = len(x) - 1
+    while x_i >= 0 and y[x_i] <= peakY and y[x_i] < halfMax:
+        print str(x_i) + ' (' + str(x[x_i]) + ', ' + str(y[x_i]) + ')'
+        x_i -= 1
+    rightGreater = y[x_i]
+    rightLesser = y[x_i - 1]
+    rightPercent = (halfMax - rightLesser) / (rightGreater - rightLesser)
+    rightX = x[x_i - 1] + (rightPercent * (x[x_i] - x[x_i - 1]))
+    print rightX
+    print
+    
+    guessWidth = (abs(leftX - peakX) + abs(rightX - peakX))
+    print guessWidth
+    print
+    return guessWidth

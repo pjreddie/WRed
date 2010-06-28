@@ -35,13 +35,22 @@ Ext.onReady(function () {
         items:          [{
                             text:       'Highlight this point on chart',
                             icon:       'http://famfamfam.com/lab/icons/silk/icons/tag_yellow.png',
-                            handler:    function() { alert('Not yet...'); }
+                            handler:    GridRowContextHighlight,
                         }],
     });
     
     function displayGridRowContextMenu (grid, rowIndex, event) {
+        GridRowContextMenu.grid = grid;
+        GridRowContextMenu.rowIndex = rowIndex;
         GridRowContextMenu.showAt(event.getXY());
         event.stopEvent();
+    }
+    function GridRowContextHighlight (menuItem, event) {
+        record = menuItem.parentMenu.grid.getStore().getAt(menuItem.parentMenu.rowIndex);
+        xData = record.get(xChoice.getValue());
+        yData = record.get(yChoice.getValue());
+        
+        plot.highlight(plot.getData()[0], [xData, yData]);
     }
 
 
@@ -217,6 +226,7 @@ Ext.onReady(function () {
                 $('#PlotContainer').one('plotclick', function (event, pos, item) {
                     makeFittingRequest({ 'actionID': 1, 'actionName': 'sendPeak', 'peakX': pos.x, 'peakY': pos.y },
                     function (responseObject) {
+                        alert(responseObject.responseText);
                         Ext.Msg.alert('Step 2', 'Please click on the width of the data');
                         var clickPos = [];
                         $('#PlotContainer').one('plotclick', function (event, pos, item) {
@@ -241,7 +251,7 @@ Ext.onReady(function () {
             params: params,
             success: successFunction,
             failure: function () {
-                alert('Error: Failed request');
+                Ext.Msg.alert('Error: Failed request');
             }
         });
     }
@@ -327,7 +337,7 @@ Ext.onReady(function () {
         items:          [ DataTab ],
     }).show();
     tabs.add({
-        listeners:      { activate: activateChart },
+        listeners:      { activate: function() { activateChart(); } },
         id:             'ChartTab',
         title:          'Chart',
         items:          [ ChartTab ],
@@ -489,7 +499,7 @@ function drawChart(store, xChoice, yChoice, chart) {
       //yaxis: { autoscaleMargin: null },
     };
 
-    var plotData = [{
+    var plotDataSeries = [{
             label:    xChoice + ' vs. ' + yChoice + ': Series 1',
             data:     chartInfo,
             points:   datapoints,
@@ -499,7 +509,7 @@ function drawChart(store, xChoice, yChoice, chart) {
 
     plot = $.plot(
         plotContainer,
-        plotData,
+        plotDataSeries,
         options); //.addRose(); // Compass rose for panning
 
 
@@ -526,6 +536,7 @@ function drawChart(store, xChoice, yChoice, chart) {
     */
     plotContainer.bind('plotclick', function (event, pos, item) {
         var previousPoints = [];
+
         if (item) {
             plot.highlight(item.series, item.datapoint);
             previousPoints.push(item);
