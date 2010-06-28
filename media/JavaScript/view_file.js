@@ -209,15 +209,21 @@ Ext.onReady(function () {
         else {
             Ext.Msg.alert('Form complete', 'Submitting function...');
             
-            makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData' },
+            data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
+            makeFittingRequest({ 'actionID': 0, 'actionName': 'sendData', 'x': JSON.stringify(data.x), 'y': JSON.stringify(data.y) },
             function (responseObject) {
                 Ext.Msg.alert('Step 1', 'Please click on the peak of the data');
                 var clickPos = [];
                 $('#PlotContainer').one('plotclick', function (event, pos, item) {
-                    data = getData(store, xChoice.getValue(), yChoice.getValue());
-                    makeFittingRequest({ 'actionID': 2, 'actionName': 'sendHeight', 'data': JSON.stringify(data), 'height': pos.x, 'center': pos.y },
+                    makeFittingRequest({ 'actionID': 1, 'actionName': 'sendPeak', 'peakX': pos.x, 'peakY': pos.y },
                     function (responseObject) {
-                        alert(responseObject.responseText);
+                        Ext.Msg.alert('Step 2', 'Please click on the width of the data');
+                        var clickPos = [];
+                        $('#PlotContainer').one('plotclick', function (event, pos, item) {
+                            makeFittingRequest({ 'actionID': 2, 'actionName': 'sendWidth', 'widthX': pos.x, 'widthY': pos.y },
+                            function (responseObject) { alert(responseObject.responseText); }
+                            );
+                        });
                     });
                 });
             });
@@ -435,6 +441,20 @@ function getData(store, xChoice, yChoice) {
         var data = [ +record.get(xChoice), +record.get(yChoice), +Math.sqrt(record.get(yChoice)) ]; // + to convert string to number
         
         dataResults.push(data);
+    }
+    
+    return dataResults;
+}
+
+/* Gets data from the Store to draw the chart */
+function getDataInCols(store, xChoice, yChoice) {
+    var dataResults = { x: [], y: [] };
+
+    for (var recordIndex = 0; recordIndex < store.getCount(); recordIndex++ ) {
+        var record = store.getAt(recordIndex);
+
+        dataResults.x.push( +record.get(xChoice));
+        dataResults.y.push( +record.get(yChoice));
     }
     
     return dataResults;

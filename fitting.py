@@ -1,6 +1,6 @@
 import os
-from django.http import HttpResponse, HttpResponseRedirect
 import simplejson
+from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django import forms
@@ -8,6 +8,8 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from WRed.display.models import *
 from WRed.display.fileToJson import displayfile
+
+import numpy as N
 
 
 @login_required
@@ -24,19 +26,42 @@ def fitting_request_action(request, idNum):
 
         print 'You are trying to request the following action: ' + actionName + ' [ID: ' + actionID + ']'
         
-        if actionID == '1':
-            return HttpResponse('Go ahead')
+        if actionID == '0':
+            x = simplejson.loads(request.POST['x'])
+            y = simplejson.loads(request.POST['y'])
+            request.session['x'] = x
+            request.session['y'] = y
+            # FIXME
+            background = 0
+            request.session['background'] = background
+            
+            return HttpResponse('X: ' + str(x) + "\n" + 'Y: ' + str(y))
+        elif actionID == '1':
+            peakX = float(request.POST['peakX'])
+            peakY = float(request.POST['peakY'])
+            request.session['peakX'] = peakX
+            request.session['peakY'] = peakY
+            
+            return HttpResponse('Peak X: ' + str(peakX) + "\n" + 'Peak Y: ' + str(peakY))
         elif actionID == '2':
-            data = request.POST['data']
-            x=0
-            y=0
-            height = request.POST['height']
-            center = request.POST['center']
-            # Calculate width here
-            width = find_width(x, y, height, center)
-            print width
-            return HttpResponse('Height: ' + height + "\n" + 'Center: ' + center + "\n" + 'Width: ' + str(width))
-        
+            widthX = float(request.POST['widthX'])
+            widthY = float(request.POST['widthY'])
+            request.session['widthX'] = widthX
+            request.session['widthY'] = widthY
+            
+            x = request.session['x']
+            background = request.session['background']
+            peakX = request.session['peakX']
+            peakY = request.session['peakY']
+            
+            width = 2 * N.abs(widthX - peakX)
+            request.session['width'] = width
+            
+            stdDev = width / 2 / N.sqrt(2 * N.log(2))
+            
+            gaussianFunction = (peakY - background) * N.exp(- N.power(N.subtract(x, peakX), 2) / 2 * stdDev)
+            
+            return HttpResponse('Width: ' + str(width))
         
         
         
@@ -47,7 +72,7 @@ def fitting_request_action(request, idNum):
         return HttpResponse('Not authenticated.')
 
 
-def find_width(x, y, height, center):
+def find_area(x, y, height, center, width, background):
     width = 0
     return width
 
