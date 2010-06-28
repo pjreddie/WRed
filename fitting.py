@@ -24,14 +24,41 @@ def fitting_request_action(request, idNum):
 
         print 'You are trying to request the following action: ' + actionName + ' [ID: ' + actionID + ']'
         
-        if (actionID == '1'):
+        if actionID == '1':
             return HttpResponse('Go ahead')
+        elif actionID == '2':
+            data = request.POST['data']
+            x=0
+            y=0
+            height = request.POST['height']
+            center = request.POST['center']
+            # Calculate width here
+            width = find_width(x, y, height, center)
+            print width
+            return HttpResponse('Height: ' + height + "\n" + 'Center: ' + center + "\n" + 'Width: ' + str(width))
+        
+        
+        
+        
         else:
             return HttpResponse('actionID not correct; it was ' + actionID)
             
     else:
         return HttpResponse('Not authenticated.')
-        
+
+
+def find_width(x, y, height, center):
+    width = 0
+    return width
+
+
+
+
+
+
+
+
+
 def foo():
         try:
             md5 = DataFile.objects.get(id = idNum).md5

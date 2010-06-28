@@ -209,7 +209,18 @@ Ext.onReady(function () {
         else {
             Ext.Msg.alert('Form complete', 'Submitting function...');
             
-            makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData' }, function (responseObject) { alert(responseObject.responseText); } );
+            makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData' },
+            function (responseObject) {
+                Ext.Msg.alert('Step 1', 'Please click on the peak of the data');
+                var clickPos = [];
+                $('#PlotContainer').one('plotclick', function (event, pos, item) {
+                    data = getData(store, xChoice.getValue(), yChoice.getValue());
+                    makeFittingRequest({ 'actionID': 2, 'actionName': 'sendHeight', 'data': JSON.stringify(data), 'height': pos.x, 'center': pos.y },
+                    function (responseObject) {
+                        alert(responseObject.responseText);
+                    });
+                });
+            });
         }
     }
     function clearCurve (button, event) {
@@ -224,7 +235,7 @@ Ext.onReady(function () {
             params: params,
             success: successFunction,
             failure: function () {
-                response = 'Error: Failed JSON request';
+                alert('Error: Failed request');
             }
         });
     }
@@ -471,6 +482,7 @@ function drawChart(store, xChoice, yChoice, chart) {
         plotData,
         options); //.addRose(); // Compass rose for panning
 
+
 /*
     plotContainer.bind('plothover', function (event, pos, item) {
         dataX = pos.x;
@@ -491,15 +503,19 @@ function drawChart(store, xChoice, yChoice, chart) {
         else
             $('#tt').css({ display: 'none' });
     });
+    */
     plotContainer.bind('plotclick', function (event, pos, item) {
+        var previousPoints = [];
         if (item) {
-            $('#cX').text(item.datapoint[0]);
-            $('#cY').text(item.datapoint[1]);
-            
             plot.highlight(item.series, item.datapoint);
+            previousPoints.push(item);
+        }
+        else {
+            for (i in previousPoints)
+                plot.unhighlight(previousPoints[i].series, previousPoints[i].datapoint);
+            previousPoints = [];
         }
     });
-    */
     /*
     plotContainer.bind('plotselected', function (event, ranges) {
         var extension = {};
