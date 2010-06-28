@@ -10,6 +10,7 @@ from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 
 from WRed.fileRead import *
+from WRed.fitting import *
 from fileToJson import displayfile
 from WRed.display.models import *
 from django import forms

@@ -46,3 +46,14 @@
   padding:        8px 12px 8px 32px;
   background-position: 8px center;
 }
+
+.x-menu-item-checked .x-menu-item-text {
+  font-weight:    bold;
+}
+
+.icon-radio-unchecked {
+  background-image: url(http://telem.fr/pub/System/FamFamFamSilkCompanion2Icons/radio-unchecked.png) !important;
+}
+.icon-radio-checked {
+  background-image: url(http://telem.fr/pub/System/FamFamFamSilkCompanion2Icons/radio-checked.png) !important;
+}

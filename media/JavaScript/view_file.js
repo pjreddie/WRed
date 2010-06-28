@@ -103,7 +103,7 @@ Ext.onReady(function () {
      // height:         500,
         valueField:     'id',
         displayField:   'name',
-        autoWidth: true,
+        autoWidth:      true,
         
         id:             'ChartContainer',
         items:          [ PlotContainer ],
@@ -118,7 +118,7 @@ Ext.onReady(function () {
                             data:       0.0,
                         },
                         {
-                            text:       'Zoom <u>i</u>n (+25%)',
+                            text:       'Zoom in (+25%)',
                             icon:       'http://famfamfam.com/lab/icons/silk/icons/zoom_in.png',
                             handler:    zoomPlot,
                             data:       1.25,
@@ -129,16 +129,24 @@ Ext.onReady(function () {
                             handler:    zoomPlot,
                             data:       0.8,
                         },
-                        new Ext.menu.Separator(),
+                        '-',
                         {
+                            id:         'dragCheckZoom',
                             text:       'Drag and select to zoom',
-                            icon:       'http://famfamfam.com/lab/icons/silk/icons/magnifier.png',
-                            handler:    dragRadio,
+                          //icon:       'http://famfamfam.com/lab/icons/silk/icons/magnifier.png',
+                            iconCls:    'icon-radio-unchecked',
+                            group:      'dragCheck',
+                            checked:    false,
+                            checkHandler: dragCheckHandler,
                         },
                         {
+                            id:         'dragCheckPan',
                             text:       'Drag to pan',
-                            icon:       'http://sexybuttons.googlecode.com/svn-history/r2/trunk/images/icons/silk/arrow_nsew.png',
-                            handler:    dragRadio,
+                          //icon:       'http://sexybuttons.googlecode.com/svn-history/r2/trunk/images/icons/silk/arrow_nsew.png',
+                            iconCls:    'icon-radio-checked',
+                            group:      'dragCheck',
+                            checked:    true,
+                            checkHandler: dragCheckHandler,
                         }],
     });
     
@@ -200,12 +208,25 @@ Ext.onReady(function () {
             Ext.Msg.show({ title: 'Form incomplete', msg: 'Please select a function.', buttons: Ext.Msg.OK, icon: Ext.Msg.ERROR, fn: function () {} } );
         else {
             Ext.Msg.alert('Form complete', 'Submitting function...');
-
+            
+            makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData' }, function (responseObject) { alert(responseObject.responseText); } );
         }
     }
     function clearCurve (button, event) {
 
 
+    }
+
+    function makeFittingRequest (params, successFunction) {
+        conn.request({
+            url: 'fitting/' + idNum + '/',
+            method: 'POST',
+            params: params,
+            success: successFunction,
+            failure: function () {
+                response = 'Error: Failed JSON request';
+            }
+        });
     }
 
 
@@ -323,7 +344,7 @@ Ext.onReady(function () {
     /* Retrieve data in json format via a GET request to the server. This is used anytime there is new data, and initially to populate the table. */
     function update() {
         conn.request({
-            url: 'json/' + idNum,
+            url: 'json/' + idNum + '/',
             method: 'GET',
             params: {},
             success: function (responseObject) {
@@ -333,7 +354,7 @@ Ext.onReady(function () {
                 loadMask.hide();
             },
             failure: function () {
-                alert('Failed Request');
+                Ext.Msg.alert('Error', 'Failed JSON request');
             }
         });
     }
@@ -359,7 +380,7 @@ Ext.onReady(function () {
         });
 
         store.loadData(dataArray);
-        colModel = new Ext.grid.ColumnModel({columns: gridColumns});
+        colModel = new Ext.grid.ColumnModel({ columns: gridColumns });
         DataTab.reconfigure(store, colModel);
 
         if (tabs.getActiveTab().getId() == 'chart') {
@@ -373,19 +394,19 @@ Ext.onReady(function () {
     var stomp = new STOMPClient();
     stomp.onopen = function () {};
     stomp.onclose = function (c) {
-        alert('Lost Connection, Code: ' + c);
+        Ext.Msg.alert('Error', 'Lost connection, Code: ' + c);
     };
     stomp.onerror = function (error) {
-        alert('Error: ' + error);
+        Ext.Msg.alert('Error', error);
     };
     stomp.onerrorframe = function (frame) {
-        alert('Error: ' + frame.body);
+        Ext.Msg.alert('Error', frame.body);
     };
     stomp.onconnectedframe = function () {
         stomp.subscribe('/updates/files/' + idNum);
     };
     stomp.onmessageframe = function (frame) {
-        //alert('OMG we got updates!!!!1!!!111');
+        // Ext.Msg.alert('Success', 'OMG we got updates!!!!1!!!111');
         update();
     };
     stomp.connect('localhost', 61613);
@@ -400,7 +421,7 @@ function getData(store, xChoice, yChoice) {
         var record = store.getAt(recordIndex);
         
         // Calculate error bars with square roots; not included in data file as it should be
-        var data = [ record.get(xChoice), record.get(yChoice), Math.sqrt(record.get(yChoice)) ];
+        var data = [ +record.get(xChoice), +record.get(yChoice), +Math.sqrt(record.get(yChoice)) ]; // + to convert string to number
         
         dataResults.push(data);
     }
@@ -422,32 +443,35 @@ function drawChart(store, xChoice, yChoice, chart) {
     var options = {
       series: { points: { show: true, radius: 3 } },
       selection: { mode: 'xy' },
+      crosshair: { mode: 'xy' },
       zoom: { // plugin
           interactive: true,
-          //recenter: false,
-          //selection: 'xy',
+          //recenter: true,
+          selection: 'xy',
           //trigger: null,
           amount: 1.25,
       },
-      crosshair: { mode: 'xy' },
       pan: { // plugin
-          interactive: true
+          interactive: true,
       },
       grid: { hoverable: true, clickable: true },
       //yaxis: { autoscaleMargin: null },
     };
 
-
-    plot = $.plot(
-        plotContainer,
-        [{
+    var plotData = [{
             label:    xChoice + ' vs. ' + yChoice + ': Series 1',
             data:     chartInfo,
             points:   datapoints,
-            lines:    { show: false }
-        }],
+            lines:    { show: false },
+        }];
+
+
+    plot = $.plot(
+        plotContainer,
+        plotData,
         options); //.addRose(); // Compass rose for panning
 
+/*
     plotContainer.bind('plothover', function (event, pos, item) {
         dataX = pos.x;
         dataY = pos.y;
@@ -467,7 +491,6 @@ function drawChart(store, xChoice, yChoice, chart) {
         else
             $('#tt').css({ display: 'none' });
     });
-    
     plotContainer.bind('plotclick', function (event, pos, item) {
         if (item) {
             $('#cX').text(item.datapoint[0]);
@@ -476,6 +499,45 @@ function drawChart(store, xChoice, yChoice, chart) {
             plot.highlight(item.series, item.datapoint);
         }
     });
+    */
+    /*
+    plotContainer.bind('plotselected', function (event, ranges) {
+        var extension = {};
+
+        if (dragCheckState == 'dragCheckZoom') {
+            // clamp the zooming to prevent eternal zoom
+            if (ranges.xaxis.to - ranges.xaxis.from < 0.01)
+                ranges.xaxis.to = ranges.xaxis.from + 0.01;
+            if (ranges.yaxis.to - ranges.yaxis.from < 0.01)
+                ranges.yaxis.to = ranges.yaxis.from + 0.01;
+            
+            
+            // do the zooming
+            extension = {
+                            pan:   { interactive: true },
+                            zoom:  { interactive: true  },
+                            xaxis: { min: ranges.xaxis.from, max: ranges.xaxis.to },
+                            yaxis: { min: ranges.yaxis.from, max: ranges.yaxis.to },
+                        };
+        }
+        else {
+            var newXdelta = ranges.xaxis.to - ranges.xaxis.from;
+            var newXmin = plot.getAxes().xaxis.min + newXdelta;
+            var newXmax = plot.getAxes().xaxis.max + newXdelta;
+            var newYdelta = ranges.yaxis.to - ranges.yaxis.from;
+            var newYmin = plot.getAxes().yaxis.min + newYdelta;
+            var newYmax = plot.getAxes().yaxis.max + newYdelta;
+            
+            extension = {
+                            pan:   { interactive: true  },
+                            zoom:  { interactive: true },
+                            xaxis: { min: newXmin, max: newXmax },
+                            yaxis: { min: newYmin, max: newYmax },
+                        };
+        }
+        plot = $.plot(plotContainer, plotData,
+                      $.extend(true, {}, options, extension));
+    });*/
 
 }
 
@@ -487,4 +549,12 @@ function zoomPlot (menuItem, event) {
         plot.zoom({ amount: menuItem.data, recenter: true });
 }
 
-function dragRadio() {}
+dragCheckState = 'dragCheckPan';
+
+function dragCheckHandler(menuItem, checked) {
+    if (checked === true) {
+        dragCheckState = menuItem.id;
+    }
+    var iconCls = 'icon-radio-' + ((checked === true) ? '' : 'un') + 'checked';
+    menuItem.setIconClass(iconCls);
+}
