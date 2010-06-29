@@ -70,11 +70,19 @@ def fitting_request_action(request, idNum):
             stdDev = width / 2 / N.sqrt(2 * N.log(2))
             
             gaussianDomain = N.arange(x[0], x[-1], abs(x[-1] - x[0]) / 100)
-            gaussianFunction = background + (peakY - background) * N.exp(- N.power(N.subtract(gaussianDomain, peakX), 2) / 2 / N.power(stdDev, 2))
+            gaussianFunction = generateGaussianFunction(gaussianDomain, peakX, peakY, background, stdDev)
             gaussianData = zip(gaussianDomain, gaussianFunction)
             
+            
+            gaussianResiduals = N.subtract(generateGaussianFunction(x, peakX, peakY, background, stdDev), x)
+            print gaussianResiduals
+            gaussianResidualData = zip(x, gaussianResiduals)
+            
+            JSONobj = dict(fit=gaussianData, resid=gaussianResidualData)
+            
+            
             #return HttpResponse('Width: ' + str(width))
-            return HttpResponse(simplejson.dumps(gaussianData))
+            return HttpResponse(simplejson.dumps(JSONobj))
         
         
         
@@ -122,3 +130,6 @@ def guess_width2(x, y, peakX, peakY, background):
     print stddev
     guessWidth = 2 * N.sqrt(2 * N.log(2)) * stddev
     return guessWidth
+    
+def generateGaussianFunction(domain, peakX, peakY, background, stdDev):
+    return background + (peakY - background) * N.exp(- N.power(N.subtract(domain, peakX), 2) / 2 / N.power(stdDev, 2))

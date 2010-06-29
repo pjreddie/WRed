@@ -234,7 +234,8 @@ Ext.onReady(function () {
                             $('#PlotContainer').one('plotclick', function (event, pos, item) {
                                 makeFittingRequest({ 'actionID': 3, 'actionName': 'sendWidth', 'widthX': pos.x, 'widthY': pos.y },
                                 function (responseObject) {
-                                    fitpoints = Ext.decode(responseObject.responseText);
+                                    responseJSON = Ext.decode(responseObject.responseText);
+                                    fitpoints = responseJSON.fit;
                                     plotDataSeries.push({
                                         label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Fit 1',
                                         data:     fitpoints,
@@ -242,6 +243,8 @@ Ext.onReady(function () {
                                         lines:    { show: true },
                                     });
                                     plot = $.plot($('#PlotContainer'), plotDataSeries, plotOptions);
+                                    
+                                    console.log(responseJSON.resid);
                                 });
                             });
                         });

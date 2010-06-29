@@ -181,7 +181,7 @@ Ext.onReady(function(){
         fileUpload: true,
         width: 300,
         frame: true,
-        title: 'File Upload Form',
+        title: 'Upload file',
         autoHeight: true,
         bodyStyle: 'padding: 10px 10px 0 10px;',
         labelWidth: 50,
@@ -199,9 +199,10 @@ Ext.onReady(function(){
             buttonText: 'Browse...',
         }],
         buttons: [{
-            text: 'Save',
+            text: 'Upload',
+            icon: 'http://famfamfam.com/lab/icons/silk/icons/page_white_add.png',
             handler: function(){
-                if(fp.getForm().isValid()){
+                if (fp.getForm().isValid()) {
 	                fp.getForm().submit({
 	                    url: '../forms/upload/',
 	                    waitMsg: 'Uploading your file...',
@@ -210,9 +211,12 @@ Ext.onReady(function(){
 	                });
                 }
             }
-        },'-',{
-            text: 'Reset',
-            handler: function(){
+        },
+        '-',
+        {
+            text: 'Cancel',
+            icon: 'http://famfamfam.com/lab/icons/silk/icons/cancel.png',
+            handler: function() {
                 fp.getForm().reset();
             }
         }]
@@ -232,7 +236,7 @@ Ext.onReady(function(){
         height: 500,
         minSize:100,
         maxSize:500,
-        title: 'Available Files', 
+        title: 'Available files', 
         /*bbar: new Ext.PagingToolbar({
             pageSize: 25,
             store: store,
@@ -248,12 +252,12 @@ Ext.onReady(function(){
 
 /*Menu that shows up on right click to delete a file from the database*/
     var rowMenu = new Ext.menu.Menu({
-        id:'rowMenu',
-        items:[
-            {
-                text: 'Delete', handler:deleteRow,
-            },
-        ],
+        id: 'rowMenu',
+        items:  [{
+                    text: 'Delete',
+                    handler: deleteRow,
+                    icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
+                }],
     });
 /*Sends a POST request to server to delete a file*/
     function deleteRow(){
@@ -264,8 +268,8 @@ Ext.onReady(function(){
             params: {'md5': store.getAt(rowRightClicked).get('md5')},
             success: function(responseObject) {
             },
-             failure: function() {
-             }
+            failure: function() {
+            }
         });
     }
     grid.on('rowcontextmenu', function(grid, rowIndex, e){rowRightClicked = rowIndex;rowMenu.showAt(e.getXY());e.stopEvent();});
@@ -302,7 +306,7 @@ requests later, so we add them to the Store differently*/
     }
 /*Retrieve data in json format via a GET request to the server. This is used
 anytime there is new data, and initially to populate the table.*/
-    function update(){
+    function update() {
     var conn = new Ext.data.Connection();
         conn.request({
             url: '../all/json/',
@@ -312,8 +316,8 @@ anytime there is new data, and initially to populate the table.*/
                 dataArray = Ext.decode(responseObject.responseText);//decodes the response
                 reload_data();                                      //resets the store and grids
             },
-             failure: function() {
-             }
+            failure: function() {
+            }
         });
     }
     update();
@@ -343,20 +347,24 @@ whenever any message comes through (whenever files are added, removed, or change
 
 
 var plMenu = new Ext.menu.Menu({
-    id:'plMenu',
-    items:[
-        {
-            text: 'Connect',handler: connector,id: 'connect',
-        },
-        {
-           text: 'Disconnect', handler: disconnector, id: 'disconnect',
-        },
-    ],
+    id: 'plMenu',
+    items:  [{
+                text: 'Connect',
+                handler: connector,
+                id: 'connect',
+                icon: 'http://famfamfam.com/lab/icons/silk/icons/connect.png',
+            },
+            {
+                text: 'Disconnect',
+                handler: disconnector,
+                id: 'disconnect',
+                icon: 'http://famfamfam.com/lab/icons/silk/icons/disconnect.png',
+            }],
 });
-function connected(){
+function connected() {
   var count = 0;
-  for(var i = 0; i < boxes.length && count < 3; ++i){
-    if(boxes[i].selected){
+  for (var i = 0; i < boxes.length && count < 3; ++i){
+    if (boxes[i].selected){
       if (count === 0) from = boxes[i];
       else if (count == 1) to = boxes[i];
       ++count;
@@ -364,22 +372,23 @@ function connected(){
   }
   if (count != 2){
     return false;
-  }else{
+  }
+  else {
     var connected = false;
-    for(var j = 0; j < from.connectedBoxes.length; ++j){
+    for (var j = 0; j < from.connectedBoxes.length; ++j) {
       if (from.connectedBoxes[j] == to) connected = true;
     }
-    for(var j = 0; j < to.connectedBoxes.length; ++j){
+    for (var j = 0; j < to.connectedBoxes.length; ++j) {
       if (to.connectedBoxes[j] == from) connected = true;
     }
     return connected;
   }
   return false;
 }
-function disconnected(){
+function disconnected() {
   var count = 0;
-  for(var i = 0; i < boxes.length && count < 3; ++i){
-    if(boxes[i].selected){
+  for (var i = 0; i < boxes.length && count < 3; ++i) {
+    if (boxes[i].selected) {
       if (count === 0) from = boxes[i];
       else if (count == 1) to = boxes[i];
       ++count;
@@ -422,34 +431,38 @@ var canvasContainer = new Ext.BoxComponent({
 });
 var toolbar = new Ext.Toolbar();
 toolbar.add({
-        text: '++++',
+        text: 'Add',
         id: 'plus',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/add.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
-        pressed: false
- },{
-        text: '----',
+        pressed: false,
+    },{
+        text: 'Subtract',
         id: 'minus',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
-        pressed: false
- },{
+        pressed: false,
+    },{
         text: 'File',
         id: 'file',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/page_white_text.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
-        pressed: false
- },{
+        pressed: false,
+    },{
         text: 'Pointer',
         id: 'pointer',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/cursor.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
-        pressed: true
- });
+        pressed: true,
+    });
 
 var pipelinePanel = new Ext.Panel({
     tbar: toolbar,
