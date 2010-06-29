@@ -73,9 +73,8 @@ def fitting_request_action(request, idNum):
             gaussianFunction = generateGaussianFunction(gaussianDomain, peakX, peakY, background, stdDev)
             gaussianData = zip(gaussianDomain, gaussianFunction)
             
-            
-            gaussianResiduals = N.subtract(generateGaussianFunction(x, peakX, peakY, background, stdDev), x)
-            print gaussianResiduals
+            gaussianY = generateGaussianFunction(x, peakX, peakY, background, stdDev)
+            gaussianResiduals = N.subtract(gaussianY, y)
             gaussianResidualData = zip(x, gaussianResiduals)
             
             JSONobj = dict(fit=gaussianData, resid=gaussianResidualData)

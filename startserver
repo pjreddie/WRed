@@ -1,3 +1,5 @@
-python manage.py runserver
-orbited --config orbited.cfg
+{
+python manage.py runserver &
+orbited --config orbited.cfg &
 python relay.py
+}
