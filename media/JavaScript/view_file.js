@@ -218,21 +218,32 @@ Ext.onReady(function () {
         else {
             Ext.Msg.alert('Form complete', 'Submitting function...');
             
+            Ext.Msg.alert('Step 1', 'Please click on the background of the data');
             data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
-            makeFittingRequest({ 'actionID': 0, 'actionName': 'sendData', 'x': JSON.stringify(data.x), 'y': JSON.stringify(data.y) },
-            function (responseObject) {
-                Ext.Msg.alert('Step 1', 'Please click on the peak of the data');
-                var clickPos = [];
-                $('#PlotContainer').one('plotclick', function (event, pos, item) {
-                    makeFittingRequest({ 'actionID': 1, 'actionName': 'sendPeak', 'peakX': pos.x, 'peakY': pos.y },
-                    function (responseObject) {
-                        alert(responseObject.responseText);
-                        Ext.Msg.alert('Step 2', 'Please click on the width of the data');
-                        var clickPos = [];
-                        $('#PlotContainer').one('plotclick', function (event, pos, item) {
-                            makeFittingRequest({ 'actionID': 2, 'actionName': 'sendWidth', 'widthX': pos.x, 'widthY': pos.y },
-                            function (responseObject) { alert(responseObject.responseText); }
-                            );
+            $('#PlotContainer').one('plotclick', function (event, pos, item) {
+                makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData',
+                                     'x': JSON.stringify(data.x), 'y': JSON.stringify(data.y), 'backgroundX': pos.x, 'backgroundY': pos.y },
+                function (responseObject) {
+                    Ext.Msg.alert('Step 2', 'Please click on the peak of the data');
+                    var clickPos = [];
+                    $('#PlotContainer').one('plotclick', function (event, pos, item) {
+                        makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPeak', 'peakX': pos.x, 'peakY': pos.y },
+                        function (responseObject) {
+                            Ext.Msg.alert('Step 3', 'Please click on the width of the data');
+                            var clickPos = [];
+                            $('#PlotContainer').one('plotclick', function (event, pos, item) {
+                                makeFittingRequest({ 'actionID': 3, 'actionName': 'sendWidth', 'widthX': pos.x, 'widthY': pos.y },
+                                function (responseObject) {
+                                    fitpoints = Ext.decode(responseObject.responseText);
+                                    plotDataSeries.push({
+                                        label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Fit 1',
+                                        data:     fitpoints,
+                                        points:   { show: false },
+                                        lines:    { show: true },
+                                    });
+                                    plot = $.plot($('#PlotContainer'), plotDataSeries, plotOptions);
+                                });
+                            });
                         });
                     });
                 });
@@ -472,16 +483,9 @@ function getDataInCols(store, xChoice, yChoice) {
 
 /* Initialize Flot generation, draw the chart with error bars */
 function drawChart(store, xChoice, yChoice, chart) {
-    var chartInfo = getData(store, xChoice, yChoice);
-
     var plotContainer = $('#' + chart);
-    
-    var datapoints = {
-        errorbars: 'y',
-        yerr: { show: true, upperCap: '-', lowerCap: '-' },
-    };
-    
-    var options = {
+
+    plotOptions = {
       series: { points: { show: true, radius: 3 } },
       selection: { mode: 'xy' },
       crosshair: { mode: 'xy' },
@@ -499,18 +503,26 @@ function drawChart(store, xChoice, yChoice, chart) {
       //yaxis: { autoscaleMargin: null },
     };
 
-    var plotDataSeries = [{
-            label:    xChoice + ' vs. ' + yChoice + ': Series 1',
-            data:     chartInfo,
-            points:   datapoints,
-            lines:    { show: false },
-        }];
+    var seriesData = getData(store, xChoice, yChoice);
+    
+    var seriesPointsOptions = {
+        show: true,
+        errorbars: 'y',
+        yerr: { show: true, upperCap: '-', lowerCap: '-' },
+    };
+    
+    plotDataSeries = [{
+        label:    xChoice + ' vs. ' + yChoice + ': Series 1',
+        data:     seriesData,
+        points:   seriesPointsOptions,
+        lines:    { show: false },
+    }];
 
 
     plot = $.plot(
         plotContainer,
         plotDataSeries,
-        options); //.addRose(); // Compass rose for panning
+        plotOptions); //.addRose(); // Compass rose for panning
 
 
 /*
@@ -583,7 +595,7 @@ function drawChart(store, xChoice, yChoice, chart) {
                         };
         }
         plot = $.plot(plotContainer, plotData,
-                      $.extend(true, {}, options, extension));
+                      $.extend(true, {}, plotOptions, extension));
     });*/
 
 }

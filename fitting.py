@@ -26,19 +26,17 @@ def fitting_request_action(request, idNum):
 
         print 'You are trying to request the following action: ' + actionName + ' [ID: ' + actionID + ']'
         
-        if actionID == '0':
+        if actionID == '1':
             x = simplejson.loads(request.POST['x'])
             y = simplejson.loads(request.POST['y'])
+            background = float(request.POST['backgroundX'])
             request.session['x'] = x
             request.session['y'] = y
-            
-            # FIXME
-            background = 0
             request.session['background'] = background
             
             return HttpResponse('X: ' + str(x) + "\n" + 'Y: ' + str(y))
             
-        elif actionID == '1':
+        elif actionID == '2':
             peakX = float(request.POST['peakX'])
             peakY = float(request.POST['peakY'])
             request.session['peakX'] = peakX
@@ -49,11 +47,12 @@ def fitting_request_action(request, idNum):
             y = request.session['y']
             background = request.session['background']
             guessWidth = guess_width(x, y, peakX, peakY, background)
+            guessWidth2 = guess_width2(x, y, peakX, peakY, background)
             
             
-            return HttpResponse('Peak X: ' + str(peakX) + "\n" + 'Peak Y: ' + str(peakY) + "\n" + 'Guess width: ' + str(guessWidth))
+            return HttpResponse('Peak X: ' + str(peakX) + "\n" + 'Peak Y: ' + str(peakY) + "\n" + 'Guess width: ' + str(guessWidth) + "\n" + 'Guess width 2: ' + str(guessWidth2))
             
-        elif actionID == '2':
+        elif actionID == '3':
             widthX = float(request.POST['widthX'])
             widthY = float(request.POST['widthY'])
             request.session['widthX'] = widthX
@@ -70,9 +69,12 @@ def fitting_request_action(request, idNum):
             
             stdDev = width / 2 / N.sqrt(2 * N.log(2))
             
-            gaussianFunction = (peakY - background) * N.exp(- N.power(N.subtract(x, peakX), 2) / 2 * stdDev)
+            gaussianDomain = N.arange(x[0], x[-1], abs(x[-1] - x[0]) / 100)
+            gaussianFunction = background + (peakY - background) * N.exp(- N.power(N.subtract(gaussianDomain, peakX), 2) / 2 / N.power(stdDev, 2))
+            gaussianData = zip(gaussianDomain, gaussianFunction)
             
-            return HttpResponse('Width: ' + str(width))
+            #return HttpResponse('Width: ' + str(width))
+            return HttpResponse(simplejson.dumps(gaussianData))
         
         
         
@@ -113,4 +115,10 @@ def guess_width(x, y, peakX, peakY, background):
     guessWidth = (abs(leftX - peakX) + abs(rightX - peakX))
     print guessWidth
     print
+    return guessWidth
+
+def guess_width2(x, y, peakX, peakY, background):
+    stddev = N.std(x)
+    print stddev
+    guessWidth = 2 * N.sqrt(2 * N.log(2)) * stddev
     return guessWidth
