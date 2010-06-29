@@ -101,6 +101,9 @@ Ext.onReady(function () {
         cls:            'ChoiceContainer',
         items:          [ yChoice ],
     });
+    var xyCornerContainer = new Ext.Container({
+        id:             'xyCornerContainer',
+    });
     
     
     /* Holds the flot plot */
@@ -118,6 +121,38 @@ Ext.onReady(function () {
         items:          [ PlotContainer ],
     });
     
+    var MouseInfoContainer = new Ext.Container({
+        id:             'MouseInfoContainer',
+        autoWidth:      true,
+        
+        html:           '<p>Mouse: (<span id="MIC-mx"></span>, <span id="MIC-my"></span>)</p><p id="MIC-d" style="display: none;">Point: (<span id="MIC-dx"></span>, <span id="MIC-dy"></span> &plusmn; <span id="MIC-de"></span>)</p>',
+        items:          [ ],
+    });
+    var ChartInfoContainer = new Ext.Container({
+//        title:          'Chart information',
+        
+//        autoHeight:     true,
+        rowspan:        3,
+        
+        id:             'ChartInfoContainer',
+        items:          [ MouseInfoContainer ],
+    });
+    var yResidContainer = new Ext.Container({
+        id:             'yResidualsContainer',
+    });
+    var ResidPlotContainer = new Ext.Container({
+        id:             'ResidPlotContainer',
+    });
+    var ResidChartContainer = new Ext.Container({
+        title:          'Residuals',
+        
+        id:             'ResidChartContainer',
+        items:          [ ResidPlotContainer ],
+    });
+
+
+
+
     var PlotContextMenu = new Ext.menu.Menu({
         id:             'PlotContextMenu',
         items:          [{
@@ -156,6 +191,13 @@ Ext.onReady(function () {
                             group:      'dragCheck',
                             checked:    true,
                             checkHandler: dragCheckHandler,
+                        },
+                        '-',
+                        {
+                            text: '<s>Logarithmic scale</s>',
+                        },
+                        {
+                            text: '<s>Linear scale</s>',
                         }],
     });
     
@@ -163,7 +205,8 @@ Ext.onReady(function () {
         PlotContextMenu.showAt(event.getXY());
         event.stopEvent();
     }
-
+    
+    
 
 
 // [ TOOLS PANEL ]
@@ -235,6 +278,7 @@ Ext.onReady(function () {
                                 makeFittingRequest({ 'actionID': 3, 'actionName': 'sendWidth', 'widthX': pos.x, 'widthY': pos.y },
                                 function (responseObject) {
                                     responseJSON = Ext.decode(responseObject.responseText);
+                                    
                                     fitpoints = responseJSON.fit;
                                     plotDataSeries.push({
                                         label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Fit 1',
@@ -244,7 +288,14 @@ Ext.onReady(function () {
                                     });
                                     plot = $.plot($('#PlotContainer'), plotDataSeries, plotOptions);
                                     
-                                    console.log(responseJSON.resid);
+                                    residpoints = responseJSON.resid;
+                                    residplotDataSeries.push({
+                                        label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Resid 1',
+                                        data:     residpoints,
+                                        points:   { show: true },
+                                        lines:    { show: true },
+                                    });
+                                    residplot = $.plot($('#ResidPlotContainer'), residplotDataSeries, residplotOptions);
                                 });
                             });
                         });
@@ -272,7 +323,7 @@ Ext.onReady(function () {
 
 
     var FittingPanel = new Ext.FormPanel({
-        title:          'Fitting Tools',
+        title:          'Fitting tools',
         
         defaultType:    'textfield',
         labelWidth:     80,
@@ -311,11 +362,14 @@ Ext.onReady(function () {
         title:          'Chart',
         region:         'center',
         
+        layout:         'table',
+        layoutConfig:   { columns: 3, tableAttrs: { valign: 'top' } },
+        
         minWidth:       755,
         width:          900,
         
         id:             'ChartPanel',
-        items:          [ yChoiceContainer, ChartContainer, xChoiceContainer ],
+        items:          [ yChoiceContainer, ChartContainer, ChartInfoContainer, xyCornerContainer, xChoiceContainer, yResidContainer, ResidChartContainer ],
         tools:          [{
                             id: 'refresh',
                             qtip: 'Refresh chart',
@@ -323,11 +377,13 @@ Ext.onReady(function () {
                         }],
     });
     
+    
+    
     /* Holds the chart container and the other tool panels */
     var ChartTab = new Ext.Panel({
-//      title:          'Chart Tab',
+//      title:          'Chart tab',
 //      autoWidth:      true,
-        height:         588, // why not auto!?
+        height:         888, //588, // why not auto!?
         
         layout:         'border',
         defaults:       { split: true },
@@ -528,27 +584,26 @@ function drawChart(store, xChoice, yChoice, chart) {
         plotOptions); //.addRose(); // Compass rose for panning
 
 
-/*
     plotContainer.bind('plothover', function (event, pos, item) {
         dataX = pos.x;
         dataY = pos.y;
+        
+        $('#MIC-mx').text(dataX.toPrecision(5));
+        $('#MIC-my').text(dataY.toPrecision(5));
         
         if (item) {
             mouseX = item.pageX;
             mouseY = item.pageY;
             
-            $('#pX').text(dataX);
-            $('#pY').text(dataY);
-            
-            $('#dX').text(item.datapoint[0]);
-            $('#dY').text(item.datapoint[1]);
-            $('#dE').text(item.datapoint[2]);
-            $('#tt').css({ display: 'block', left: mouseX + 3, top: mouseY + 3 });
+            $('#MIC-dx').text(item.datapoint[0].toPrecision(5));
+            $('#MIC-dy').text(item.datapoint[1].toPrecision(5));
+            $('#MIC-de').text(item.datapoint[2].toPrecision(5));
+            $('#MIC-d').css({ display: 'block' }); //, left: mouseX + 3, top: mouseY + 3 });
         }
         else
-            $('#tt').css({ display: 'none' });
+            $('#MIC-d').css({ display: 'none' });
     });
-    */
+    
     plotContainer.bind('plotclick', function (event, pos, item) {
         var previousPoints = [];
 
@@ -601,14 +656,53 @@ function drawChart(store, xChoice, yChoice, chart) {
                       $.extend(true, {}, plotOptions, extension));
     });*/
 
+// RESID
+
+    var residplotContainer = $('#Resid' + chart);
+
+    residplotOptions = {
+      series: { points: { show: true, radius: 3 } },
+      selection: { mode: 'xy' },
+      crosshair: { mode: 'xy' },
+      zoom: { // plugin
+          interactive: true,
+          //recenter: true,
+          selection: 'xy',
+          //trigger: null,
+          amount: 1.25,
+      },
+      pan: { // plugin
+          interactive: true,
+      },
+      grid: { hoverable: true, clickable: true },
+      //yaxis: { autoscaleMargin: null },
+    };
+    
+    var residseriesPointsOptions = {
+        show: true,
+    };
+
+    residplotDataSeries = [{
+        label:    '',
+        data:     [],
+        points:   residseriesPointsOptions,
+        lines:    { show: true },
+    }];
+
+    residplot = $.plot(
+        residplotContainer,
+        residplotDataSeries,
+        residplotOptions);
 }
 
 function zoomPlot (menuItem, event) {
     if (menuItem.data == 0) {
         // something?
     }
-    else
+    else {
         plot.zoom({ amount: menuItem.data, recenter: true });
+        residplot.zoom({ amount: menuItem.data, recenter: true });
+    }
 }
 
 dragCheckState = 'dragCheckPan';

@@ -3,17 +3,17 @@
 }
 
 #xChoiceContainer {
-  width:          500px;
-  margin-left:    240px; /* 10 + 210 + 10 + ... + 10 */
-  clear:          left;
-  padding-left:   160px; /* Horizontal centering (approximate) */
+/*width:          500px;
+  margin-left:    240px; */ /* 10 + 210 + 10 + ... + 10 */
+/*clear:          left;  */
+  padding-left:   160px;    /* Horizontal centering (approximate) */
 }
 
 #yChoiceContainer {
-  width:          210px; /* 210 */
-  height:         260px; /* 500 - 240 */
-  float:          left;
-  padding-top:    240px; /* Vertical centering (approximate) */
+  width:          210px;    /* 210 */
+/*height:         260px; */ /* 500 - 240 */
+/*float:          left;  */
+  padding-top:    240px;    /* Vertical centering (approximate) */
 }
 
 /* Vertical text
@@ -27,8 +27,25 @@
   width:          500px;
   height:         500px;
   margin:         10px;
-  float:          left;
 }
+#ChartContainer {
+  width:          520px;
+}
+
+#ChartPanel table td {
+  vertical-align: top;
+}
+
+#ResidPlotContainer {
+  width:          500px;
+  height:         200px;
+  margin:         10px;
+}
+#ResidChartContainer {
+  width:          520px;
+}
+
+
 
 
 #FittingPanel .x-form-item, #FittingPanel .x-btn {

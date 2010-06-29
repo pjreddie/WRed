@@ -1,6 +1,6 @@
-//Author: Joe Redmon
-//pipeline.js
-/*This mainly deals with animating the pipeline and is not close to being finished,
+// Author: Joe Redmon
+// pipeline.js
+/* This mainly deals with animating the pipeline and is not close to being finished,
 since I think you're more interested in the other aspects, I'm going to leave out comments
 until it is further along...*/
 
@@ -187,9 +187,10 @@ Ext.onReady(function () {
     };
 
     /*FormPanel to enable file uploads. Sends POST request to server w/ file information*/
+
     var fp = new Ext.FormPanel({
         fileUpload: true,
-        width: 300,
+        width: 294,
         frame: true,
         title: 'Upload file',
         autoHeight: true,
@@ -227,6 +228,7 @@ Ext.onReady(function () {
             }
         }]
     });
+
     var rowRightClicked = 0; //variable to store index of row that is right clicked
     /*GridPanel that displays the data*/
     var grid = new Ext.grid.GridPanel({
@@ -385,6 +387,7 @@ whenever any message comes through (whenever files are added, removed, or change
 
 
 
+
     var plMenu = new Ext.menu.Menu({
         id: 'plMenu',
         items: [{
@@ -424,6 +427,7 @@ whenever any message comes through (whenever files are added, removed, or change
         }
         return false;
     }
+
 
     function disconnected() {
         var count = 0;
@@ -473,7 +477,7 @@ whenever any message comes through (whenever files are added, removed, or change
     toolbar.add({
         text: 'Add',
         id: 'plus',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/add.png',
+        icon: 'http:// famfamfam.com/lab/icons/silk/icons/add.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
@@ -481,7 +485,7 @@ whenever any message comes through (whenever files are added, removed, or change
     }, {
         text: 'Subtract',
         id: 'minus',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
+        icon: 'http:// famfamfam.com/lab/icons/silk/icons/delete.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
@@ -489,7 +493,7 @@ whenever any message comes through (whenever files are added, removed, or change
     }, {
         text: 'File',
         id: 'file',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/page_white_text.png',
+        icon: 'http:// famfamfam.com/lab/icons/silk/icons/page.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
@@ -497,7 +501,7 @@ whenever any message comes through (whenever files are added, removed, or change
     }, {
         text: 'Pointer',
         id: 'pointer',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/cursor.png',
+        icon: 'http:// famfamfam.com/lab/icons/silk/icons/cursor.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
