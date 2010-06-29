@@ -3,13 +3,14 @@
 
 import os
 from multiprocessing import Queue
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render_to_response
+from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.shortcuts import render_to_response, get_object_or_404
 import simplejson
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 
 from WRed.fileRead import *
+from WRed.fitting import *
 from fileToJson import displayfile
 from WRed.display.models import *
 from django import forms
@@ -35,14 +36,13 @@ def json_file_display(request, idNum):
     rFile = DataFile.objects.get(id = idNum)
     if request.user.is_authenticated() and (request.user.username == str(rFile.proposal_id) or request.user.is_superuser):
         print 'Good To Go!'
-        try:
-            md5 = rFile.md5
-            all_objects = displayfile('db/' + md5 + '.file')
-            data = simplejson.dumps(all_objects)
-            return HttpResponse(data)
-        except ObjectDoesNotExist:
-            return HttpResponse('Oops! Datafile Does Not Exist')
-    else: print 'No!'
+        data = get_object_or_404(DataFile, id = idNum)
+        md5 = data.md5
+        all_objects = displayfile('db/' + md5 + '.file')
+        data = simplejson.dumps(all_objects)
+        return HttpResponse(data)
+    else:
+        print 'Not authenticated!'
     return HttpResponse('Go Login!')
 
 #Handles GET requests for all file information, returns a json object of the files

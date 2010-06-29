@@ -22,4 +22,5 @@ urlpatterns = patterns('',
     (r'^files/forms/upload/live/$', upload_file_live),
     (r'^files/forms/delete/$', delete_file),
     (r'^files/pipeline/$', direct_to_template,{'template':'pipeline.html'}),
+    (r'^files/fitting/(\w+)/$', fitting_request_action),
 )

@@ -1,0 +1,59 @@
+.ChoiceContainer {
+  margin:         10px;
+}
+
+#xChoiceContainer {
+  width:          500px;
+  margin-left:    240px; /* 10 + 210 + 10 + ... + 10 */
+  clear:          left;
+  padding-left:   160px; /* Horizontal centering (approximate) */
+}
+
+#yChoiceContainer {
+  width:          210px; /* 210 */
+  height:         260px; /* 500 - 240 */
+  float:          left;
+  padding-top:    240px; /* Vertical centering (approximate) */
+}
+
+/* Vertical text
+#yChoiceContainer, .yChoiceList {
+      -webkit-transform: rotate(-90deg); 
+      -moz-transform: rotate(-90deg);
+      filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+}*/
+
+#PlotContainer {
+  width:          500px;
+  height:         500px;
+  margin:         10px;
+  float:          left;
+}
+
+
+#FittingPanel .x-form-item, #FittingPanel .x-btn {
+  margin-bottom:  8px;
+}
+
+.submitButton button {
+  font-weight:    bold;
+}
+
+
+
+.ext-el-mask-msg div {
+  font-size:      1.1em;
+  padding:        8px 12px 8px 32px;
+  background-position: 8px center;
+}
+
+.x-menu-item-checked .x-menu-item-text {
+  font-weight:    bold;
+}
+
+.icon-radio-unchecked {
+  background-image: url(http://telem.fr/pub/System/FamFamFamSilkCompanion2Icons/radio-unchecked.png) !important;
+}
+.icon-radio-checked {
+  background-image: url(http://telem.fr/pub/System/FamFamFamSilkCompanion2Icons/radio-checked.png) !important;
+}
