@@ -4,156 +4,181 @@
 since I think you're more interested in the other aspects, I'm going to leave out comments
 until it is further along...*/
 
-function drawBox(ctx, _x, _y, _width, _height, _color) {
-    var width = _width;
-    var height = _height;
-    var x = _x - width / 2;
-    var y = _y - height / 2;
-    var radius = Math.min(width / 10, height / 10);
-    ctx.beginPath();
-    ctx.strokeStyle = _color;
-    ctx.moveTo(x, y + radius);
-    ctx.lineTo(x, y + height - radius);
-    ctx.quadraticCurveTo(x, y + height, x + radius, y + height);
-    ctx.lineTo(x + width - radius, y + height);
-    ctx.quadraticCurveTo(x + width, y + height, x + width, y + height - radius);
-    ctx.lineTo(x + width, y + radius);
-    ctx.quadraticCurveTo(x + width, y, x + width - radius, y);
-    ctx.lineTo(x + radius, y);
-    ctx.quadraticCurveTo(x, y, x, y + radius);
-    ctx.stroke();
-}
 
-function clearBox(ctx, _x, _y, _width, _height) {
-    var width = _width;
-    var height = _height;
-    var x = _x - width / 2;
-    var y = _y - height / 2;
-    ctx.clearRect(x, y, width, height);
-}
+//*******EXT Stuff***********
+Ext.onReady(function () {
 
-function connect(ctx, from, to) {
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgb(0,0,0)';
-    ctx.moveTo(from.x, from.y)
-    ctx.bezierCurveTo(to.x, from.y, from.x, to.y, to.x, to.y);
-    ctx.stroke();
-}
+    var conn = new Ext.data.Connection();
 
-function PlusBox(x, y, width, height) {
-    this.deselect = function () {
-        this.selected = false;
-    };
-    this.x = x;
-    this.y = y;
-    this.width = width;
-    this.height = height;
-    this.selected = false;
-    this.connectedBoxes = [];
-    this.draw = function (ctx) {
-        clearBox(ctx, this.x, this.y, this.width, this.height);
-        drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(255,0,0)');
-        if (this.selected) {
-            this.highlight(ctx);
+    function drawBox(ctx, _x, _y, _width, _height, _color) {
+        var width = _width;
+        var height = _height;
+        var x = _x - width / 2;
+        var y = _y - height / 2;
+        var radius = Math.min(width / 10, height / 10);
+        ctx.beginPath();
+        ctx.strokeStyle = _color;
+        ctx.moveTo(x, y + radius);
+        ctx.lineTo(x, y + height - radius);
+        ctx.quadraticCurveTo(x, y + height, x + radius, y + height);
+        ctx.lineTo(x + width - radius, y + height);
+        ctx.quadraticCurveTo(x + width, y + height, x + width, y + height - radius);
+        ctx.lineTo(x + width, y + radius);
+        ctx.quadraticCurveTo(x + width, y, x + width - radius, y);
+        ctx.lineTo(x + radius, y);
+        ctx.quadraticCurveTo(x, y, x, y + radius);
+        ctx.stroke();
+    }
+
+    function clearBox(ctx, _x, _y, _width, _height) {
+        var width = _width;
+        var height = _height;
+        var x = _x - width / 2;
+        var y = _y - height / 2;
+        ctx.clearRect(x, y, width, height);
+    }
+
+    function connect(ctx, from, to) {
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgb(0,0,0)';
+        ctx.moveTo(from.x, from.y)
+        ctx.bezierCurveTo(to.x, from.y, from.x, to.y, to.x, to.y);
+        ctx.stroke();
+    }
+
+    function PlusBox(x, y, width, height) {
+        this.deselect = function () {
+            this.selected = false;
+        };
+        this.x = x;
+        this.y = y;
+        this.chart = function () {
+
         }
-    };
-    this.highlight = function (ctx) {
-        drawBox(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
-    };
-}
-
-function MinusBox(x, y, width, height) {
-    this.deselect = function () {
+        this.width = width;
+        this.height = height;
         this.selected = false;
-    };
-    this.x = x;
-    this.y = y;
-    this.width = width;
-    this.height = height;
-    this.selected = false;
-    this.connectedBoxes = [];
-    this.draw = function (ctx) {
-        clearBox(ctx, this.x, this.y, this.width, this.height);
-        drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(0,255,0)');
-        if (this.selected) {
-            this.highlight(ctx);
-        }
-    };
-    this.highlight = function (ctx) {
-        drawBox(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
-    };
-}
+        this.connected_boxes = [];
+        this.draw = function (ctx) {
+            clearBox(ctx, this.x, this.y, this.width, this.height);
+            drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(255,0,0)');
+            if (this.selected) {
+                this.highlight(ctx);
+            }
+        };
+        this.highlight = function (ctx) {
+            drawBox(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
+        };
+    }
 
-function TextBox(file) {
-    this.deselect = function () {
-        this.selected = false;
-    };
-    this.file = file;
-    this.text = file.data['File Name'];
-    this.width = 0;
-    this.update = function (ctx) {
-        var size = ctx.measureText(this.text);
-        this.width = size.width;
-    };
-    this.selected = false;
-    this.draw = function (ctx, x, y, width, height) {
+    function MinusBox(x, y, width, height) {
+        this.deselect = function () {
+            this.selected = false;
+        };
+        this.chart = function () {}
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
-        clearBox(ctx, this.x, this.y, this.width, this.height);
-        drawBox(ctx, x, y, width, height, 'rgb(100,100,255)');
-        ctx.fillText(this.text, x - width / 2, y + height / 2);
-        if (this.selected) this.highlight(ctx);
-    };
-    this.highlight = function (ctx) {
-        drawBox(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
-    };
-}
-
-function FileBox(x, y) {
-    this.files = [];
-    this.x = x;
-    this.y = y;
-    this.width = 30;
-    this.height = 30;
-    this.tbwidth = 2;
-    this.tbheight = 12;
-    this.selected = false;
-    this.connectedBoxes = [];
-    this.deselect = function () {
         this.selected = false;
-        for (var i = 0; i < this.files.length; ++i) this.files[i].deselect();
-    };
-    this.update = function (ctx) {
-        if (this.files.length != 0) {
-            this.tbwidth = 0;
-            for (var i = 0; i < this.files.length; ++i) {
-                this.files[i].update(ctx);
-                this.tbwidth = Math.max(this.tbwidth, this.files[i].width + 4);
+        this.connected_boxes = [];
+        this.draw = function (ctx) {
+            clearBox(ctx, this.x, this.y, this.width, this.height);
+            drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(0,255,0)');
+            if (this.selected) {
+                this.highlight(ctx);
             }
-            this.height = this.tbheight * this.files.length + 4 * (this.files.length + 1);
-            this.width = this.tbwidth + 10;
-        }
-    };
-    this.draw = function (ctx) {
-        this.update(ctx);
-        var cury = this.y - this.height / 2 + this.tbheight / 2 + 4;
-        clearBox(ctx, this.x, this.y, this.width, this.height);
-        drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(0,0,255)');
-        for (var i = 0; i < this.files.length; ++i) {
-            this.files[i].draw(ctx, this.x, cury, this.tbwidth, this.tbheight);
-            cury += this.tbheight + 4;
-        }
-        if (this.selected) this.highlight(ctx);
-    };
-    this.highlight = function (ctx) {
-        drawBox(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
-    };
-}
+        };
+        this.highlight = function (ctx) {
+            drawBox(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
+        };
+    }
 
-//*******EXT Stuff***********
-Ext.onReady(function () {
+    function TextBox(file) {
+        this.deselect = function () {
+            this.selected = false;
+        };
+        this.file = file;
+        this.text = file.data['File Name'];
+        this.width = 0;
+        this.chart = function () {
+            conn.request({
+                url: '../json/' + this.file.data['id'] + '/',
+                method: 'GET',
+                params: {}, success: function (responseObject) {
+                    var jsonpoints = Ext.decode(responseObject.responseText);
+                    creloadData(jsonpoints);
+                }, failure: function () {
+                    Ext.Msg.alert('Error', 'Failed JSON request');
+                }
+            });
+        }
+        this.update = function (ctx) {
+            var size = ctx.measureText(this.text);
+            this.width = size.width;
+        };
+        this.selected = false;
+        this.draw = function (ctx, x, y, width, height) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            clearBox(ctx, this.x, this.y, this.width, this.height);
+            drawBox(ctx, x, y, width, height, 'rgb(100,100,255)');
+            ctx.fillText(this.text, x - width / 2, y + height / 2);
+            if (this.selected) this.highlight(ctx);
+        };
+        this.highlight = function (ctx) {
+            drawBox(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
+        };
+    }
+
+    function FileBox(x, y) {
+        this.files = [];
+        this.x = x;
+        this.y = y;
+        this.chart = function () {}
+        this.width = 30;
+        this.height = 30;
+        this.tbwidth = 2;
+        this.tbheight = 12;
+        this.selected = false;
+        this.connected_boxes = [];
+        this.deselect = function () {
+            this.selected = false;
+            for (var i = 0; i < this.files.length; ++i) this.files[i].deselect();
+        };
+        this.update = function (ctx) {
+            if (this.files.length != 0) {
+                this.tbwidth = 0;
+                for (var i = 0; i < this.files.length; ++i) {
+                    this.files[i].update(ctx);
+                    this.tbwidth = Math.max(this.tbwidth, this.files[i].width + 4);
+                }
+                this.height = this.tbheight * this.files.length + 4 * (this.files.length + 1);
+                this.width = this.tbwidth + 10;
+            }
+        };
+        this.draw = function (ctx) {
+            this.update(ctx);
+            var cury = this.y - this.height / 2 + this.tbheight / 2 + 4;
+            clearBox(ctx, this.x, this.y, this.width, this.height);
+            drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(0,0,255)');
+            for (var i = 0; i < this.files.length; ++i) {
+                this.files[i].draw(ctx, this.x, cury, this.tbwidth, this.tbheight);
+                cury += this.tbheight + 4;
+            }
+            if (this.selected) this.highlight(ctx);
+        };
+        this.highlight = function (ctx) {
+            drawBox(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
+        };
+    }
+
+
+
+
+
 
     var maxvals = [];
     var minvals = []; /*Handles rendering of ArrayGrid to show range of parameters in data files*/
@@ -240,7 +265,8 @@ Ext.onReady(function () {
         minSize: 100,
         maxSize: 500,
         tbar: [fp, '-'],
-        store: store,
+        bbar: [],
+        ds: store,
         columns: gridColumns,
         stripeRows: true,
         title: 'Available files',
@@ -268,7 +294,7 @@ Ext.onReady(function () {
     }); /*Sends a POST request to server to delete a file*/
 
     function deleteRow() {
-        var conn = new Ext.data.Connection();
+
         conn.request({
             url: '../forms/delete/',
             method: 'POST',
@@ -293,7 +319,7 @@ so that the new data is displayed on the page*/
         minvals = dataArray[2]; //Third row is min values of parameters
         dataArray.splice(0, 3); //The rest is the actual data
         var gridColumns = [];
-        var storeFields = [];
+        storeFields = [];
 /*The first three parameters (File Name, database ID, and md5 sum) aren't renedered using the
 standard renderer and the ID and md5 sum aren't displayed at all, they are only used for server
 requests later, so we add them to the Store differently*/
@@ -338,19 +364,36 @@ requests later, so we add them to the Store differently*/
                 name: fieldData[i]
             });
         }
-        store = new Ext.data.ArrayStore({
-            fields: storeFields,
+        store = new Ext.data.Store({
+            proxy: new Ext.ux.data.PagingMemoryProxy(dataArray),
+            reader: new Ext.data.ArrayReader({}, storeFields),
+            remoteSort: true,
         });
-        store.loadData(dataArray);
+
         colModel = new Ext.grid.ColumnModel({
             columns: gridColumns
         });
+        store.load({
+            params: {
+                start: 0,
+                limit: 10
+            }
+        });
+        grid.getBottomToolbar().removeAll();
+        grid.getBottomToolbar().add(new Ext.PagingToolbar({
+            store: store,
+            pageSize: 10,
+            displayInfo: false,
+            displayMsg: 'Displaying topics {0} - {1} of {2}',
+            emptyMsg: "No topics to display",
+        }))
+        grid.getBottomToolbar().doLayout();
         grid.reconfigure(store, colModel);
 
     }
 /*Retrieve data in json format via a GET request to the server. This is used
 anytime there is new data, and initially to populate the table.*/
-    var conn = new Ext.data.Connection();
+
     function update() {
         conn.request({
             url: '../all/json/',
@@ -417,11 +460,11 @@ whenever any message comes through (whenever files are added, removed, or change
         }
         else {
             var connected = false;
-            for (var j = 0; j < from.connectedBoxes.length; ++j) {
-                if (from.connectedBoxes[j] == to) connected = true;
+            for (var j = 0; j < from.connected_boxes.length; ++j) {
+                if (from.connected_boxes[j] == to) connected = true;
             }
-            for (var j = 0; j < to.connectedBoxes.length; ++j) {
-                if (to.connectedBoxes[j] == from) connected = true;
+            for (var j = 0; j < to.connected_boxes.length; ++j) {
+                if (to.connected_boxes[j] == from) connected = true;
             }
             return connected;
         }
@@ -442,11 +485,11 @@ whenever any message comes through (whenever files are added, removed, or change
             return false;
         } else {
             var connected = false;
-            for (var j = 0; j < from.connectedBoxes.length; ++j) {
-                if (from.connectedBoxes[j] == to) connected = true;
+            for (var j = 0; j < from.connected_boxes.length; ++j) {
+                if (from.connected_boxes[j] == to) connected = true;
             }
-            for (var j = 0; j < to.connectedBoxes.length; ++j) {
-                if (to.connectedBoxes[j] == from) connected = true;
+            for (var j = 0; j < to.connected_boxes.length; ++j) {
+                if (to.connected_boxes[j] == from) connected = true;
             }
             return !connected;
         }
@@ -455,18 +498,18 @@ whenever any message comes through (whenever files are added, removed, or change
 
     function disconnector() {
         if (connected()) {
-            for (var j = 0; j < from.connectedBoxes.length; ++j) {
-                if (from.connectedBoxes[j] == to) from.connectedBoxes.splice(j, 1);
+            for (var j = 0; j < from.connected_boxes.length; ++j) {
+                if (from.connected_boxes[j] == to) from.connected_boxes.splice(j, 1);
             }
-            for (var j = 0; j < to.connectedBoxes.length; ++j) {
-                if (to.connectedBoxes[j] == from) to.connectedBoxes.splice(j, 1);
+            for (var j = 0; j < to.connected_boxes.length; ++j) {
+                if (to.connected_boxes[j] == from) to.connected_boxes.splice(j, 1);
             }
         }
     }
 
     function connector() {
         if (disconnected()) {
-            from.connectedBoxes.push(to);
+            from.connected_boxes.push(to);
         }
     }
     var canvasContainer = new Ext.BoxComponent({
@@ -477,7 +520,7 @@ whenever any message comes through (whenever files are added, removed, or change
     toolbar.add({
         text: 'Add',
         id: 'plus',
-        icon: 'http:// famfamfam.com/lab/icons/silk/icons/add.png',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/add.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
@@ -485,7 +528,7 @@ whenever any message comes through (whenever files are added, removed, or change
     }, {
         text: 'Subtract',
         id: 'minus',
-        icon: 'http:// famfamfam.com/lab/icons/silk/icons/delete.png',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
@@ -493,7 +536,7 @@ whenever any message comes through (whenever files are added, removed, or change
     }, {
         text: 'File',
         id: 'file',
-        icon: 'http:// famfamfam.com/lab/icons/silk/icons/page.png',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/page.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
@@ -501,7 +544,7 @@ whenever any message comes through (whenever files are added, removed, or change
     }, {
         text: 'Pointer',
         id: 'pointer',
-        icon: 'http:// famfamfam.com/lab/icons/silk/icons/cursor.png',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/cursor.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
@@ -539,8 +582,8 @@ whenever any message comes through (whenever files are added, removed, or change
 
         for (var i = 0; i < boxes.length; ++i) {
             //boxes[i].draw(ctx);
-            for (var j = 0; j < boxes[i].connectedBoxes.length; ++j) {
-                connect(ctx, boxes[i], boxes[i].connectedBoxes[j]);
+            for (var j = 0; j < boxes[i].connected_boxes.length; ++j) {
+                connect(ctx, boxes[i], boxes[i].connected_boxes[j]);
             }
         }
         for (var i = 0; i < boxes.length; ++i) {
@@ -618,7 +661,28 @@ whenever any message comes through (whenever files are added, removed, or change
                 break;
             default:
             }
-
+            var selected_files = [];
+            for (var i = 0; i < boxes.length; ++i) {
+                if (boxes[i].selected && boxes[i].files) {
+                    var some_selected = false;
+                    for (var j = 0; j < boxes[i].files.length; ++j) {
+                        if (boxes[i].files[j].selected) {
+                            some_selected = true;
+                            break;
+                        }
+                    }
+                    if (some_selected) {
+                        for (var j = 0; j < boxes[i].files.length; ++j) {
+                            if (boxes[i].files[j].selected) {
+                                boxes[i].files[j].chart();
+                            }
+                        }
+                    } else {
+                        boxes[i].chart();
+                    }
+                }
+            }
+            cupdate(selected_files);
         } else if (e.button == 2 || e.button == 1) {
             if (connected()) {
                 plMenu.items.get('connect').disable();
@@ -696,9 +760,9 @@ whenever any message comes through (whenever files are added, removed, or change
                     var temp = boxes[i];
                     boxes.splice(i, 1);
                     for (var j = 0; j < boxes.length; ++j) {
-                        for (var k = 0; k < boxes[j].connectedBoxes.length; ++k) {
-                            if (boxes[j].connectedBoxes[k] == temp) {
-                                boxes[j].connectedBoxes.splice(k, 1);
+                        for (var k = 0; k < boxes[j].connected_boxes.length; ++k) {
+                            if (boxes[j].connected_boxes[k] == temp) {
+                                boxes[j].connected_boxes.splice(k, 1);
                                 --k;
                             }
                         }
@@ -721,12 +785,9 @@ whenever any message comes through (whenever files are added, removed, or change
         }
         canvas.on('mousemove', redraw);
     }
-    grid.on('mouseup', function(grid, rowIndex, e){
+    grid.on('mouseup', function (g, rowIndex, e) {
         selectedFiles = grid.getSelectionModel().getSelections();
-        ids = []
-        for (var i = 0; i < sf.length; ++i){
-          ids.push
-        }
+        cupdate(selectedFiles);
     });
     canvas.on('contextmenu', rightClick);
     canvas.on({
@@ -750,72 +811,85 @@ whenever any message comes through (whenever files are added, removed, or change
 
 
     var ChartContainer = new Ext.Container({
-        height:         500,
-        valueField:     'id',
-        displayField:   'name',
-        autoWidth:      true,
-        
-        id:             'ChartContainer',
+        height: 500,
+        valueField: 'id',
+        displayField: 'name',
+        autoWidth: true,
+
+        id: 'ChartContainer',
 
     });
     ChartContainer.on('afterrender', cupdate);
     var ChartPanel = new Ext.Panel({
-        title:          'Chart',
-        region:         'east',
-        valueField:     'id',
-        displayField:   'name',
-        split: 		true,
-        region:		'east',
-        collapsible:	true,
-        width:		500,
-        height:		300,
-        minSize:	100,
-        maxSize:	500,
-        
-        id:             'ChartPanel',
-        items:          [ ChartContainer ],
+        title: 'Chart',
+        region: 'east',
+        valueField: 'id',
+        displayField: 'name',
+        split: true,
+        region: 'east',
+        collapsible: true,
+        width: 500,
+        height: 300,
+        minSize: 100,
+        maxSize: 500,
+
+        id: 'ChartPanel',
+        items: [ChartContainer],
 
     });
+
     var cstore = new Ext.data.ArrayStore();
     var cfieldData = [];
     var cgridColumns = [];
     var cstoreFields = [];
     var cdataArray = [];
-    function cupdate(idNum) {
-        conn.request({
-            url: '../json/' + idNum + '/',
-            method: 'GET',
-            params: {},
-            success: function (responseObject) {
-                var jsonpoints = Ext.decode(responseObject.responseText);
-                cdataArray = jsonpoints;
-                creloadData();
-            },
-            failure: function () {
-                Ext.Msg.alert('Error', 'Failed JSON request');
-            }
-        });
+
+    function cupdate(files) {
+        ids = [];
+        for (var i = 0; i < files.length; ++i) {
+            ids.push(files[i].data['id']);
+        }
+        cstores = [];
+        for (var i = 0; i < ids.length; ++i) {
+            conn.request({
+                url: '../json/' + ids[i] + '/',
+                method: 'GET',
+                params: {}, success: function (responseObject) {
+                    var jsonpoints = Ext.decode(responseObject.responseText);
+                    creloadData(jsonpoints);
+                }, failure: function () {
+                    Ext.Msg.alert('Error', 'Failed JSON request');
+                }
+            });
+        }
     }
 
     /* Same idea as in all_files.js, when new data comes, we must re-initialize our store to update the plot */
-    function creloadData() {
-        cfieldData = cdataArray[0];
 
-        cdataArray.splice(0, 1);
-        cgridColumns = [];
-        cstoreFields = [];
-        for (var i = 0; i < cfieldData.length; ++ i) {
-            cgridColumns.push({ header: cfieldData[i], width: 70, sortable: true, dataIndex: cfieldData[i] });
-            cstoreFields.push({ name: cfieldData[i] });
+    function creloadData(pts) {
+        var cfieldData = pts[0];
+        pts.splice(0, 1);
+        var cgridColumns = [];
+        var cstoreFields = [];
+        for (var i = 0; i < cfieldData.length; ++i) {
+            cgridColumns.push({
+                header: cfieldData[i],
+                width: 70,
+                sortable: true,
+                dataIndex: cfieldData[i]
+            });
+            cstoreFields.push({
+                name: cfieldData[i]
+            });
         }
 
-        cstore = new Ext.data.ArrayStore({
+        var cstore = new Ext.data.ArrayStore({
             fields: cstoreFields,
         });
 
-        cstore.loadData(cdataArray);
-        colModel = new Ext.grid.ColumnModel({ columns: cgridColumns });
-        drawChart(cstore, 'A4', 'Detector', 'ChartContainer');
+        cstore.loadData(pts);
+        cstores.push(cstore);
+        drawChart(cstores, 'A4', 'Detector', 'ChartContainer');
     }
     var viewport = new Ext.Viewport({
         layout: 'border',
@@ -826,59 +900,68 @@ whenever any message comes through (whenever files are added, removed, or change
 
 function getData(store, xChoice, yChoice) {
     var dataResults = [];
-
-    for (var recordIndex = 0; recordIndex < store.getCount(); recordIndex++ ) {
+    for (var recordIndex = 0; recordIndex < store.getCount(); recordIndex++) {
         var record = store.getAt(recordIndex);
-        
+
         // Calculate error bars with square roots; not included in data file as it should be
-        var data = [ +record.get(xChoice), +record.get(yChoice), +Math.sqrt(record.get(yChoice)) ]; // + to convert string to number
-        
+        var data = [+record.get(xChoice), +record.get(yChoice), +Math.sqrt(record.get(yChoice))]; // + to convert string to number
         dataResults.push(data);
     }
-    
+
     return dataResults;
-}
-/* Initialize Flot generation, draw the chart with error bars */
-function drawChart(store, xChoice, yChoice, chart) {
-    console.log('plot');
+} /* Initialize Flot generation, draw the chart with error bars */
+
+function drawChart(stores, xChoice, yChoice, chart) {
+
     var plotContainer = $('#' + chart);
 
     plotOptions = {
-      series: { points: { show: true, radius: 3 } },
-      selection: { mode: 'xy' },
-      crosshair: { mode: 'xy' },
-      zoom: { // plugin
-          interactive: true,
-          //recenter: true,
-          selection: 'xy',
-          //trigger: null,
-          amount: 1.25,
-      },
-      pan: { // plugin
-          interactive: true,
-      },
-      grid: { hoverable: true, clickable: true },
-      //yaxis: { autoscaleMargin: null },
+        series: {
+            points: {
+                show: true,
+                radius: 3
+            }
+        }, selection: {
+            mode: 'xy'
+        }, crosshair: {
+            mode: 'xy'
+        }, zoom: { // plugin
+            interactive: true,
+            //recenter: true,
+            selection: 'xy',
+            //trigger: null,
+            amount: 1.25,
+        }, pan: { // plugin
+            interactive: true,
+        }, grid: {
+            hoverable: true,
+            clickable: true
+        },
+        //yaxis: { autoscaleMargin: null },
     };
-
-    var seriesData = getData(store, xChoice, yChoice);
-    
     var seriesPointsOptions = {
         show: true,
         errorbars: 'y',
-        yerr: { show: true, upperCap: '-', lowerCap: '-' },
+        yerr: {
+            show: true,
+            upperCap: '-',
+            lowerCap: '-'
+        },
     };
-    
-    plotDataSeries = [{
-        label:    xChoice + ' vs. ' + yChoice + ': Series 1',
-        data:     seriesData,
-        points:   seriesPointsOptions,
-        lines:    { show: false },
-    }];
+    var plotDataSeries = [];
 
+    for (var i = 0; i < stores.length; ++i) {
+        var seriesData = getData(stores[i], xChoice, yChoice);
+        plotDataSeries.push({
+            label: xChoice + ' vs. ' + yChoice + ': Series ' + (i + 1),
+            data: seriesData,
+            points: seriesPointsOptions,
+            lines: {
+                show: false
+            },
+        });
+    }
 
     plot = $.plot(
-        plotContainer,
-        plotDataSeries,
-        plotOptions); //.addRose(); // Compass rose for panning
+    plotContainer, plotDataSeries, plotOptions); //.addRose(); // Compass rose for panning
 }
