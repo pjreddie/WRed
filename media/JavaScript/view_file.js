@@ -14,22 +14,58 @@ Ext.onReady(function () {
     var fieldData = [];
     var gridColumns = [];
     var storeFields = [];
+    var metadataObj = {};
     var dataArray = [];
 
     // Initialize grid for data view
-    var DataTab = new Ext.grid.GridPanel({
+    var GridPanel = new Ext.grid.GridPanel({
         title:          'Data table',
-    
-        store:          store,
-        columns:        gridColumns,
-        stripeRows:     true,
+        
+        region:         'center',
         height:         588,
         autoWidth:      true,
         horizontalScroll: true,
         
-        id:             'DataTabPanel',
+        store:          store,
+        columns:        gridColumns,
+        stripeRows:     true,
+        
+        id:             'GridPanel',
     });
     
+    var MetadataStore = new Ext.data.JsonStore({
+        data: [],
+        fields:         ['name', 'data'],
+    });
+    var MetadataListPanel = new Ext.list.ListView({
+       
+        store:          MetadataStore,
+        columns:        [ { header: 'Name', dataIndex: 'name' }, { header: 'Data', dataIndex: 'data' }],
+        
+        id:             'MetadataListPanel',
+    });
+    var MetadataPanel = new Ext.Panel({
+        title:          'Metadata',
+        
+        region:         'east',
+        collapsible:    true,
+        minWidth:       200,
+        
+        id:             'MetadataPanel',
+        items:          [ MetadataListPanel ],
+    });
+    
+
+    var DataTabPanel = new Ext.Panel({
+        height:         588, // why not auto!?
+        
+        layout:         'border',
+        defaults:       { split: true },
+        
+        id:             'DataTabPanel',
+        items:          [ GridPanel, MetadataPanel ],
+    });
+
     var GridRowContextMenu = new Ext.menu.Menu({
         id:             'GridRowContextMenu',
         items:          [{
@@ -105,7 +141,7 @@ Ext.onReady(function () {
         id:             'xyCornerContainer',
     });
     
-    
+
     /* Holds the flot plot */
     var PlotContainer = new Ext.Container({
         id:             'PlotContainer',
@@ -149,7 +185,6 @@ Ext.onReady(function () {
         id:             'ResidChartContainer',
         items:          [ ResidPlotContainer ],
     });
-
 
 
 
@@ -205,8 +240,6 @@ Ext.onReady(function () {
         PlotContextMenu.showAt(event.getXY());
         event.stopEvent();
     }
-    
-    
 
 
 // [ TOOLS PANEL ]
@@ -274,28 +307,31 @@ Ext.onReady(function () {
                         function (responseObject) {
                             Ext.Msg.alert('Step 3', 'Please click on the width of the data');
                             var clickPos = [];
-                            $('#PlotContainer').one('plotclick', function (event, pos, item) {
+                            $('#PlotContainer').bind('plotclick', function (event, pos, item) {
                                 makeFittingRequest({ 'actionID': 3, 'actionName': 'sendWidth', 'widthX': pos.x, 'widthY': pos.y },
                                 function (responseObject) {
                                     responseJSON = Ext.decode(responseObject.responseText);
                                     
                                     fitpoints = responseJSON.fit;
-                                    plotDataSeries.push({
+                                    
+                                    plotHoverDataSeries = plotDataSeries.slice(0);
+                                    plotHoverDataSeries.push({
                                         label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Fit 1',
                                         data:     fitpoints,
                                         points:   { show: false },
                                         lines:    { show: true },
                                     });
-                                    plot = $.plot($('#PlotContainer'), plotDataSeries, plotOptions);
+                                    plot = $.plot($('#PlotContainer'), plotHoverDataSeries, plotOptions);
                                     
                                     residpoints = responseJSON.resid;
-                                    residplotDataSeries.push({
+                                    residplotHoverDataSeries = residplotDataSeries.slice(0);
+                                    residplotHoverDataSeries.push({
                                         label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Resid 1',
                                         data:     residpoints,
                                         points:   { show: true },
                                         lines:    { show: true },
                                     });
-                                    residplot = $.plot($('#ResidPlotContainer'), residplotDataSeries, residplotOptions);
+                                    residplot = $.plot($('#ResidPlotContainer'), residplotHoverDataSeries, residplotOptions);
                                 });
                             });
                         });
@@ -380,10 +416,10 @@ Ext.onReady(function () {
     
     
     /* Holds the chart container and the other tool panels */
-    var ChartTab = new Ext.Panel({
+    var ChartTabPanel = new Ext.Panel({
 //      title:          'Chart tab',
 //      autoWidth:      true,
-        height:         888, //588, // why not auto!?
+        height:         808, //588, // why not auto!?
         
         layout:         'border',
         defaults:       { split: true },
@@ -404,13 +440,13 @@ Ext.onReady(function () {
     tabs.add({
         id:             'DataTab',
         title:          'Data',
-        items:          [ DataTab ],
+        items:          [ DataTabPanel ],
     }).show();
     tabs.add({
         listeners:      { activate: function() { activateChart(); } },
         id:             'ChartTab',
         title:          'Chart',
-        items:          [ ChartTab ],
+        items:          [ ChartTabPanel ],
     }).show();
     
     tabs.setActiveTab('DataTab');
@@ -419,7 +455,7 @@ Ext.onReady(function () {
     var first = true;
 
 
-    DataTab.on('rowcontextmenu', displayGridRowContextMenu);
+    GridPanel.on('rowcontextmenu', displayGridRowContextMenu);
     PlotContainer.getEl().on('contextmenu', displayPlotContextMenu);
 
 
@@ -445,8 +481,11 @@ Ext.onReady(function () {
             method: 'GET',
             params: {},
             success: function (responseObject) {
-                jsonpoints = Ext.decode(responseObject.responseText);
-                dataArray = jsonpoints;
+                responseJSON = Ext.decode(responseObject.responseText);
+                metadataObj = responseJSON.metadata;
+                MetadataStore.loadData(metadataObj);
+                
+                dataArray = responseJSON.data;
                 reloadData();
                 loadMask.hide();
             },
@@ -478,7 +517,7 @@ Ext.onReady(function () {
 
         store.loadData(dataArray);
         colModel = new Ext.grid.ColumnModel({ columns: gridColumns });
-        DataTab.reconfigure(store, colModel);
+        GridPanel.reconfigure(store, colModel);
 
         if (tabs.getActiveTab().getId() == 'chart') {
             activateChart(tabs.getActiveTab());
