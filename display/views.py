@@ -8,13 +8,19 @@ from django.shortcuts import render_to_response, get_object_or_404
 import simplejson
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
-
+from WRed.file_parsing.file_operator import *
 from WRed.fileRead import *
 from WRed.fitting import *
-from fileToJson import displayfile
+from fileToJson import *
 from WRed.display.models import *
 from django import forms
 
+def concat_data(*args):
+    print 'concating...'
+    out = Data('db/' + DataFile.objects.get(id = args[0]).md5 + '.file')
+    for f in args[1:]:
+        out = out + Data('db/' + DataFile.objects.get(id = f).md5 + '.file')
+    return out.to_string()
 
 class ViewFileForm(forms.Form):
     md5 = forms.CharField(max_length = 32)
@@ -28,6 +34,8 @@ class DeleteFileForm(forms.Form):
     md5 = forms.CharField(max_length = 32)
 class WaitForUpdateForm(forms.Form):
     pass
+class EvaluateEquationForm(forms.Form):
+    equation = forms.CharField(max_length = 500)
 #Handles GET requests for individual files, returns a json object of the data file
 @login_required
 def json_file_display(request, idNum):
@@ -152,6 +160,22 @@ def delete_file(request):
 @login_required
 def all_files(request):
     return render_to_response('all_files.html')
+
+def evaluate(request):
+    json = {
+        'file': {},
+        'errors': {},
+        'text': {},
+        'success': False,
+    }
+    print 'evaluate'
+    if request.method == 'GET':
+        form = EvaluateEquationForm(request.GET, request.FILES)
+        if form.is_valid():
+            print 'evaluating: ', request.GET['equation']
+            eq = request.GET['equation']
+            return HttpResponse(simplejson.dumps(displaystring(eval(eq))))
+    return HttpResponse(simplejson.dumps(json))
 @login_required
 def view_file(request, idNum):
     return render_to_response('view_file.html', {'id': idNum})

@@ -105,9 +105,10 @@ Ext.onReady(function () {
             conn.request({
                 url: '../json/' + this.file.data['id'] + '/',
                 method: 'GET',
-                params: {}, success: function (responseObject) {
-                    var jsonpoints = Ext.decode(responseObject.responseText);
-                    creloadData(jsonpoints);
+                params: {},
+                success: function (responseObject) {
+                    var json_response = Ext.decode(responseObject.responseText);
+                    creloadData(json_response.data);
                 }, failure: function () {
                     Ext.Msg.alert('Error', 'Failed JSON request');
                 }
@@ -137,7 +138,43 @@ Ext.onReady(function () {
         this.files = [];
         this.x = x;
         this.y = y;
-        this.chart = function () {}
+        this.get_equation = function(){
+            var eq = 'concat_data(' + this.files[0].file.data['id'];
+            for(var i = 1; i < this.files.length; ++i){
+                eq += ', ' + this.files[i].file.data['id'];
+            }
+            eq += ')'
+            return eq;
+        };
+        this.chart = function () {
+            var some_selected = false;
+            for (var j = 0; j < this.files.length; ++j) {
+                if (this.files[j].selected) {
+                    some_selected = true;
+                    break;
+                }
+            }
+            if (some_selected) {
+                for (var j = 0; j < this.files.length; ++j) {
+                    if (this.files[j].selected) {
+                        this.files[j].chart();
+                    }
+                }
+            } else {
+            var ids;
+            conn.request({
+                url: '../json/evaluate/',
+                method: 'GET',
+                params: {'equation': this.get_equation(),}, success: function (responseObject) {
+                    var json_response = Ext.decode(responseObject.responseText);
+                    console.log(json_response.data);
+                    creloadData(json_response.data);
+                }, failure: function () {
+                    Ext.Msg.alert('Error', 'Failed JSON request');
+                }
+            });
+            }
+        };
         this.width = 30;
         this.height = 30;
         this.tbwidth = 2;
@@ -661,28 +698,12 @@ whenever any message comes through (whenever files are added, removed, or change
                 break;
             default:
             }
-            var selected_files = [];
+            cstores = [];
             for (var i = 0; i < boxes.length; ++i) {
-                if (boxes[i].selected && boxes[i].files) {
-                    var some_selected = false;
-                    for (var j = 0; j < boxes[i].files.length; ++j) {
-                        if (boxes[i].files[j].selected) {
-                            some_selected = true;
-                            break;
-                        }
-                    }
-                    if (some_selected) {
-                        for (var j = 0; j < boxes[i].files.length; ++j) {
-                            if (boxes[i].files[j].selected) {
-                                boxes[i].files[j].chart();
-                            }
-                        }
-                    } else {
-                        boxes[i].chart();
-                    }
+                if (boxes[i].selected) {
+                    boxes[i].chart();
                 }
             }
-            cupdate(selected_files);
         } else if (e.button == 2 || e.button == 1) {
             if (connected()) {
                 plMenu.items.get('connect').disable();
@@ -855,8 +876,8 @@ whenever any message comes through (whenever files are added, removed, or change
                 url: '../json/' + ids[i] + '/',
                 method: 'GET',
                 params: {}, success: function (responseObject) {
-                    var jsonpoints = Ext.decode(responseObject.responseText);
-                    creloadData(jsonpoints);
+                    var json_response = Ext.decode(responseObject.responseText);
+                    creloadData(json_response.data);
                 }, failure: function () {
                     Ext.Msg.alert('Error', 'Failed JSON request');
                 }

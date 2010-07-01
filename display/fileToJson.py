@@ -28,3 +28,26 @@ def displayfile(filestr):
         data.append(line.split())
         
     return dict(metadata=metadata, data=data)
+
+def displaystring(st):
+    metadata = []
+    data = []
+    f = st.splitlines()
+    i = 0
+    for line in f:
+        i+=1
+        line_array = line.split()
+        if line[0] == '#':
+            metadata_name = line_array[0][1:]
+            metadata_data = ' '.join(line_array[1:])
+            metadata.append(dict(name=metadata_name, data=metadata_data))
+            
+        if line_array[0] == '#Columns':
+            data.append(line_array[1:])
+            break
+
+    for line in f[i:]:
+        if line[0] == '#': break
+        data.append(line.split())
+        
+    return dict(metadata=metadata, data=data)
