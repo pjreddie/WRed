@@ -34,25 +34,40 @@ Ext.onReady(function () {
     });
     
     var MetadataStore = new Ext.data.JsonStore({
-        data: [],
+        data:           [],
         fields:         ['name', 'data'],
     });
-    var MetadataListPanel = new Ext.list.ListView({
-       
-        store:          MetadataStore,
-        columns:        [ { header: 'Name', dataIndex: 'name' }, { header: 'Data', dataIndex: 'data' }],
+    var MetadataGridPanel = new Ext.grid.GridPanel({
         
-        id:             'MetadataListPanel',
-    });
-    var MetadataPanel = new Ext.Panel({
+        store:          MetadataStore,
+        columns:        [ { header: 'Name', dataIndex: 'name', width: 164 }, { header: 'Data', id: 'data', dataIndex: 'data', width: 1000 }],
+        stripeRows:     true,
+        
+//        viewConfig:     { forceFit: true },
+//        autoExpandColumn: 'data',
+//        horizontalScroll: true,
+
         title:          'Metadata',
+        
+        onRender:       MetadataGridTooltipRender,
+        listeners: {
+            render: function (g) {
+                g.on("beforetooltipshow", function(grid, row, col) {
+                    metadataRecord = MetadataStore.getAt(row);
+                    metadataText = metadataRecord.get(metadataRecord.fields.keys[col]);
+                    grid.tooltip.body.update(metadataText);
+                });
+            }
+        },
+
         
         region:         'east',
         collapsible:    true,
         minWidth:       200,
+        width: 250,
+        maxWidth:       500,
         
-        id:             'MetadataPanel',
-        items:          [ MetadataListPanel ],
+        id:             'MetadataGridPanel',
     });
     
 
@@ -63,7 +78,7 @@ Ext.onReady(function () {
         defaults:       { split: true },
         
         id:             'DataTabPanel',
-        items:          [ GridPanel, MetadataPanel ],
+        items:          [ GridPanel, MetadataGridPanel ],
     });
 
     var GridRowContextMenu = new Ext.menu.Menu({
@@ -88,6 +103,34 @@ Ext.onReady(function () {
         
         plot.highlight(plot.getData()[0], [xData, yData]);
     }
+    
+    Ext.ToolTip.prototype.onTargetOver = Ext.ToolTip.prototype.onTargetOver.createInterceptor(function (e) {
+        this.baseTarget = e.getTarget();
+    });
+    Ext.ToolTip.prototype.onMouseMove = Ext.ToolTip.prototype.onMouseMove.createInterceptor(function(e) {
+        if (!e.within(this.baseTarget)) {
+            this.onTargetOver(e);
+            return false;
+        }
+    });
+    function MetadataGridTooltipRender () {
+        Ext.grid.GridPanel.prototype.onRender.apply(this, arguments);
+        this.addEvents("beforetooltipshow");
+        this.tooltip = new Ext.ToolTip({
+            renderTo: Ext.getBody(),
+            target: this.view.mainBody,
+            listeners: {
+                beforeshow: function(qt) {
+                    var v = this.getView();
+    			          var row = v.findRowIndex(qt.baseTarget);
+    			          var cell = v.findCellIndex(qt.baseTarget);
+    			          this.fireEvent("beforetooltipshow", this, row, cell);
+                },
+                scope: this,
+            }
+        });
+    }
+
 
 
 
@@ -161,7 +204,7 @@ Ext.onReady(function () {
         id:             'MouseInfoContainer',
         autoWidth:      true,
         
-        html:           '<p>Mouse: (<span id="MIC-mx"></span>, <span id="MIC-my"></span>)</p><p id="MIC-d" style="display: none;">Point: (<span id="MIC-dx"></span>, <span id="MIC-dy"></span> &plusmn; <span id="MIC-de"></span>)</p>',
+        html:           '<p>Mouse: (<span id="MIC-mx"></span>, <span id="MIC-my"></span>)</p>Page: (<span id="MIC-px"></span>, <span id="MIC-py"></span>)</p><p id="MIC-d" style="display: none;">Point: (<span id="MIC-dx"></span>, <span id="MIC-dy"></span> &plusmn; <span id="MIC-de"></span>)</p><div id="foo"></div>',
         items:          [ ],
     });
     var ChartInfoContainer = new Ext.Container({
@@ -245,7 +288,7 @@ Ext.onReady(function () {
 // [ TOOLS PANEL ]
 
     var FunctionSelectStore = new Ext.data.ArrayStore({
-        data:           [ [ 1, 'Gaussian' ], [ -1, '...' ] ],
+        data:           [ [ 1, 'Linear'], [ 11, 'Gaussian' ], [ 21, 'Lorentzian'], [ -1, '...' ] ],
         fields:         [ 'id', 'name' ],
     });
     var FunctionSelect = new Ext.form.ComboBox({
@@ -294,52 +337,56 @@ Ext.onReady(function () {
         else {
             Ext.Msg.alert('Form complete', 'Submitting function...');
             
-            Ext.Msg.alert('Step 1', 'Please click on the background of the data');
             data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
-            $('#PlotContainer').one('plotclick', function (event, pos, item) {
-                makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData',
-                                     'x': JSON.stringify(data.x), 'y': JSON.stringify(data.y), 'backgroundX': pos.x, 'backgroundY': pos.y },
-                function (responseObject) {
-                    Ext.Msg.alert('Step 2', 'Please click on the peak of the data');
-                    var clickPos = [];
-                    $('#PlotContainer').one('plotclick', function (event, pos, item) {
-                        makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPeak', 'peakX': pos.x, 'peakY': pos.y },
-                        function (responseObject) {
-                            Ext.Msg.alert('Step 3', 'Please click on the width of the data');
-                            var clickPos = [];
-                            $('#PlotContainer').bind('plotclick', function (event, pos, item) {
-                                makeFittingRequest({ 'actionID': 3, 'actionName': 'sendWidth', 'widthX': pos.x, 'widthY': pos.y },
-                                function (responseObject) {
-                                    responseJSON = Ext.decode(responseObject.responseText);
-                                    
-                                    fitpoints = responseJSON.fit;
-                                    
-                                    plotHoverDataSeries = plotDataSeries.slice(0);
-                                    plotHoverDataSeries.push({
-                                        label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Fit 1',
-                                        data:     fitpoints,
-                                        points:   { show: false },
-                                        lines:    { show: true },
-                                    });
-                                    plot = $.plot($('#PlotContainer'), plotHoverDataSeries, plotOptions);
-                                    
-                                    residpoints = responseJSON.resid;
-                                    residplotHoverDataSeries = residplotDataSeries.slice(0);
-                                    residplotHoverDataSeries.push({
-                                        label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Resid 1',
-                                        data:     residpoints,
-                                        points:   { show: true },
-                                        lines:    { show: true },
-                                    });
-                                    residplot = $.plot($('#ResidPlotContainer'), residplotHoverDataSeries, residplotOptions);
-                                });
-                            });
-                        });
-                    });
-                });
-            });
+            makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData', 'functionID': FunctionSelect.getValue(),
+                                 'x': JSON.stringify(data.x), 'y': JSON.stringify(data.y) }, doFitInstruction);
         }
     }
+    function doFitInstruction(responseObject) {
+        responseJSON = Ext.decode(responseObject.responseText);
+        
+        switch (responseJSON['dataType']) {
+            case 'askPoint':
+                askPoint(responseJSON);
+                break;
+            default:
+                doPlotting(responseJSON);
+        }
+    }
+    function askPoint(responseJSON) {
+        Ext.Msg.alert(responseJSON['messageTitle'], responseJSON['messageText']);
+        
+        $('#PlotContainer').one('plotclick', function (event, pos, item) {
+            makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPoint', 'dataType': 'askPoint',
+                                 'xPos': pos.x, 'yPos': pos.y, 'xID': responseJSON['xID'], 'yID': responseJSON['yID'] }, doFitInstruction);
+        });
+    }
+    
+    function doPlotting (responseJSON) {        
+        fitpoints = responseJSON.fit;
+        
+        plotHoverDataSeries = plotDataSeries.slice(0);
+        plotHoverDataSeries.push({
+            label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Fit 1',
+            data:     fitpoints,
+            points:   { show: false },
+            lines:    { show: true },
+        });
+        plot = $.plot($('#PlotContainer'), plotHoverDataSeries, plotOptions);
+        
+        residpoints = responseJSON.resid;
+        residplotHoverDataSeries = residplotDataSeries.slice(0);
+        residplotHoverDataSeries.push({
+            label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Resid 1',
+            data:     residpoints,
+            points:   { show: true },
+            lines:    { show: true },
+        });
+        residplot = $.plot($('#ResidPlotContainer'), residplotHoverDataSeries, residplotOptions);
+    }
+    
+    
+    
     function clearCurve (button, event) {
 
 
@@ -622,13 +669,15 @@ function drawChart(store, xChoice, yChoice, chart) {
         plotDataSeries,
         plotOptions); //.addRose(); // Compass rose for panning
 
-
+prevp={x:0,y:0};q=0;
     plotContainer.bind('plothover', function (event, pos, item) {
-        dataX = pos.x;
-        dataY = pos.y;
-        
-        $('#MIC-mx').text(dataX.toPrecision(5));
-        $('#MIC-my').text(dataY.toPrecision(5));
+    console.log(pos.pageX, pos.pageY, hypot(prevp.pageX - pos.pageX, prevp.pageY - pos.pageY), q++);
+        $('#MIC-mx').text(pos.x.toPrecision(5));
+        $('#MIC-my').text(pos.y.toPrecision(5));
+        $('#MIC-px').text(pos.pageX);
+        $('#MIC-py').text(pos.pageY);
+        prevp = pos;
+
         
         if (item) {
             mouseX = item.pageX;
@@ -636,7 +685,8 @@ function drawChart(store, xChoice, yChoice, chart) {
             
             $('#MIC-dx').text(item.datapoint[0].toPrecision(5));
             $('#MIC-dy').text(item.datapoint[1].toPrecision(5));
-            $('#MIC-de').text(item.datapoint[2].toPrecision(5));
+            if (item.datapoint[2])
+                $('#MIC-de').text(item.datapoint[2].toPrecision(5));
             $('#MIC-d').css({ display: 'block' }); //, left: mouseX + 3, top: mouseY + 3 });
         }
         else
@@ -752,4 +802,8 @@ function dragCheckHandler(menuItem, checked) {
     }
     var iconCls = 'icon-radio-' + ((checked === true) ? '' : 'un') + 'checked';
     menuItem.setIconClass(iconCls);
+}
+
+function hypot(x, y) {
+  return Math.sqrt(x * x + y * y);
 }

@@ -1,5 +1,7 @@
 import os
 import simplejson
+from collections import deque
+
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
@@ -10,6 +12,7 @@ from WRed.display.models import *
 from WRed.display.fileToJson import displayfile
 
 import numpy as N
+
 
 
 @login_required
@@ -26,65 +29,46 @@ def fitting_request_action(request, idNum):
 
         print 'You are trying to request the following action: ' + actionName + ' [ID: ' + actionID + ']'
         
+        
         if actionID == '1':
             x = simplejson.loads(request.POST['x'])
             y = simplejson.loads(request.POST['y'])
-            background = float(request.POST['backgroundX'])
+            functionID = int(request.POST['functionID'])
             request.session['x'] = x
             request.session['y'] = y
-            request.session['background'] = background
+            request.session['functionID'] = functionID
             
-            return HttpResponse('X: ' + str(x) + "\n" + 'Y: ' + str(y))
+            addlParams = { 'x': x, 'y': y, 'functionID': functionID, 'actionID': 2 }
+            request.session['addlParams'] = addlParams
+            
+            fitInstructions = getFitInstructions(functionID)
+            nextFitInstruction = fitInstructions.popleft()
+            request.session['fitInstructions'] = fitInstructions
+            
+            response = fitInstructionResponse(nextFitInstruction, addlParams)
+            return HttpResponse(response)
+            
             
         elif actionID == '2':
-            peakX = float(request.POST['peakX'])
-            peakY = float(request.POST['peakY'])
-            request.session['peakX'] = peakX
-            request.session['peakY'] = peakY
-            
-            #guess width
-            x = request.session['x']
-            y = request.session['y']
-            background = request.session['background']
-            guessWidth = guess_width(x, y, peakX, peakY, background)
-            guessWidth2 = guess_width2(x, y, peakX, peakY, background)
+            # Data Types
+            if request.POST['dataType'] == 'askPoint':
+                request = defPoint(request)
             
             
-            return HttpResponse('Peak X: ' + str(peakX) + "\n" + 'Peak Y: ' + str(peakY) + "\n" + 'Guess width: ' + str(guessWidth) + "\n" + 'Guess width 2: ' + str(guessWidth2))
             
-        elif actionID == '3':
-            widthX = float(request.POST['widthX'])
-            widthY = float(request.POST['widthY'])
-            request.session['widthX'] = widthX
-            request.session['widthY'] = widthY
-            
-            x = request.session['x']
-            y = request.session['y']
-            background = request.session['background']
-            peakX = request.session['peakX']
-            peakY = request.session['peakY']
-            
-            width = 2 * N.abs(widthX - peakX)
-            request.session['width'] = width
-            
-            stdDev = width / 2 / N.sqrt(2 * N.log(2))
-            
-            gaussianDomain = N.arange(x[0], x[-1], abs(x[-1] - x[0]) / 100)
-            gaussianFunction = generateGaussianFunction(gaussianDomain, peakX, peakY, background, stdDev)
-            gaussianData = zip(gaussianDomain, gaussianFunction)
-            
-            gaussianY = generateGaussianFunction(x, peakX, peakY, background, stdDev)
-            gaussianResiduals = N.subtract(gaussianY, y)
-            gaussianResidualData = zip(x, gaussianResiduals)
-            
-            JSONobj = dict(fit=gaussianData, resid=gaussianResidualData)
+            if not request.session['fitInstructions']:
+                return finishFit(request)
+            else:
+                #guess width
+                #guessWidth = guess_width(x, y, peakX, peakY, backgroundY)
+                #guessWidth2 = guess_width2(x, y, peakX, peakY, backgroundY)
+                
+                nextFitInstruction = request.session['fitInstructions'].popleft()
+                
+                response = fitInstructionResponse(nextFitInstruction, request.session['addlParams'])
+                return HttpResponse(response)
             
             
-            #return HttpResponse('Width: ' + str(width))
-            return HttpResponse(simplejson.dumps(JSONobj))
-        
-        
-        
         else:
             return HttpResponse('actionID not correct; it was ' + actionID)
             
@@ -92,8 +76,63 @@ def fitting_request_action(request, idNum):
         return HttpResponse('Not authenticated.')
 
 
-def guess_width(x, y, peakX, peakY, background):
-    halfMax = (peakY - background) / 2.
+
+
+def finishFit(request):
+      x = request.session['x']
+      y = request.session['y']
+      functionID = request.session['functionID']
+      
+      
+      if functionID == 1:
+          functionParams = { 'X1': request.session['X1'],
+                             'Y1': request.session['Y1'],
+                             'X2': request.session['X2'],
+                             'Y2': request.session['Y2'] }
+      elif functionID == 11:
+          widthX = request.session['widthX']
+          peakX = request.session['peakX']
+          peakY = request.session['peakY']
+          backgroundY = request.session['backgroundY']
+          
+          width = 2 * N.abs(widthX - peakX)
+          stdDev = width / 2 / N.sqrt(2 * N.log(2))
+          
+          functionParams = { 'peakX': peakX, 'peakY': peakY, 'backgroundY': backgroundY, 'stdDev': stdDev }
+      elif functionID == 21:
+          widthX = request.session['widthX']
+          peakX = request.session['peakX']
+          peakY = request.session['peakY']
+          backgroundY = request.session['backgroundY']
+          
+          gamma = N.abs(widthX - peakX)
+          
+          functionParams = { 'peakX': peakX, 'peakY': peakY, 'backgroundY': backgroundY, 'gamma': gamma }
+      
+      
+      print 'Wooo', functionParams
+      
+      functionDomain = N.arange(x[0], x[-1], abs(x[-1] - x[0]) / 180)
+      thefunction = getFunction(functionID)
+      functionRange = thefunction(functionDomain, functionParams)
+      functionData = zip(functionDomain, functionRange)
+      
+      functionY = thefunction(x, functionParams)
+      functionResiduals = N.subtract(functionY, y)
+      functionResidualData = zip(x, functionResiduals)
+      
+      JSONobj = dict(fit=functionData, resid=functionResidualData)
+      
+      
+      return HttpResponse(simplejson.dumps(JSONobj))
+
+
+
+
+# --
+
+def guess_width(x, y, peakX, peakY, backgroundY):
+    halfMax = (peakY - backgroundY) / 2.
     print halfMax
     print
     
@@ -124,11 +163,80 @@ def guess_width(x, y, peakX, peakY, background):
     print
     return guessWidth
 
-def guess_width2(x, y, peakX, peakY, background):
+def guess_width2(x, y, peakX, peakY, backgroundY):
     stddev = N.std(x)
     print stddev
     guessWidth = 2 * N.sqrt(2 * N.log(2)) * stddev
     return guessWidth
     
-def generateGaussianFunction(domain, peakX, peakY, background, stdDev):
-    return background + (peakY - background) * N.exp(- N.power(N.subtract(domain, peakX), 2) / 2 / N.power(stdDev, 2))
+
+
+
+
+
+# --
+
+def defPoint(request):
+    request.session[request.POST['xID']] = float(request.POST['xPos'])
+    request.session[request.POST['yID']] = float(request.POST['yPos'])
+    return request
+
+
+def getFitInstructions(functionID):
+    fitInstructions = deque([])
+    if functionID == 1:
+        fitInstructions = deque([
+                              { 'dataType': 'askPoint', 'xID': 'X1', 'yID': 'Y1',
+                                'messageTitle': 'Step 1', 'messageText': 'Please click on the first point' },
+                              { 'dataType': 'askPoint', 'xID': 'X2', 'yID': 'Y2',
+                                'messageTitle': 'Step 2', 'messageText': 'Please click on the second point' }
+                          ])
+    elif functionID == 11:
+        fitInstructions = deque([
+                              { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
+                                'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
+                              { 'dataType': 'askPoint', 'xID': 'peakX', 'yID': 'peakY',
+                                'messageTitle': 'Step 2', 'messageText': 'Please click on the peak of the data' },
+                              { 'dataType': 'askPoint', 'xID': 'widthX', 'yID': 'widthY',
+                                'messageTitle': 'Step 3', 'messageText': 'Please click on the width of the data' }
+                          ])
+    elif functionID == 21:
+        fitInstructions = deque([
+                              { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
+                                'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
+                              { 'dataType': 'askPoint', 'xID': 'peakX', 'yID': 'peakY',
+                                'messageTitle': 'Step 2', 'messageText': 'Please click on the peak of the data' },
+                              { 'dataType': 'askPoint', 'xID': 'widthX', 'yID': 'widthY',
+                                'messageTitle': 'Step 3', 'messageText': 'Please click on the width of the data' }
+                          ])
+    return fitInstructions
+
+def fitInstructionResponse(fitInstruction, addlParams):
+    returnResponse = { 'dataType': fitInstruction['dataType'], 'xID': fitInstruction['xID'], 'yID': fitInstruction['yID'],
+                'messageTitle': fitInstruction['messageTitle'], 'messageText': fitInstruction['messageText'] }
+    returnResponse.update(addlParams)
+    
+    return simplejson.dumps(returnResponse)
+
+# --
+
+def getFunction(functionID):
+    if functionID == 1:
+        return generateLinearFunction
+    elif functionID == 11:
+        return generateGaussianFunction
+    elif functionID == 21:
+        return generateLorentzianFunction
+
+def generateLinearFunction(domain, params):
+    (X1, Y1, X2, Y2) = (params['X1'], params['Y1'], params['X2'], params['Y2'])
+    slope = N.divide(Y2 - Y1, X2 - X1)
+    return slope * N.subtract(domain, X1) + Y1
+    
+def generateGaussianFunction(domain, params):
+    (peakX, peakY, backgroundY, stdDev) = (params['peakX'], params['peakY'], params['backgroundY'], params['stdDev'])
+    return backgroundY + (peakY - backgroundY) * N.exp(- N.power(N.subtract(domain, peakX), 2) / 2 / N.power(stdDev, 2))
+    
+def generateLorentzianFunction(domain, params):
+    (peakX, peakY, backgroundY, gamma) = (params['peakX'], params['peakY'], params['backgroundY'], params['gamma'])
+    return backgroundY + (peakY - backgroundY) * N.divide(N.power(gamma, 2), N.power(N.subtract(domain, peakX), 2) + N.power(gamma, 2))
