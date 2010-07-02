@@ -1,5 +1,6 @@
 from json_parser import read_standards
 import copy
+
 class Standard:
     def __init__(self, name, units = 'unknown', epsilon = .0001, distinct = False, interpolatable = False, spectator = False, friends = None, plottable = None, metadata = False, _comment = None):
         self.name = name
@@ -34,15 +35,15 @@ class Data:
         f.close()
         self.data = []
         for i in range(1,len(t)):
-            self.data.append([None] * len(self.standards))
+            self.data.append([[None]] * len(self.standards))
             for j in range(len(t[0])):
                 try:
                     ind = self.standardsN.index(t[0][j])
-                    self.data[i-1][ind] = t[i][j]
+                    self.data[i-1][ind] = [t[i][j]]
                 except ValueError:
                     self.standardsN.append(t[0][j])
                     self.standards.append(Standard(t[0][j]).__dict__)
-                    self.data[i-1].append(t[i][j])
+                    self.data[i-1].append([t[i][j]])
         f = file(filename, 'r')
         for lines in f:
             lines = lines.split()
@@ -65,26 +66,34 @@ class Data:
                         row.append(lines[1:])
     def write(self, filename):
         f = file(filename, 'w')
+        f.write(self.to_string())
+    def to_string(self):
+        out = ''
         for s in self.standards:
             if s['metadata']:
-                f.write('#' + s['name'].ljust(11))
+                out += ('#' + s['name'].ljust(11))
                 for val in self.data[0][self.standardsN.index(s['name'])]:
-                    f.write(' ' + str(val))
-                f.write('\n')
-        f.write('#Columns')
+                    out += (' ' + str(val))
+                out += ('\n')
+        out += ('#Columns')
         for s in self.standards:
             if not s['metadata']:
-                f.write(' ' + s['name'].rjust(13))
+                out += (' ' + s['name'].rjust(13))
         for p in self.data:
-            f.write('\n        ')
+            out += ('\n        ')
             for i in range(len(p)):
-                if not self.standards[i]['metadata']:
-                    f.write(' ' + str(p[i]).rjust(13))
-    def combine(self, p1, p2):
-        pass
-    def same_point(self, p1, p2):
-        return False
+                if not self.standards[i]['metadata'] and p[i] and len(p[i]):
+                    valstr = p[i][0]
+                    for val in p[i][1:]:
+                        valstr+='_' + val
+                    out += (' ' + str(valstr).rjust(13))
+        return out
+
     def __add__(self, d):
+        def combine(p1, p2):
+            pass
+        def same_point(p1, p2):
+            return False
         out = copy.deepcopy(d)
         out.standards = copy.deepcopy(d.standards)
         out.standardsN = copy.deepcopy(d.standardsN)
@@ -92,6 +101,16 @@ class Data:
             if not self.standardsN[i] in out.standardsN:
                 out.standardsN.append(self.standardsN[i])
                 out.standards.append(self.standards[i])
+        for i in range(len(out.standardsN)):
+            try:
+                sind = self.standardsN.index(out.standardsN[i])
+                dind = d.standardsN.index(out.standardsN[i])
+                if (not d.standards[i]['metadata']) or (not self.standards[i]['metadata']) or (self.data[0][sind] != d.data[0][dind]):
+                    out.standards[i]['metadata'] = False
+                else:
+                    out.standards[i]['metadata'] = True
+            except ValueError:
+                out.standards[i]['metadata'] = False
         allpts = []
         for i in range(len(self.data)):
             temp = {}
@@ -113,10 +132,11 @@ class Data:
                     pass
             newpoint = True
             for otherp in out.data:
-                if self.same_point(otherp, temp):
+                if same_point(otherp, temp):
                     newpoint = False
-                    self.combine(otherp, temp)
+                    combine(otherp, temp)
                     break
             if newpoint:
                 out.data.append(temp)
         return out
+    
