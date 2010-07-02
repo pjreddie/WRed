@@ -1,6 +1,10 @@
 from json_parser import read_standards
 import copy
-
+def split_det(s):
+    a = s
+    for i in range(len(s)):
+        if ord(s[i]) in range(48,58):
+        a = [s[:i]
 class Standard:
     def __init__(self, name, units = 'unknown', epsilon = .0001, distinct = False, interpolatable = False, spectator = False, friends = None, plottable = None, metadata = False, _comment = None):
         self.name = name
@@ -36,7 +40,9 @@ class Data:
         self.data = []
         for i in range(1,len(t)):
             self.data.append([[None]] * len(self.standards))
+            'Detector', 'AnalyzerBlade','SDC','TDC', 'PSDC','DDC', 'MonoBlade'
             for j in range(len(t[0])):
+                if(t[0][j]
                 try:
                     ind = self.standardsN.index(t[0][j])
                     self.data[i-1][ind] = [t[i][j]]
@@ -88,7 +94,9 @@ class Data:
                         valstr+='_' + val
                     out += (' ' + str(valstr).rjust(13))
         return out
-
+    def interpolate(self, iv):
+        iv_idx = self.standardsN.index(iv)
+        detectors = ['']
     def __add__(self, d):
         def combine(p1, p2):
             pass

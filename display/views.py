@@ -20,7 +20,7 @@ def concat_data(*args):
     out = Data('db/' + DataFile.objects.get(id = args[0]).md5 + '.file')
     for f in args[1:]:
         out = out + Data('db/' + DataFile.objects.get(id = f).md5 + '.file')
-    return out.to_string()
+    return out
 
 class ViewFileForm(forms.Form):
     md5 = forms.CharField(max_length = 32)
@@ -174,7 +174,16 @@ def evaluate(request):
         if form.is_valid():
             print 'evaluating: ', request.GET['equation']
             eq = request.GET['equation']
-            return HttpResponse(simplejson.dumps(displaystring(eval(eq))))
+            eq = eq.split();
+            for i in range(len(eq)):
+                try:
+                    eq[i] = 'Data("db/" + DataFile.objects.get(id = ' + str(int(eq[i])) + ').md5 + ".file")'
+                except ValueError:
+                    pass
+            parsed_eq = eq[0]
+            for a in eq[1:]:
+                parsed_eq += ' ' + a
+            return HttpResponse(simplejson.dumps(displaystring(eval(parsed_eq).to_string())))
     return HttpResponse(simplejson.dumps(json))
 @login_required
 def view_file(request, idNum):

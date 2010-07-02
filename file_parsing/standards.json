@@ -7,7 +7,7 @@
 {"name":"A6",		"units":"degrees",	"epsilon":0.0001,		"distinct":true,	"interpolatable":true,	"spectator":false,	"friends":null,		"plottable":true,	"metadata":false,	"_comment": '',},
 
 {"name":"SmplElev",	"units":"degrees",	"epsilon":0.0001,		"distinct":false,	"interpolatable":true,	"spectator":false,	"friends":null,		"plottable":true,	"metadata":false,	"_comment": '',},
-{"name":"SmplLTilt",	"units":"degrees",	"epsilon":0.0001,		"distinct":false,	"interpolatable":true,	"spectator":false,	"friends":null,		"plottable":true,	"metadata":false,	"_comment": '',},
+{"name":"SmplLTilt",    S"units":"degrees",	"epsilon":0.0001,		"distinct":false,	"interpolatable":true,	"spectator":false,	"friends":null,		"plottable":true,	"metadata":false,	"_comment": '',},
 {"name":"SmplLTrn",	"units":"degrees",	"epsilon":0.0001,		"distinct":false,	"interpolatable":true,	"spectator":false,	"friends":null,		"plottable":true,	"metadata":false,	"_comment": '',},
 {"name":"SmplUTilt",	"units":"degrees",	"epsilon":0.0001,		"distinct":false,	"interpolatable":true,	"spectator":false,	"friends":null,		"plottable":true,	"metadata":false,	"_comment": '',},
 {"name":"SmplUTrn",	"units":"degrees",	"epsilon":0.0001,		"distinct":false,	"interpolatable":true,	"spectator":false,	"friends":null,		"plottable":true,	"metadata":false,	"_comment": '',},
@@ -73,6 +73,9 @@
 
 {"name":"Detector",	"units":"counts",	"epsilon":0.0001,		"distinct":false,	"interpolatable":true,	"spectator":false,	"friends":null,		"plottable":true,	"metadata":false,	"_comment": '',},
 {"name":"AnalyzerBlade","units":"counts",	"epsilon":0.0001,		"distinct":false,	"interpolatable":true,	"spectator":false,	"friends":null,		"plottable":true,	"metadata":false,	"_comment": '',},
+{"name":"SDC",		"units":"counts",	"epsilon":0.0001,		"distinct":false,	"interpolatable":true,	"spectator":false,	"friends":null,		"plottable":true,	"metadata":false,	"_comment": '',},
+{"name":"TDC",		"units":"counts",	"epsilon":0.0001,		"distinct":false,	"interpolatable":true,	"spectator":false,	"friends":null,		"plottable":true,	"metadata":false,	"_comment": '',},
+{"name":"PSDC",		"units":"counts",	"epsilon":0.0001,		"distinct":false,	"interpolatable":true,	"spectator":false,	"friends":null,		"plottable":true,	"metadata":false,	"_comment": '',},
 {"name":"DDC",		"units":"counts",	"epsilon":0.0001,		"distinct":false,	"interpolatable":true,	"spectator":false,	"friends":null,		"plottable":true,	"metadata":false,	"_comment": '',},
 {"name":"MonoBlade",	"units":"counts",	"epsilon":0.0001,		"distinct":false,	"interpolatable":true,	"spectator":false,	"friends":null,		"plottable":true,	"metadata":false,	"_comment": '',},
 

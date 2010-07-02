@@ -307,7 +307,7 @@ Ext.onReady(function () {
                         function (responseObject) {
                             Ext.Msg.alert('Step 3', 'Please click on the width of the data');
                             var clickPos = [];
-                            $('#PlotContainer').bind('plotclick', function (event, pos, item) {
+                            $('#PlotContainer').one('plotclick', function (event, pos, item) {
                                 makeFittingRequest({ 'actionID': 3, 'actionName': 'sendWidth', 'widthX': pos.x, 'widthY': pos.y },
                                 function (responseObject) {
                                     responseJSON = Ext.decode(responseObject.responseText);
@@ -636,7 +636,8 @@ function drawChart(store, xChoice, yChoice, chart) {
             
             $('#MIC-dx').text(item.datapoint[0].toPrecision(5));
             $('#MIC-dy').text(item.datapoint[1].toPrecision(5));
-            $('#MIC-de').text(item.datapoint[2].toPrecision(5));
+	    if (item.datapoint[2])
+                $('#MIC-de').text(item.datapoint[2].toPrecision(5));
             $('#MIC-d').css({ display: 'block' }); //, left: mouseX + 3, top: mouseY + 3 });
         }
         else
