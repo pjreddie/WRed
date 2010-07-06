@@ -296,7 +296,10 @@ Ext.onReady(function () {
 // [ TOOLS PANEL ]
 
     var FunctionSelectStore = new Ext.data.ArrayStore({
-        data:           [ [ 1, 'Linear'], [ 11, 'Gaussian' ], [ 21, 'Lorentzian'], [ -1, '...' ] ],
+        data:           [ [ 1, 'Linear' ], [ 2, 'Linear drag test' ],
+                          [ 11, 'Gaussian' ], [ 12, 'Gaussian drag test' ],
+                          [ 21, 'Lorentzian' ], [ 22, 'Lorentzian drag test' ],
+                          [ -1, '...' ] ],
         fields:         [ 'id', 'name' ],
     });
     var FunctionSelect = new Ext.form.ComboBox({
@@ -357,9 +360,16 @@ Ext.onReady(function () {
             case 'askPoint':
                 askPoint(responseJSON);
                 break;
+            case 'askDrag':
+                askDrag(responseJSON);
+                break;
+            case 'doingDrag':
+                doPlotting(responseJSON, true);
+                break;
             default:
                 doPlotting(responseJSON);
         }
+        allowNextRequest = true;
     }
     function askPoint(responseJSON) {
         Ext.Msg.alert(responseJSON['messageTitle'], responseJSON['messageText']);
@@ -369,11 +379,61 @@ Ext.onReady(function () {
                                  'xPos': pos.x, 'yPos': pos.y, 'xID': responseJSON['xID'], 'yID': responseJSON['yID'] }, doFitInstruction);
         });
     }
+    function askDrag(responseJSON) {
+        Ext.Msg.alert(responseJSON['messageTitle'], responseJSON['messageText']);
+
+        $('#PlotContainer').one('dragstart', { 'responseJSON': responseJSON }, onDragStart);
+        $('#PlotContainer').bind('drag', { 'responseJSON': responseJSON }, onDrag);
+        $('#PlotContainer').one('dragend', function (event) {
+            $('#PlotContainer').unbind('drag', onDrag);
+            console.log('End');
+        });
+    }
+    function onDragStart (event) {
+        console.log('Start');
+        
+        pos = event2pos(event);
+        /*
+        makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPoint', 'dataType': 'askDrag',
+                             'xPosstart': pos.x, 'yPosstart': pos.y, 'xIDstart': responseJSON['xIDstart'], 'yIDstart': responseJSON['yIDstart'],
+                             'xPosend':   pos.x, 'yPosend':   pos.y, 'xIDend':   responseJSON['xIDend'],   'yIDend':   responseJSON['yIDend'] },
+                             function() {});*/
+      makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPoint', 'dataType': 'askDrag',
+                             'xPos': pos.x, 'yPos': pos.y, 'xID': responseJSON['xIDstart'], 'yID': responseJSON['yIDstart'] },
+                             function() {});
+    }
+    function onDrag (event) {
+        pos = event2pos(event);
+        //console.log(event.data.responseJSON);
+        //console.log(responseJSON);
+        
+        if (allowNextRequest) {
+            console.log('Request');
+            makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPoint', 'dataType': 'askDrag',
+                                 'xPos': pos.x, 'yPos': pos.y, 'xID': event.data.responseJSON['xIDend'], 'yID': event.data.responseJSON['yIDend'] },
+                                 doFitInstruction);
+            allowNextRequest = false;
+        }
+        else
+            console.log('No request');
+    }
+    function event2pos (event) {
+        var offset = plot.offset(),
+            plotOffset = plot.getPlotOffset(),
+            axes = plot.getAxes(),
+            pos = { pageX: event.pageX, pageY: event.pageY },
+            canvasX = event.pageX - offset.left - plotOffset.left,
+            canvasY = event.pageY - offset.top - plotOffset.top;
+        pos.x = axes.xaxis.c2p(canvasX);
+        pos.y = axes.yaxis.c2p(canvasY);
+        
+        return pos;
+    }
     
-    function doPlotting (responseJSON) {        
+    function doPlotting (responseJSON, sliceSeries) {        
         fitpoints = responseJSON.fit;
         
-        plotHoverDataSeries = plotDataSeries; //.slice(0);
+        plotHoverDataSeries = (sliceSeries) ? plotDataSeries.slice(plotDataSeries.length - 2) : plotDataSeries;
         plotHoverDataSeries.push({
             label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Fit 1',
             data:     fitpoints,
@@ -382,11 +442,11 @@ Ext.onReady(function () {
         });
         //plot = $.plot($('#PlotContainer'), plotHoverDataSeries, plotOptions);
         plot.setData(plotHoverDataSeries);
-        plot.setupGrid();
+        //plot.setupGrid();
         plot.draw();
         
         residpoints = responseJSON.resid;
-        residplotHoverDataSeries = residplotDataSeries; //.slice(0);
+        residplotHoverDataSeries = (sliceSeries) ? residplotDataSeries.slice(plotDataSeries.length - 2) : residplotDataSeries;
         residplotHoverDataSeries.push({
             label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Resid 1',
             data:     residpoints,
@@ -395,7 +455,7 @@ Ext.onReady(function () {
         });
         //residplot = $.plot($('#ResidPlotContainer'), residplotHoverDataSeries, residplotOptions);
         residplot.setData(residplotHoverDataSeries);
-        residplot.setupGrid();
+        //residplot.setupGrid();
         residplot.draw();
     }
     
@@ -646,7 +706,7 @@ function drawChart(store, xChoice, yChoice, chart) {
 
     plotOptions = {
       series: { points: { show: true, radius: 3 } },
-      selection: { mode: 'xy' },
+//      selection: { mode: 'xy' },
       crosshair: { mode: 'xy' },
       zoom: { // plugin
           interactive: true,
@@ -766,7 +826,7 @@ prevp={x:0,y:0};q=0;
 
     residplotOptions = {
       series: { points: { show: true, radius: 3 } },
-      selection: { mode: 'xy' },
+//      selection: { mode: 'xy' },
       crosshair: { mode: 'xy' },
       zoom: { // plugin
           interactive: true,
