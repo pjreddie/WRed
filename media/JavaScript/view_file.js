@@ -234,7 +234,7 @@ Ext.onReady(function () {
     var PlotContextMenu = new Ext.menu.Menu({
         id:             'PlotContextMenu',
         items:          [{
-                            text:       '<s>Zoom reset<\/s>',
+                            text:       'Zoom reset',
                             icon:       'http://famfamfam.com/lab/icons/silk/icons/zoom.png',
                             handler:    zoomPlot,
                             data:       0.0,
@@ -256,7 +256,7 @@ Ext.onReady(function () {
                             id:         'dragCheckZoom',
                             text:       'Drag and select to zoom',
                           //icon:       'http://famfamfam.com/lab/icons/silk/icons/magnifier.png',
-                            iconCls:    'icon-radio-unchecked',
+                          //iconCls:    'icon-radio-unchecked',
                             group:      'dragCheck',
                             checked:    false,
                             checkHandler: dragCheckHandler,
@@ -265,17 +265,25 @@ Ext.onReady(function () {
                             id:         'dragCheckPan',
                             text:       'Drag to pan',
                           //icon:       'http://sexybuttons.googlecode.com/svn-history/r2/trunk/images/icons/silk/arrow_nsew.png',
-                            iconCls:    'icon-radio-checked',
+                          //iconCls:    'icon-radio-checked',
                             group:      'dragCheck',
                             checked:    true,
                             checkHandler: dragCheckHandler,
                         },
                         '-',
                         {
-                            text: '<s>Logarithmic scale</s>',
+                            id:         'scaleCheckLog',
+                            text:       '<s>Logarithmic scale<\/s>',
+                            group:      'scaleCheck',
+                            checked:    false,
+                            checkHandler: scaleCheckHandler,
                         },
                         {
-                            text: '<s>Linear scale</s>',
+                            id:         'scaleCheckLinear',
+                            text:       '<s>Linear scale<\/s>',
+                            group:      'scaleCheck',
+                            checked:    false,
+                            checkHandler: scaleCheckHandler,
                         }],
     });
     
@@ -365,24 +373,30 @@ Ext.onReady(function () {
     function doPlotting (responseJSON) {        
         fitpoints = responseJSON.fit;
         
-        plotHoverDataSeries = plotDataSeries.slice(0);
+        plotHoverDataSeries = plotDataSeries; //.slice(0);
         plotHoverDataSeries.push({
             label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Fit 1',
             data:     fitpoints,
             points:   { show: false },
             lines:    { show: true },
         });
-        plot = $.plot($('#PlotContainer'), plotHoverDataSeries, plotOptions);
+        //plot = $.plot($('#PlotContainer'), plotHoverDataSeries, plotOptions);
+        plot.setData(plotHoverDataSeries);
+        plot.setupGrid();
+        plot.draw();
         
         residpoints = responseJSON.resid;
-        residplotHoverDataSeries = residplotDataSeries.slice(0);
+        residplotHoverDataSeries = residplotDataSeries; //.slice(0);
         residplotHoverDataSeries.push({
             label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Resid 1',
             data:     residpoints,
             points:   { show: true },
             lines:    { show: true },
         });
-        residplot = $.plot($('#ResidPlotContainer'), residplotHoverDataSeries, residplotOptions);
+        //residplot = $.plot($('#ResidPlotContainer'), residplotHoverDataSeries, residplotOptions);
+        residplot.setData(residplotHoverDataSeries);
+        residplot.setupGrid();
+        residplot.draw();
     }
     
     
@@ -667,11 +681,12 @@ function drawChart(store, xChoice, yChoice, chart) {
     plot = $.plot(
         plotContainer,
         plotDataSeries,
-        plotOptions); //.addRose(); // Compass rose for panning
+        plotOptions); // Compass rose for panning
+    plot.addRose();
 
 prevp={x:0,y:0};q=0;
     plotContainer.bind('plothover', function (event, pos, item) {
-    console.log(pos.pageX, pos.pageY, hypot(prevp.pageX - pos.pageX, prevp.pageY - pos.pageY), q++);
+//    console.log(pos.pageX, pos.pageY, hypot(prevp.pageX - pos.pageX, prevp.pageY - pos.pageY), q++);
         $('#MIC-mx').text(pos.x.toPrecision(5));
         $('#MIC-my').text(pos.y.toPrecision(5));
         $('#MIC-px').text(pos.pageX);
@@ -782,11 +797,30 @@ prevp={x:0,y:0};q=0;
         residplotContainer,
         residplotDataSeries,
         residplotOptions);
+
+
+    plotContainer.bind('plotzoom', function (event, plot, limits) {
+        residplot.axis([ limits[0], limits[1], null, null ]);
+    });
+    plotContainer.bind('plotpan', function (event, plot, ranges) {
+        residplot.pan(ranges);
+    });
+    residplotContainer.bind('plotzoom', function (event, plot, limits) {
+        plot.axis([ limits[0], limits[1], null, null ]);
+    });
+    residplotContainer.bind('plotpan', function (event, plot, ranges) {
+        plot.pan(ranges);
+    });
+}
+
+function hypot(x, y) {
+  return Math.sqrt(x * x + y * y);
 }
 
 function zoomPlot (menuItem, event) {
     if (menuItem.data == 0) {
-        // something?
+        plot.axis();
+        residplot.axis();
     }
     else {
         plot.zoom({ amount: menuItem.data, recenter: true });
@@ -794,6 +828,7 @@ function zoomPlot (menuItem, event) {
     }
 }
 
+/*
 dragCheckState = 'dragCheckPan';
 
 function dragCheckHandler(menuItem, checked) {
@@ -801,9 +836,10 @@ function dragCheckHandler(menuItem, checked) {
         dragCheckState = menuItem.id;
     }
     var iconCls = 'icon-radio-' + ((checked === true) ? '' : 'un') + 'checked';
-    menuItem.setIconClass(iconCls);
+  //menuItem.setIconClass(iconCls);
 }
+*/
 
-function hypot(x, y) {
-  return Math.sqrt(x * x + y * y);
-}
+function dragCheckHandler(menuItem, checked) {}
+
+function scaleCheckHandler(menuItem, checked) {}

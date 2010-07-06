@@ -109,7 +109,6 @@ def finishFit(request):
           
           functionParams = { 'peakX': peakX, 'peakY': peakY, 'backgroundY': backgroundY, 'gamma': gamma }
       
-      
       print 'Wooo', functionParams
       
       functionDomain = N.arange(x[0], x[-1], abs(x[-1] - x[0]) / 180)
@@ -191,16 +190,7 @@ def getFitInstructions(functionID):
                               { 'dataType': 'askPoint', 'xID': 'X2', 'yID': 'Y2',
                                 'messageTitle': 'Step 2', 'messageText': 'Please click on the second point' }
                           ])
-    elif functionID == 11:
-        fitInstructions = deque([
-                              { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
-                                'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
-                              { 'dataType': 'askPoint', 'xID': 'peakX', 'yID': 'peakY',
-                                'messageTitle': 'Step 2', 'messageText': 'Please click on the peak of the data' },
-                              { 'dataType': 'askPoint', 'xID': 'widthX', 'yID': 'widthY',
-                                'messageTitle': 'Step 3', 'messageText': 'Please click on the width of the data' }
-                          ])
-    elif functionID == 21:
+    elif functionID == 11 or functionID == 21:
         fitInstructions = deque([
                               { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
                                 'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
