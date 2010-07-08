@@ -1,4 +1,4 @@
-import os
+import os, time, copy
 import simplejson
 from collections import deque
 
@@ -12,10 +12,8 @@ from WRed.display.models import *
 from WRed.display.fileToJson import displayfile
 
 import numpy as N
+from WRed.utilities.mpfit import mpfit
 
-import time
-
- 
 
 def print_timing(func):
   def wrapper(*arg):
@@ -27,10 +25,10 @@ def print_timing(func):
   return wrapper
 
 
+
 @print_timing
 @login_required
 def fitting_request_action(request, idNum):
-    print 
     print 'USERNAME: ', request.user.username
     print 'Authenticated: ', request.user.is_authenticated()
     print 'Request: ', request.POST
@@ -46,14 +44,14 @@ def fitting_request_action(request, idNum):
         
         
         if actionID == '1':
-            x = simplejson.loads(request.POST['x'])
-            y = simplejson.loads(request.POST['y'])
+            xData = simplejson.loads(request.POST['xData'])
+            yData = simplejson.loads(request.POST['yData'])
             functionID = int(request.POST['functionID'])
-            request.session['x'] = x
-            request.session['y'] = y
+            request.session['xData'] = xData
+            request.session['yData'] = yData
             request.session['functionID'] = functionID
             
-            addlParams = { 'x': x, 'y': y, 'functionID': functionID, 'actionID': 2 }
+            addlParams = { 'xData': xData, 'yData': yData, 'functionID': functionID, 'actionID': 2 }
             request.session['addlParams'] = addlParams
             
             fitInstructions = getFitInstructions(functionID)
@@ -70,24 +68,58 @@ def fitting_request_action(request, idNum):
                 request = defPoint(request)
             elif request.POST['dataType'] == 'askDrag':
                 request = defPoint(request)
-                dragFit = createFit(request)
+
+                xData = request.session['xData']
+                yData = request.session['yData']
+                functionID = request.session['functionID']
+                functionParams = getFunctionParams(functionID, request)
+                
+                dragFit = createFunction(xData, yData, functionID, functionParams)
                 dragFit.update({ 'dataType': 'doingDrag' })
                 return HttpResponse(simplejson.dumps(dragFit))
             
             
             if not request.session['fitInstructions']:
-                finishedFit = createFit(request)
-                return HttpResponse(simplejson.dumps(finishedFit))
+                xData = request.session['xData']
+                yData = request.session['yData']
+                functionID = request.session['functionID']
+                functionParams = getFunctionParams(functionID, request)
+                
+                finishedFunction = createFunction(xData, yData, functionID, functionParams)
+                return HttpResponse(simplejson.dumps(finishedFunction))
             else:
                 #guess width
-                #guessWidth = guess_width(x, y, peakX, peakY, backgroundY)
-                #guessWidth2 = guess_width2(x, y, peakX, peakY, backgroundY)
+                #guessWidth = guess_width(xData, yData, peakX, peakY, backgroundY)
+                #guessWidth2 = guess_width2(xData, yData, peakX, peakY, backgroundY)
                 
                 nextFitInstruction = request.session['fitInstructions'].popleft()
                 
                 response = fitInstructionResponse(nextFitInstruction, request.session['addlParams'])
                 return HttpResponse(response)
             
+        elif actionID == '3':
+            dataData = simplejson.loads(request.POST['dataData'])
+            xData = dataData['x']
+            yData = dataData['y']
+            yErrData = dataData['yerr']
+            
+            functionData = simplejson.loads(request.POST['functionData'])
+            functionID = int(request.POST['functionID'])
+            functionParams = simplejson.loads(request.POST['functionParams'])
+            params = paramsDictToArray(functionID, functionParams)
+            
+            functkw = { 'xData': xData, 'yData': yData, 'yErr': yErrData, 'functionID': functionID }
+            mpfitResult = mpfit(mpfitFunction, params, functkw=functkw)
+            
+            fitFunctionParams = paramsArrayToDict(functionID, mpfitResult.params)
+            finishedFit = createFunction(xData, yData, functionID, fitFunctionParams)
+            
+            chiSquared = chisq(xData, yData, yErrData, functionID, fitFunctionParams)
+            print chiSquared
+            response = finishedFit
+            response.update({ 'chisq': chiSquared })
+            print response
+            return HttpResponse(simplejson.dumps(response))
             
         else:
             return HttpResponse('actionID not correct; it was ' + actionID)
@@ -98,26 +130,17 @@ def fitting_request_action(request, idNum):
 
 
 
-def createFit(request):
-      x = request.session['x']
-      y = request.session['y']
-      functionID = request.session['functionID']
-      
-      functionParams = getFunctionParams(functionID, request)
-      print functionParams
-      
-      functionDomain = N.arange(x[0], x[-1], abs(x[-1] - x[0]) / 180)
-      
-      print x
-      print functionDomain
+def createFunction(xData, yData, functionID, functionParams):
+      functionDomain = N.arange(xData[0], xData[-1], abs(xData[-1] - xData[0]) / 180)
       
       thefunction = getFunction(functionID)
       functionRange = thefunction(functionDomain, functionParams)
       functionData = zip(functionDomain, functionRange)
       
-      functionY = thefunction(x, functionParams)
-      functionResiduals = N.subtract(functionY, y)
-      functionResidualData = zip(x, functionResiduals)
+      functionY = thefunction(xData, functionParams)
+      functionResiduals = N.subtract(functionY, yData)
+      functionResidualData = zip(xData, functionResiduals)
+
       
 
       print
@@ -127,10 +150,11 @@ def createFit(request):
       print '--------'
       print
       
-      JSONobj = dict(fit=functionData, resid=functionResidualData)
+      JSONobj = dict(fit=functionData, resid=functionResidualData, functionID=functionID, functionParams = functionParams)
       return JSONobj
 
 
+#def createFit(
 
 
 # --
@@ -216,6 +240,27 @@ def generateLorentzianFunction(domain, params):
     return backgroundY + (peakY - backgroundY) * N.divide(N.power(gamma, 2), N.power(N.subtract(domain, peakX), 2) + N.power(gamma, 2))
 
 
+def paramsDictToArray(functionID, functionParams):
+    if functionID == 1 or functionID == 2:
+        params = [ functionParams['X1'], functionParams['X2'], functionParams['Y1'], functionParams['Y2'] ]
+    if functionID == 11 or functionID == 12:
+        params = [ functionParams['peakX'], functionParams['peakY'], functionParams['backgroundY'], functionParams['stdDev'] ]
+    if functionID == 21 or functionID == 22:
+        params = [ functionParams['peakX'], functionParams['peakY'], functionParams['backgroundY'], functionParams['gamma'] ]
+
+    return params
+
+def paramsArrayToDict(functionID, params):
+    if functionID == 1 or functionID == 2:
+        functionParams = { 'X1': params[0], 'X2': params[1], 'Y1': params[2], 'Y2': params[3] }
+    if functionID == 11 or functionID == 12:
+        functionParams = { 'peakX': params[0], 'peakY': params[1], 'backgroundY': params[2], 'stdDev': params[3] }
+    if functionID == 21 or functionID == 22:
+        functionParams = { 'peakX': params[0], 'peakY': params[1], 'backgroundY': params[2], 'gamma': params[3] }
+
+    return functionParams
+
+
 def getFunctionParams(functionID, request):
     functionParams = {}
     
@@ -252,6 +297,38 @@ def getFunctionParams(functionID, request):
     return functionParams
 
 # --
+
+# Copied straight from William
+def chisq(xData, yData, yErr, functionID, functionParams):
+    thefunction = getFunction(functionID)
+    yCalc = thefunction(xData, functionParams)
+    
+    yErr_temp = copy.deepcopy(yErr)
+#    zero_loc = N.where(yErr == 0)[0]
+#    if len(zero_loc) != 0:
+#        yErr_temp[zero_loc] = 1.0
+    chi = ((yData - yCalc) / yErr_temp) ** 2
+    
+    return chi.sum() / (len(yData) - len(functionParams))
+
+
+def mpfitFunction(params, parinfo=None, fjac=None, xData=None, yData=None, yErr=None, functionID=None):
+    # Parameter values are passed in "params"
+    # If fjac==None then partial derivatives should not be
+    # computed.  It will always be None if MPFIT is called with default flag.
+    
+    functionParams = paramsArrayToDict(functionID, params)
+    thefunction = getFunction(functionID)
+    yCalc = thefunction(xData, functionParams)
+    
+    # Non-negative status value means MPFIT should continue, negative means
+    # stop the calculation.
+    
+    status = 0
+    return [status, (yData - yCalc) / yErr]
+    
+    
+
 
 def guess_width(x, y, peakX, peakY, backgroundY):
     halfMax = (peakY - backgroundY) / 2.

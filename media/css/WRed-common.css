@@ -47,6 +47,25 @@
 
 
 
+#LegendContainer {
+  margin:         10px;
+}
+#LegendContainer li {
+  font:           12px/1 'Arial', 'Tahoma', 'Verdana', 'Helvetica', sans-serif;
+  margin-bottom:  6px;
+}
+#LegendContainer input {
+  vertical-align: top;
+}
+#LegendContainer label span {
+  border:         1px solid white;
+  padding:        0 7px;
+  margin:         0 4px;
+  -moz-box-shadow: 0 0 0 2px;
+  -webkit-box-shadow:     0 0 0 2px;
+}
+
+
 
 #FittingPanel .x-form-item, #FittingPanel .x-btn {
   margin-bottom:  8px;

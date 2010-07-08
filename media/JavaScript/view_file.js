@@ -4,6 +4,8 @@
 /* This is where the fun begins, now we have a Tab panel where you can see both the actual data
 displayed in an GridPanel, and the chart of the data, rendered with flot */
 
+var globalPlots = { plot: [], residplot: [] };
+
 Ext.onReady(function () {
     loadMask = new Ext.LoadMask(Ext.getBody(), { msg: 'Please wait a moment while the page loads...' } );
     loadMask.show();
@@ -182,6 +184,10 @@ Ext.onReady(function () {
     });
     var xyCornerContainer = new Ext.Container({
         id:             'xyCornerContainer',
+        
+        html:           '<p style="line-height: .8; font-size: .8em;">Mouse: (<span id="MIC-mx"></span>, <span id="MIC-my"></span>)<br/>' +
+                        'Page: (<span id="MIC-px"></span>, <span id="MIC-py"></span>)<br />' +
+                        '<span id="MIC-d" style="display: none;">Point: (<span id="MIC-dx"></span>, <span id="MIC-dy"></span> &plusmn; <span id="MIC-de"></span>)</p>',
     });
     
 
@@ -200,12 +206,27 @@ Ext.onReady(function () {
         items:          [ PlotContainer ],
     });
     
-    var MouseInfoContainer = new Ext.Container({
-        id:             'MouseInfoContainer',
+    LegendSeriesStore = new Ext.data.JsonStore({
+        data:           globalPlots.plot,
+        fields:         [ 'label', 'data', 'points', 'lines', 'color' ],
+        autoLoad:       true,
+    });
+    var LegendSeriesTemplate = new Ext.XTemplate(
+        '<ul>',
+        '<tpl for=".">',
+            '<li>',
+                '<input type="checkbox" name="legendSeries{#}" id="legendSeries{#}" checked="checked" />',
+                '<label for="legendSeries{#}"><span style="-moz-box-shadow: 0 0 0 1px {color}; -webkit-box-shadow: 0 0 0 1px {color}; background-color: {color};"></span>{label}</label>',
+            '</li>',
+        '</tpl></ul>'
+    );
+    var LegendContainer = new Ext.DataView({
+        tpl:            LegendSeriesTemplate,
+        store:          LegendSeriesStore,
+        itemSelector:   'li',
+    
+        id:             'LegendContainer',
         autoWidth:      true,
-        
-        html:           '<p>Mouse: (<span id="MIC-mx"></span>, <span id="MIC-my"></span>)</p>Page: (<span id="MIC-px"></span>, <span id="MIC-py"></span>)</p><p id="MIC-d" style="display: none;">Point: (<span id="MIC-dx"></span>, <span id="MIC-dy"></span> &plusmn; <span id="MIC-de"></span>)</p><div id="foo"></div>',
-        items:          [ ],
     });
     var ChartInfoContainer = new Ext.Container({
 //        title:          'Chart information',
@@ -214,7 +235,7 @@ Ext.onReady(function () {
         rowspan:        3,
         
         id:             'ChartInfoContainer',
-        items:          [ MouseInfoContainer ],
+        items:          [ LegendContainer ],
     });
     var yResidContainer = new Ext.Container({
         id:             'yResidualsContainer',
@@ -295,14 +316,14 @@ Ext.onReady(function () {
 
 // [ TOOLS PANEL ]
 
-    var FunctionSelectStore = new Ext.data.ArrayStore({
+     FunctionSelectStore = new Ext.data.ArrayStore({
         data:           [ [ 1, 'Linear' ], [ 2, 'Linear drag test' ],
                           [ 11, 'Gaussian' ], [ 12, 'Gaussian drag test' ],
                           [ 21, 'Lorentzian' ], [ 22, 'Lorentzian drag test' ],
                           [ -1, '...' ] ],
         fields:         [ 'id', 'name' ],
     });
-    var FunctionSelect = new Ext.form.ComboBox({
+     FunctionSelect = new Ext.form.ComboBox({
         fieldLabel:     'Function',
         emptyText:      'Select a fitting function...',
         hiddenName:     'function',
@@ -318,7 +339,9 @@ Ext.onReady(function () {
         mode:           'local',
         triggerAction:  'all',
         selectOnFocus:  true,
-        listeners:      {},
+        listeners:      {
+                            'select': fitFunction,
+                        },
         
         id:             'FunctionSelect',
         itemCls:        'formSelect',
@@ -341,8 +364,10 @@ Ext.onReady(function () {
         cls:            'resetButton',
     });
 
-    function fitSeries (button, event) {
-        fittingFunction = FunctionSelect.getValue();
+    function fitFunction (combobox, record, index) {
+        //fittingFunction = FunctionSelect.getValue();
+        fittingFunction = record.data.id;
+        
         if (fittingFunction === '' || fittingFunction == '-1')
             Ext.Msg.show({ title: 'Form incomplete', msg: 'Please select a function.', buttons: Ext.Msg.OK, icon: Ext.Msg.ERROR, fn: function () {} } );
         else {
@@ -350,9 +375,29 @@ Ext.onReady(function () {
             
             data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
             makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData', 'functionID': FunctionSelect.getValue(),
-                                 'x': JSON.stringify(data.x), 'y': JSON.stringify(data.y) }, doFitInstruction);
+                                 'xData': JSON.stringify(data.x), 'yData': JSON.stringify(data.y) }, doFitInstruction);
         }
     }
+    function fitSeries (button, event) {
+        var dataSeries = globalPlots.plot[0]
+        var dataData = dataPointsToCols(dataSeries.data)
+        var functionSeries = globalPlots.plot[1]
+        var functionData = dataPointsToCols(functionSeries.data)
+
+        console.log(dataSeries,functionSeries);
+        
+//        if (fittingFunction === '' || fittingFunction == '-1')
+//            Ext.Msg.show({ title: 'Form incomplete', msg: 'Please select serie(s).', buttons: Ext.Msg.OK, icon: Ext.Msg.ERROR, fn: function () {} } );
+//        else {
+            Ext.Msg.alert('Form complete', 'Submitting function for fitting...');
+            
+            data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
+            makeFittingRequest({ 'actionID': 3, 'actionName': 'sendData',
+                                 'functionID': functionSeries.functionID, 'functionParams': JSON.stringify(functionSeries.functionParams),
+                                 'dataData': JSON.stringify(dataData), 'functionData': JSON.stringify(functionData) }, doFitInstruction);
+//        }
+    }
+    
     function doFitInstruction(responseObject) {
         responseJSON = Ext.decode(responseObject.responseText);
         
@@ -401,6 +446,9 @@ Ext.onReady(function () {
       makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPoint', 'dataType': 'askDrag',
                              'xPos': pos.x, 'yPos': pos.y, 'xID': responseJSON['xIDstart'], 'yID': responseJSON['yIDstart'] },
                              function() {});
+      makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPoint', 'dataType': 'askDrag',
+                             'xPos': pos.x, 'yPos': pos.y + 0.00001, 'xID': responseJSON['xIDend'], 'yID': responseJSON['yIDend'] },
+                             function() {});
     }
     function onDrag (event) {
         pos = event2pos(event);
@@ -433,12 +481,17 @@ Ext.onReady(function () {
     function doPlotting (responseJSON, sliceSeries) {        
         fitpoints = responseJSON.fit;
         
+        FunctionName = 'FIXME'; //FunctionSelectStore.getAt(FunctionSelect.getValue()).data.name;
+
         plotHoverDataSeries = (sliceSeries) ? plotDataSeries.slice(plotDataSeries.length - 2) : plotDataSeries;
         plotHoverDataSeries.push({
-            label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Fit 1',
+            label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': ' + FunctionName,
             data:     fitpoints,
             points:   { show: false },
             lines:    { show: true },
+            
+            functionID: responseJSON.functionID,
+            functionParams: responseJSON.functionParams,
         });
         //plot = $.plot($('#PlotContainer'), plotHoverDataSeries, plotOptions);
         plot.setData(plotHoverDataSeries);
@@ -455,6 +508,7 @@ Ext.onReady(function () {
         });
         //residplot = $.plot($('#ResidPlotContainer'), residplotHoverDataSeries, residplotOptions);
         residplot.setData(residplotHoverDataSeries);
+        residplot.axis()
         //residplot.setupGrid();
         residplot.draw();
     }
@@ -674,7 +728,7 @@ Ext.onReady(function () {
 function getData(store, xChoice, yChoice) {
     var dataResults = [];
 
-    for (var recordIndex = 0; recordIndex < store.getCount(); recordIndex++ ) {
+    for (var recordIndex = 0; recordIndex < store.getCount(); recordIndex ++ ) {
         var record = store.getAt(recordIndex);
         
         // Calculate error bars with square roots; not included in data file as it should be
@@ -690,7 +744,7 @@ function getData(store, xChoice, yChoice) {
 function getDataInCols(store, xChoice, yChoice) {
     var dataResults = { x: [], y: [] };
 
-    for (var recordIndex = 0; recordIndex < store.getCount(); recordIndex++ ) {
+    for (var recordIndex = 0; recordIndex < store.getCount(); recordIndex ++ ) {
         var record = store.getAt(recordIndex);
 
         dataResults.x.push( +record.get(xChoice));
@@ -700,11 +754,38 @@ function getDataInCols(store, xChoice, yChoice) {
     return dataResults;
 }
 
+/* Gets data from the Store to draw the chart */
+function dataPointsToCols(data) {
+    var dataResults = { x: [], y: [], yerr: [] };
+
+    for (var index = 0; index < data.length; index ++ ) {
+        dataResults.x.push( +data[index][0] );
+        dataResults.y.push( +data[index][1] );
+        if (typeof data[index][2] !== 'undefined')
+            dataResults.yerr.push( +data[index][2] );
+    }
+    
+    if (dataResults.yerr.length == 0)
+        delete dataResults.yerr;
+    
+    return dataResults;
+}
+
+
+function updateLegend() {
+    if (typeof plot !== 'undefined')
+        globalPlots.plot = plot.getData();
+    LegendSeriesStore.loadData(globalPlots.plot);
+}
+
 /* Initialize Flot generation, draw the chart with error bars */
 function drawChart(store, xChoice, yChoice, chart) {
     var plotContainer = $('#' + chart);
 
     plotOptions = {
+      hooks: { draw: [ updateLegend ] },
+      
+      legend: { show: false }, // because we have a custom legend
       series: { points: { show: true, radius: 3 } },
 //      selection: { mode: 'xy' },
       crosshair: { mode: 'xy' },
@@ -735,7 +816,9 @@ function drawChart(store, xChoice, yChoice, chart) {
         data:     seriesData,
         points:   seriesPointsOptions,
         lines:    { show: false },
+        color:    'rgb(255, 51, 51)',
     }];
+    globalPlots.plot = plotDataSeries;
 
 
     plot = $.plot(
@@ -825,6 +908,7 @@ prevp={x:0,y:0};q=0;
     var residplotContainer = $('#Resid' + chart);
 
     residplotOptions = {
+      legend: { show: false }, // because we have a custom legend
       series: { points: { show: true, radius: 3 } },
 //      selection: { mode: 'xy' },
       crosshair: { mode: 'xy' },
@@ -851,13 +935,18 @@ prevp={x:0,y:0};q=0;
         data:     [],
         points:   residseriesPointsOptions,
         lines:    { show: true },
+        color:    'rgb(255, 51, 51)',
     }];
+    globalPlots.residplot = residplotDataSeries;
 
     residplot = $.plot(
         residplotContainer,
         residplotDataSeries,
         residplotOptions);
-
+    
+    // Copy initial x-axis scale on plot to residplot
+    var plotInitialAxesScales = plot.getAxesScales();
+    residplot.axis([ plotInitialAxesScales[0], plotInitialAxesScales[1], null, null]);
 
     plotContainer.bind('plotzoom', function (event, plot, limits) {
         residplot.axis([ limits[0], limits[1], null, null ]);

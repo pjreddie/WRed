@@ -329,6 +329,13 @@ Licensed under the MIT License ~ http://threedubmedia.googlecode.com/files/MIT-L
         }
         // }
         
+        // Self {
+        plot.getAxesScales = function() {
+            var axes = plot.getAxes();
+            return [ axes['xaxis'].datamin, axes['xaxis'].datamax, axes['yaxis'].datamin, axes['yaxis'].datamax ];
+        }
+        // }
+        
         
         // 0.5 {
         // Navigation rose using image map
@@ -340,29 +347,31 @@ Licensed under the MIT License ~ http://threedubmedia.googlecode.com/files/MIT-L
                     ' style="border:0px;position:absolute;cursor:pointer;right:1em;top:1em;z-index:2;" />'),
                 map = $('\
 <map name="@">\n\
-  <area id="@_right" alt="right" hrf="#right"   \n\
+  <area id="@_right" alt="right" href="#right"   \n\
     shape="poly" coords="80,40, 54,30, 44,40, 54,50" />\n\
-  <area id="@_left"  alt="left"  hrf="#left"    \n\
+  <area id="@_left"  alt="left"  href="#left"    \n\
     shape="poly" coords=" 0,40, 26,30, 36,40, 26,50" />\n\
-  <area id="@_up"    alt="up"    hrf="#up"      \n\
+  <area id="@_up"    alt="up"    href="#up"      \n\
     shape="poly" coords="40, 0, 30,26, 40,36, 50,26" />\n\
-  <area id="@_down"  alt="down"  hrf="#down"    \n\
+  <area id="@_down"  alt="down"  href="#down"    \n\
     shape="poly" coords="40,80, 30,54, 40,44, 50,54" />\n\
-  <area id="@_in"    alt="in"    hrf="#zoomin"  \n\
+  <area id="@_in"    alt="in"    href="#zoomin"  \n\
     shape="poly" coords="52,65, 55,58, 60,54, 70,54, 75,58, 78,65" />\n\
-  <area id="@_out"   alt="out"   hrf="#zoomout" \n\
+  <area id="@_out"   alt="out"   href="#zoomout" \n\
     shape="poly" coords="52,67, 55,74, 60,78, 70,78, 75,74, 78,67" />\n\
-  <area id="@_reset" alt="reset" hrf="#reset"   \n\
+  <area id="@_reset" alt="reset" href="#reset"   \n\
     shape="poly" coords="52,13, 55, 5, 60, 1, 70, 1, 75, 5, 78,13, 75,21 70,25, 60,25, 55, 21" />\n\
-  <area id="@_other" alt="other" hrf="#" shape="default" />\n\
+  <area id="@_other" alt="other" href="#" shape="default" />\n\
 </map>'.replace(/@/g,mapid));
 
             img.appendTo(placeholder);
             map.appendTo(placeholder);
             function none(E) { return false; }
-            function addControl(op,fn) {
-                var area = $('#'+mapid+'_'+op);
-                area.mousehold(50,fn).click(none).dblclick(none).mousewheel(none);
+            function addControl(op, fn) {
+                var area = $('#' + mapid + '_' + op);
+                area.mousehold(50, fn).click(none).dblclick(none).mousewheel(none);
+                //area.click(fn).dblclick(none).mousewheel(none);
+                area.click(fn);
             }
             addControl('left',  function() { plot.pan({ left: -25 }); });
             addControl('right', function() { plot.pan({ left:  25 }); });
