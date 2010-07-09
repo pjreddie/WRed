@@ -10,6 +10,9 @@ subImg.src = 'http://famfamfam.com/lab/icons/silk/icons/delete.png'
 
 //*******EXT Stuff***********
 Ext.onReady(function () {
+    loadMask = new Ext.LoadMask(Ext.getBody(), { msg: 'Please wait a moment while the page loads...' } );
+    loadMask.show();
+
     var myCanvas = new Ext.Element(document.createElement('canvas'));
     myCanvas.set({
 	width: 1000,
@@ -20,7 +23,7 @@ Ext.onReady(function () {
     myCanvas.appendTo(document.body);
     var conn = new Ext.data.Connection();
 
-    function drawBox(ctx, _x, _y, _width, _height, _color) {
+    function draw_box(ctx, _x, _y, _width, _height, _color) {
         var width = _width;
         var height = _height;
         var x = _x - width / 2;
@@ -40,14 +43,23 @@ Ext.onReady(function () {
         ctx.stroke();
     }
 
-    function clearBox(ctx, _x, _y, _width, _height) {
+    function clear_box(ctx, _x, _y, _width, _height) {
         var width = _width;
         var height = _height;
         var x = _x - width / 2;
         var y = _y - height / 2;
         ctx.clearRect(x, y, width, height);
     }
-
+    function draw_arrow(ctx, x0,y0,x1,y1){
+        ctx.beginPath();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.moveTo(x0,y0);
+        ctx.lineTo(x1,y1);
+        var dx = (x1-x0)/Math.sqrt(Math.pow((x1-x0),2) + (Math.pow((y1-y0),2)));
+        var dy = (y1-y0)/(x1-x0 + y1-y0);
+        
+    }
     function connect(ctx, from, to) {
         ctx.beginPath();
         ctx.strokeStyle = 'rgb(0,0,0)';
@@ -104,15 +116,15 @@ Ext.onReady(function () {
             return eq;
         }
         this.draw = function (ctx) {
-            clearBox(ctx, this.x, this.y, this.width, this.height);
-            drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(0,255,0)');
+            clear_box(ctx, this.x, this.y, this.width, this.height);
+            draw_box(ctx, this.x, this.y, this.width, this.height, 'rgb(0,255,0)');
             ctx.drawImage(addImg, this.x - this.width/2, this.y - this.height/2, this.width, this.height);
             if (this.selected) {
                 this.highlight(ctx);
             }
         };
         this.highlight = function (ctx) {
-            drawBox(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
+            draw_box(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
         };
     }
 
@@ -159,15 +171,15 @@ Ext.onReady(function () {
             else return ' ' + this.connected_boxes[0].get_equation() + '.sub( ' + this.connected_boxes[1].get_equation() + ' , \'' + this.independent_variable + '\' )'
         };
         this.draw = function (ctx) {
-            clearBox(ctx, this.x, this.y, this.width, this.height);
-            drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(255,0,0)');
+            clear_box(ctx, this.x, this.y, this.width, this.height);
+            draw_box(ctx, this.x, this.y, this.width, this.height, 'rgb(255,0,0)');
             ctx.drawImage(subImg, this.x - this.width/2, this.y - this.height/2, this.width, this.height);
             if (this.selected) {
                 this.highlight(ctx);
             }
         };
         this.highlight = function (ctx) {
-            drawBox(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
+            draw_box(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
         };
     }
 
@@ -201,13 +213,13 @@ Ext.onReady(function () {
             this.y = y;
             this.width = width;
             this.height = height;
-            clearBox(ctx, this.x, this.y, this.width, this.height);
-            drawBox(ctx, x, y, width, height, 'rgb(100,100,255)');
+            clear_box(ctx, this.x, this.y, this.width, this.height);
+            draw_box(ctx, x, y, width, height, 'rgb(100,100,255)');
             ctx.fillText(this.text, x - width / 2, y + height / 2);
             if (this.selected) this.highlight(ctx);
         };
         this.highlight = function (ctx) {
-            drawBox(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
+            draw_box(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
         };
     }
 
@@ -281,8 +293,8 @@ Ext.onReady(function () {
         this.draw = function (ctx) {
             this.update(ctx);
             var cury = this.y - this.height / 2 + this.tbheight / 2 + 4;
-            clearBox(ctx, this.x, this.y, this.width, this.height);
-            drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(0,0,255)');
+            clear_box(ctx, this.x, this.y, this.width, this.height);
+            draw_box(ctx, this.x, this.y, this.width, this.height, 'rgb(0,0,255)');
             for (var i = 0; i < this.files.length; ++i) {
                 this.files[i].draw(ctx, this.x, cury, this.tbwidth, this.tbheight);
                 cury += this.tbheight + 4;
@@ -290,17 +302,20 @@ Ext.onReady(function () {
             if (this.selected) this.highlight(ctx);
         };
         this.highlight = function (ctx) {	
-            drawBox(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
+            draw_box(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
         };
     }
-    
+    function OutputBox(input){
+    this.input = input
+    }
     function FilterBox(x, y) {
-
         this.x = x;
         this.y = y;
-        this.inputs = [];
+        this.outputs = [];
         this.chart = function () {
-            
+        };
+        this.can_add = function(){
+            return true;
         };
         this.width = 30;
         this.height = 30;
@@ -310,7 +325,7 @@ Ext.onReady(function () {
         this.connected_boxes = [];
         this.deselect = function () {
             this.selected = false;
-            for (var i = 0; i < this.files.length; ++i) this.files[i].deselect();
+            for (var i = 0; i < this.inputs.length; ++i) this.inputs[i].deselect();
         };
         this.update = function (ctx) {
             if (this.files.length != 0) {
@@ -326,8 +341,8 @@ Ext.onReady(function () {
         this.draw = function (ctx) {
             this.update(ctx);
             var cury = this.y - this.height / 2 + this.tbheight / 2 + 4;
-            clearBox(ctx, this.x, this.y, this.width, this.height);
-            drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(0,0,255)');
+            clear_box(ctx, this.x, this.y, this.width, this.height);
+            draw_box(ctx, this.x, this.y, this.width, this.height, 'rgb(0,0,255)');
             for (var i = 0; i < this.files.length; ++i) {
                 this.files[i].draw(ctx, this.x, cury, this.tbwidth, this.tbheight);
                 cury += this.tbheight + 4;
@@ -335,7 +350,7 @@ Ext.onReady(function () {
             if (this.selected) this.highlight(ctx);
         };
         this.highlight = function (ctx) {	
-            drawBox(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
+            draw_box(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
         };
     }
 
@@ -565,6 +580,7 @@ anytime there is new data, and initially to populate the table.*/
             params: {}, success: function (responseObject) {
                 dataArray = Ext.decode(responseObject.responseText); //decodes the response
                 reload_data(); //resets the store and grids
+                loadMask.hide();
             }, failure: function () {}
         });
     }
@@ -1018,10 +1034,16 @@ whenever any message comes through (whenever files are added, removed, or change
     }
 
     /* Same idea as in all_files.js, when new data comes, we must re-initialize our store to update the plot */
-
+    var iv = 'QY'
     function creloadData(response) {
         var pts = response.data;
         var meta = response.metadata;
+
+        if (pts.length == 0){
+            Ext.Msg.alert('Whoops!', 'One or more datafiles is empty!');
+            drawChart(cstores, iv, 'Detector', 'ChartContainer');
+            return;
+        }
         var cfieldData = pts[0];
         pts.splice(0, 1);
         var cgridColumns = [];
@@ -1041,7 +1063,7 @@ whenever any message comes through (whenever files are added, removed, or change
         var cstore = new Ext.data.ArrayStore({
             fields: cstoreFields,
         });
-        var iv = 'QY'
+
         for (var i = 0; i < meta.length; ++i){
             if (meta[i].name == 'Scan'){
                 iv = meta[i].data.split(' ')[0];

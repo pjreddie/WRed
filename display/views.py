@@ -184,7 +184,7 @@ def evaluate(request):
             parsed_eq = eq[0]
             for a in eq[1:]:
                 parsed_eq += ' ' + a
-            return HttpResponse(simplejson.dumps(displaystring(eval(parsed_eq).to_string())))
+            return HttpResponse(simplejson.dumps(displaystring(eval(parsed_eq).__str__())))
     return HttpResponse(simplejson.dumps(json))
 @login_required
 def view_file(request, idNum):

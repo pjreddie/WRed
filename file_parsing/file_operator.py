@@ -93,34 +93,35 @@ class Data:
             
     def write(self, filename):
         f = file(filename, 'w')
-        f.write(self.to_string())
+        f.write(self.__str__())
         f.close()
-    def to_string(self):
+    def __str__(self):
         out = ''
-        for s in self.standards:
-            if self.standards[s]['metadata']:
-                out += ('#' + s.ljust(11))
-                for val in self.data[0][s]:
-                    out += (' ' + str(val))
-                out += ('\n')
-        out += ('#Columns')
-        field_order = self.standards.keys()
-        field_order.sort()
-        for i in field_order:
-            if not self.standards[i]['metadata']:
-                out += (' ' + i.rjust(13))
-        for p in self.data:
-            out += ('\n        ')
+        if len(self.data):
+            for s in self.standards:
+                if self.standards[s]['metadata']:
+                    out += ('#' + s.ljust(11))
+                    for val in self.data[0][s]:
+                        out += (' ' + str(val))
+                    out += ('\n')
+            out += ('#Columns')
+            field_order = self.standards.keys()
+            field_order.sort()
             for i in field_order:
                 if not self.standards[i]['metadata']:
-                    valstr = p[i][0]
-                    for val in p[i][1:]:
-                        valstr+='_' + val
-                    out += (' ' + str(valstr).rjust(13))
+                    out += (' ' + i.rjust(13))
+            for p in self.data:
+                out += ('\n        ')
+                for i in field_order:
+                    if not self.standards[i]['metadata']:
+                        valstr = p[i][0]
+                        for val in p[i][1:]:
+                            valstr+='_' + val
+                        out += (' ' + str(valstr).rjust(13))
 
         return out
     def interpolate_data(self, iv):
-        self.data.sort(cmp = lambda x,y: cmp(x[iv],y[iv]))
+        self.data.sort(cmp = lambda x,y: cmp(x[iv][0],y[iv][0]))
         interpolaters = {}
         iv_vals = []
         for p in self.data:
@@ -142,18 +143,24 @@ class Data:
         for p in bkg.data:
             minv = min(minv, p[iv][0])
             maxv = max(maxv, p[iv][0])
+        data_in_range = []
         for p in out.data:
-            if p[iv][0] > maxv or p[iv][0] < minv:
-                out.data.remove(p)
+            if p[iv][0] <= maxv and p[iv][0] >= minv:
+                data_in_range.append(p)
+        out.data = data_in_range
+                
         interps = bkg.interpolate_data(iv)
         for p in out.data:
             for s in out.standards:
                 if s in self.detectors:
-                    if interps[s]:
-                        if s[0] == '_':
-                            p[s] = [p[s][0] + interps[s](p[iv][0])]
-                        else:
-                            p[s] = [p[s][0] - interps[s](p[iv][0])]
+                    if s in interps:
+                        try:
+                            if s[0] == '_':
+                                p[s] = [p[s][0] + interps[s](p[iv][0])]
+                            else:
+                                p[s] = [p[s][0] - interps[s](p[iv][0])]
+                        except ValueError:
+                            break
                     else:
                         p[s][0] = None
         return out
