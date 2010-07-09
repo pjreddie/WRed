@@ -64,6 +64,9 @@
   -moz-box-shadow: 0 0 0 2px;
   -webkit-box-shadow:     0 0 0 2px;
 }
+#LegendContainer li div {
+  margin-left:    50px;
+}
 
 
 
@@ -71,7 +74,7 @@
   margin-bottom:  8px;
 }
 
-.submitButton button {
+.strongButton button {
   font-weight:    bold;
 }
 

@@ -212,11 +212,16 @@ Ext.onReady(function () {
         autoLoad:       true,
     });
     var LegendSeriesTemplate = new Ext.XTemplate(
-        '<ul>',
+        '<ul id="legendSeries">',
         '<tpl for=".">',
-            '<li>',
-                '<input type="checkbox" name="legendSeries{#}" id="legendSeries{#}" checked="checked" />',
-                '<label for="legendSeries{#}"><span style="-moz-box-shadow: 0 0 0 1px {color}; -webkit-box-shadow: 0 0 0 1px {color}; background-color: {color};"></span>{label}</label>',
+            '<li id="legendSeries{#}">',
+                '<input type="checkbox" name="legendSeriesCheck{#}" id="legendSeriesCheck{#}" checked="checked" />',
+                '<label for="legendSeriesCheck{#}"><span style="-moz-box-shadow: 0 0 0 1px {color}; -webkit-box-shadow: 0 0 0 1px {color}; background-color: {color};"></span>{label}</label>',
+                '<div>',
+                '<tpl if="(globalPlots.plot[xindex - 1].functionInfo)">',
+                    '<p>&chi;&#178; = {[globalPlots.plot[xindex - 1].functionInfo.chisq]}</p>',
+                '</tpl>',
+                '</div>',
             '</li>',
         '</tpl></ul>'
     );
@@ -322,6 +327,7 @@ Ext.onReady(function () {
                           [ 21, 'Lorentzian' ], [ 22, 'Lorentzian drag test' ],
                           [ -1, '...' ] ],
         fields:         [ 'id', 'name' ],
+        idIndex:        0, // Important: specifies the index of the ID column; used in getById()
     });
      FunctionSelect = new Ext.form.ComboBox({
         fieldLabel:     'Function',
@@ -339,21 +345,25 @@ Ext.onReady(function () {
         mode:           'local',
         triggerAction:  'all',
         selectOnFocus:  true,
-        listeners:      {
-                            'select': fitFunction,
-                        },
         
         id:             'FunctionSelect',
         itemCls:        'formSelect',
     });
-    
+    var CreateFunctionButton = new Ext.Button({
+        text:           'Create function',
+        type:           'submit',
+        handler:        fitFunction,
+        
+        id:             'CreateFunctionButton',
+        cls:            'submitButton',
+    });
     var FitThisSeriesButton = new Ext.Button({
         text:           'Fit this series',
         type:           'submit',
         handler:        fitSeries,
         
         id:             'FitThisSeriesButton',
-        cls:            'submitButton',
+        cls:            'submitButton strongButton',
     });
     var ClearThisCurveButton = new Ext.Button({
         text:           'Clear this curve',
@@ -364,9 +374,9 @@ Ext.onReady(function () {
         cls:            'resetButton',
     });
 
-    function fitFunction (combobox, record, index) {
-        //fittingFunction = FunctionSelect.getValue();
-        fittingFunction = record.data.id;
+    function fitFunction (button, event) {
+        fittingFunction = FunctionSelect.getValue();
+        //fittingFunction = record.data.id;
         
         if (fittingFunction === '' || fittingFunction == '-1')
             Ext.Msg.show({ title: 'Form incomplete', msg: 'Please select a function.', buttons: Ext.Msg.OK, icon: Ext.Msg.ERROR, fn: function () {} } );
@@ -378,13 +388,17 @@ Ext.onReady(function () {
                                  'xData': JSON.stringify(data.x), 'yData': JSON.stringify(data.y) }, doFitInstruction);
         }
     }
+    function getCheckedIndices() {
+        return $('#legendSeries input[type=checkbox]:checked').map(function() { if (this.checked) return $('#legendSeries li input').index(this); });
+    }
     function fitSeries (button, event) {
-        var dataSeries = globalPlots.plot[0]
+        var checkedIndices = getCheckedIndices();
+    
+        var dataSeries = globalPlots.plot[checkedIndices[0]]
         var dataData = dataPointsToCols(dataSeries.data)
-        var functionSeries = globalPlots.plot[1]
+        var functionSeries = globalPlots.plot[checkedIndices[1]]
         var functionData = dataPointsToCols(functionSeries.data)
 
-        console.log(dataSeries,functionSeries);
         
 //        if (fittingFunction === '' || fittingFunction == '-1')
 //            Ext.Msg.show({ title: 'Form incomplete', msg: 'Please select serie(s).', buttons: Ext.Msg.OK, icon: Ext.Msg.ERROR, fn: function () {} } );
@@ -392,9 +406,10 @@ Ext.onReady(function () {
             Ext.Msg.alert('Form complete', 'Submitting function for fitting...');
             
             data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
-            makeFittingRequest({ 'actionID': 3, 'actionName': 'sendData',
+            makeFittingRequest({ 'actionID': 3, 'actionName': 'sendData', 'legendIndex': checkedIndices[1],
                                  'functionID': functionSeries.functionID, 'functionParams': JSON.stringify(functionSeries.functionParams),
                                  'dataData': JSON.stringify(dataData), 'functionData': JSON.stringify(functionData) }, doFitInstruction);
+            updateLegend();
 //        }
     }
     
@@ -409,7 +424,10 @@ Ext.onReady(function () {
                 askDrag(responseJSON);
                 break;
             case 'doingDrag':
-                doPlotting(responseJSON, true);
+                doPlotting(responseJSON, plotDataSeries.length - 1);
+                break;
+            case 'doFit':
+                doPlotting(responseJSON, responseJSON.legendIndex);
                 break;
             default:
                 doPlotting(responseJSON);
@@ -428,9 +446,9 @@ Ext.onReady(function () {
         Ext.Msg.alert(responseJSON['messageTitle'], responseJSON['messageText']);
 
         $('#PlotContainer').one('dragstart', { 'responseJSON': responseJSON }, onDragStart);
-        $('#PlotContainer').bind('drag', { 'responseJSON': responseJSON }, onDrag);
+        $('#PlotContainer').bind('drag', function() {}); // To trigger dragstart/dragend events
         $('#PlotContainer').one('dragend', function (event) {
-            $('#PlotContainer').unbind('drag', onDrag);
+            $('#PlotContainer').unbind('plothover', onDrag);
             console.log('End');
         });
     }
@@ -443,27 +461,28 @@ Ext.onReady(function () {
                              'xPosstart': pos.x, 'yPosstart': pos.y, 'xIDstart': responseJSON['xIDstart'], 'yIDstart': responseJSON['yIDstart'],
                              'xPosend':   pos.x, 'yPosend':   pos.y, 'xIDend':   responseJSON['xIDend'],   'yIDend':   responseJSON['yIDend'] },
                              function() {});*/
-      makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPoint', 'dataType': 'askDrag',
+        makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPoint', 'dataType': 'askDrag',
                              'xPos': pos.x, 'yPos': pos.y, 'xID': responseJSON['xIDstart'], 'yID': responseJSON['yIDstart'] },
                              function() {});
-      makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPoint', 'dataType': 'askDrag',
+        makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPoint', 'dataType': 'askDrag',
                              'xPos': pos.x, 'yPos': pos.y + 0.00001, 'xID': responseJSON['xIDend'], 'yID': responseJSON['yIDend'] },
-                             function() {});
+                             function() {}); // To prevent undefined on backend
+        $('#PlotContainer').bind('plothover', { 'responseJSON': responseJSON }, onDrag);
     }
-    function onDrag (event) {
-        pos = event2pos(event);
+    function onDrag (event, pos, item) {
+//        pos = event2pos(event);
         //console.log(event.data.responseJSON);
         //console.log(responseJSON);
         
         if (allowNextRequest) {
-            console.log('Request');
+        //    console.log('Request');
             makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPoint', 'dataType': 'askDrag',
                                  'xPos': pos.x, 'yPos': pos.y, 'xID': event.data.responseJSON['xIDend'], 'yID': event.data.responseJSON['yIDend'] },
                                  doFitInstruction);
             allowNextRequest = false;
         }
-        else
-            console.log('No request');
+        //else
+        //    console.log('No request');
     }
     function event2pos (event) {
         var offset = plot.offset(),
@@ -478,13 +497,12 @@ Ext.onReady(function () {
         return pos;
     }
     
-    function doPlotting (responseJSON, sliceSeries) {        
+    function doPlotting (responseJSON, replaceIndex) {        
         fitpoints = responseJSON.fit;
         
-        FunctionName = 'FIXME'; //FunctionSelectStore.getAt(FunctionSelect.getValue()).data.name;
-
-        plotHoverDataSeries = (sliceSeries) ? plotDataSeries.slice(plotDataSeries.length - 2) : plotDataSeries;
-        plotHoverDataSeries.push({
+        FunctionName = FunctionSelectStore.getById(FunctionSelect.getValue()).data.name;
+        
+        newPlotData = {
             label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': ' + FunctionName,
             data:     fitpoints,
             points:   { show: false },
@@ -492,25 +510,52 @@ Ext.onReady(function () {
             
             functionID: responseJSON.functionID,
             functionParams: responseJSON.functionParams,
-        });
+            functionInfo: responseJSON.functionInfo,
+        };
+
+        var plotHoverDataSeries = plotDataSeries;
+                console.log('p',plotDataSeries, residplotDataSeries);
+        if (replaceIndex) {
+            console.log('replacing');
+            plotHoverDataSeries[replaceIndex] = newPlotData;
+        }
+        else
+            plotHoverDataSeries.push(newPlotData);
+
+console.log('ph', plotHoverDataSeries);
+
         //plot = $.plot($('#PlotContainer'), plotHoverDataSeries, plotOptions);
         plot.setData(plotHoverDataSeries);
         //plot.setupGrid();
         plot.draw();
         
         residpoints = responseJSON.resid;
-        residplotHoverDataSeries = (sliceSeries) ? residplotDataSeries.slice(plotDataSeries.length - 2) : residplotDataSeries;
-        residplotHoverDataSeries.push({
+        
+        newResidPlotData = {
             label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Resid 1',
             data:     residpoints,
             points:   { show: true },
             lines:    { show: true },
-        });
+        };
+
+        var residplotHoverDataSeries = residplotDataSeries;
+                console.log('rp',plotDataSeries, residplotDataSeries);
+        if (replaceIndex)
+            residplotHoverDataSeries[replaceIndex] = newResidPlotData;
+        else
+            residplotHoverDataSeries.push(newResidPlotData);
+
+console.log('rph', residplotHoverDataSeries);
+
         //residplot = $.plot($('#ResidPlotContainer'), residplotHoverDataSeries, residplotOptions);
         residplot.setData(residplotHoverDataSeries);
         residplot.axis()
         //residplot.setupGrid();
         residplot.draw();
+        
+        
+                console.log(plotDataSeries, residplotDataSeries);
+                console.log(plot.getData(), residplot.getData());
     }
     
     
@@ -545,7 +590,7 @@ Ext.onReady(function () {
         bodyStyle:      'padding: 10px;',
 
         id:             'FittingPanel',
-        items:          [ FunctionSelect, FitThisSeriesButton, ClearThisCurveButton ],
+        items:          [ FunctionSelect, CreateFunctionButton, FitThisSeriesButton, ClearThisCurveButton ],
         tools:          [ { id: 'gear' }, { id: 'help' } ],
     });
     
@@ -776,6 +821,7 @@ function updateLegend() {
     if (typeof plot !== 'undefined')
         globalPlots.plot = plot.getData();
     LegendSeriesStore.loadData(globalPlots.plot);
+    // should store already checked inputs
 }
 
 /* Initialize Flot generation, draw the chart with error bars */

@@ -108,6 +108,7 @@ def fitting_request_action(request, idNum):
             functionParams = simplejson.loads(request.POST['functionParams'])
             params = paramsDictToArray(functionID, functionParams)
             
+            
             functkw = { 'xData': xData, 'yData': yData, 'yErr': yErrData, 'functionID': functionID }
             mpfitResult = mpfit(mpfitFunction, params, functkw=functkw)
             
@@ -115,10 +116,11 @@ def fitting_request_action(request, idNum):
             finishedFit = createFunction(xData, yData, functionID, fitFunctionParams)
             
             chiSquared = chisq(xData, yData, yErrData, functionID, fitFunctionParams)
-            print chiSquared
+            functionInfo = { 'chisq': chiSquared }
+
+
             response = finishedFit
-            response.update({ 'chisq': chiSquared })
-            print response
+            response.update({ 'legendIndex': request.POST['legendIndex'], 'functionInfo': functionInfo, 'dataType': 'doFit' })
             return HttpResponse(simplejson.dumps(response))
             
         else:
@@ -131,13 +133,14 @@ def fitting_request_action(request, idNum):
 
 
 def createFunction(xData, yData, functionID, functionParams):
-      functionDomain = N.arange(xData[0], xData[-1], abs(xData[-1] - xData[0]) / 180)
+      functionDomain    = N.arange(min(xData), max(xData), abs(max(xData) - min(xData)) / 180.)
+      functionDataRange = N.arange(min(yData), max(yData), abs(max(yData) - min(yData)) / 180.)
       
       thefunction = getFunction(functionID)
-      functionRange = thefunction(functionDomain, functionParams)
+      functionRange = thefunction(functionDomain, functionDataRange, functionParams)
       functionData = zip(functionDomain, functionRange)
       
-      functionY = thefunction(xData, functionParams)
+      functionY = thefunction(xData, yData, functionParams)
       functionResiduals = N.subtract(functionY, yData)
       functionResidualData = zip(xData, functionResiduals)
 
@@ -192,10 +195,8 @@ def getFitInstructions(functionID):
                           ])
     if functionID == 2:
         fitInstructions = deque([
-                              { 'dataType': 'askPoint', 'xID': 'X1', 'yID': 'Y1',
-                                'messageTitle': 'Step 1', 'messageText': 'Please click on the first point' },
-                              { 'dataType': 'askDrag', 'xIDstart': 'X2', 'yIDstart': 'Y2', 'xIDend': 'X3', 'yIDend': 'Y3',
-                                'messageTitle': 'Step 2', 'messageText': 'Please drag on the second point' }
+                              { 'dataType': 'askDrag', 'xIDstart': 'X1', 'yIDstart': 'Y1', 'xIDend': 'X2', 'yIDend': 'Y2',
+                                'messageTitle': 'Step 1', 'messageText': 'Please drag from the first point to the second point' }
                           ])
     elif functionID == 11 or functionID == 21:
         fitInstructions = deque([
@@ -226,18 +227,18 @@ def fitInstructionResponse(fitInstruction, addlParams):
     return simplejson.dumps(returnResponse)
 
 
-def generateLinearFunction(domain, params):
+def generateLinearFunction(Domain, Range, params):
     (X1, Y1, X2, Y2) = (params['X1'], params['Y1'], params['X2'], params['Y2'])
     slope = N.divide(Y2 - Y1, X2 - X1)
-    return slope * N.subtract(domain, X1) + Y1
+    return slope * N.subtract(Domain, X1) + Y1
     
-def generateGaussianFunction(domain, params):
+def generateGaussianFunction(Domain, Range, params):
     (peakX, peakY, backgroundY, stdDev) = (params['peakX'], params['peakY'], params['backgroundY'], params['stdDev'])
-    return backgroundY + (peakY - backgroundY) * N.exp(- N.power(N.subtract(domain, peakX), 2) / 2 / N.power(stdDev, 2))
+    return backgroundY + (peakY - backgroundY) * N.exp(- N.power(N.subtract(Domain, peakX), 2) / 2 / N.power(stdDev, 2))
     
-def generateLorentzianFunction(domain, params):
+def generateLorentzianFunction(Domain, Range, params):
     (peakX, peakY, backgroundY, gamma) = (params['peakX'], params['peakY'], params['backgroundY'], params['gamma'])
-    return backgroundY + (peakY - backgroundY) * N.divide(N.power(gamma, 2), N.power(N.subtract(domain, peakX), 2) + N.power(gamma, 2))
+    return backgroundY + (peakY - backgroundY) * N.divide(N.power(gamma, 2), N.power(N.subtract(Domain, peakX), 2) + N.power(gamma, 2))
 
 
 def paramsDictToArray(functionID, functionParams):
@@ -264,16 +265,11 @@ def paramsArrayToDict(functionID, params):
 def getFunctionParams(functionID, request):
     functionParams = {}
     
-    if functionID == 1:
+    if functionID == 1 or functionID == 2:
         functionParams = { 'X1': request.session['X1'],
                            'Y1': request.session['Y1'],
                            'X2': request.session['X2'],
                            'Y2': request.session['Y2'] }
-    elif functionID == 2:
-        functionParams = { 'X1': request.session['X2'],
-                           'Y1': request.session['Y2'],
-                           'X2': request.session['X3'],
-                           'Y2': request.session['Y3'] }
     elif functionID == 11 or functionID == 12:
         widthX = request.session['widthX']
         peakX = request.session['peakX']
@@ -301,7 +297,7 @@ def getFunctionParams(functionID, request):
 # Copied straight from William
 def chisq(xData, yData, yErr, functionID, functionParams):
     thefunction = getFunction(functionID)
-    yCalc = thefunction(xData, functionParams)
+    yCalc = thefunction(xData, yData, functionParams)
     
     yErr_temp = copy.deepcopy(yErr)
 #    zero_loc = N.where(yErr == 0)[0]
@@ -319,7 +315,7 @@ def mpfitFunction(params, parinfo=None, fjac=None, xData=None, yData=None, yErr=
     
     functionParams = paramsArrayToDict(functionID, params)
     thefunction = getFunction(functionID)
-    yCalc = thefunction(xData, functionParams)
+    yCalc = thefunction(xData, yData, functionParams)
     
     # Non-negative status value means MPFIT should continue, negative means
     # stop the calculation.
