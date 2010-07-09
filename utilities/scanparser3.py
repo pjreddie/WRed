@@ -1,4 +1,4 @@
-#import numpy as N
+import numpy as N
 threshold=1e-6
 
 
@@ -561,11 +561,11 @@ if  __name__=='__main__':
     if 0:
         scanstr='Scan:SubID=13176:JType=VECTOR:Fixed=1:FixedE=13.6998911684:Npts=3:Counts=1.0:Prefac=1.0:DetectorType=Detector:CountType=Monitor:Filename=dumb:HoldScan=0.0:Range=Q=0.0~0.0~0.0 0.0~0.0~0.0 s:Range=E=0.0 1.0 s'
 
-    if 1:
+    if 0:
         parseobj=Parseobj()
         s=driver(scanstr,parseobj)
         print 's',s
-    if 0:
+    if 1:
         myparser=scanparser(scanstr)
         #scanstr_parsed=myparser.parse_scan()
         #print myparser.parse_range(scanstr_parsed['range_strings'][0])

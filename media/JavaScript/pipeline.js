@@ -70,17 +70,17 @@ Ext.onReady(function () {
         this.y = y;
         this.chart = function () {
             if(this.dataset()){
-            conn.request({
-                url: '../json/evaluate/',
-                method: 'GET',
-                params: {'equation': this.get_equation(),}, success: function (responseObject) {
-                    var json_response = Ext.decode(responseObject.responseText);
-                    creloadData(json_response.data);
-                }, failure: function () {
-                    Ext.Msg.alert('Error', 'Failed JSON request');
-                }
-            });
-         }
+                conn.request({
+                    url: '../json/evaluate/',
+                    method: 'GET',
+                    params: {'equation': this.get_equation(),}, success: function (responseObject) {
+                        var json_response = Ext.decode(responseObject.responseText);
+                        creloadData(json_response.data);
+                    }, failure: function () {
+                        Ext.Msg.alert('Error', 'Failed JSON request');
+                    }
+                });
+            }
         }
         this.width = width;
         this.height = height;
@@ -118,11 +118,24 @@ Ext.onReady(function () {
 
     function MinusBox(x, y, width, height) {
         
-                
+        this.independent_variable = 'A3';
         this.deselect = function () {
             this.selected = false;
         };
-        this.chart = function () {}
+        this.chart = function () {
+            if(this.dataset()){
+                conn.request({
+                    url: '../json/evaluate/',
+                    method: 'GET',
+                    params: {'equation': this.get_equation(),}, success: function (responseObject) {
+                        var json_response = Ext.decode(responseObject.responseText);
+                        creloadData(json_response.data);
+                    }, failure: function () {
+                        Ext.Msg.alert('Error', 'Failed JSON request');
+                    }
+                });
+            }
+        }
         this.x = x;
         this.y = y;
         this.width = width;
@@ -140,6 +153,10 @@ Ext.onReady(function () {
         }
         this.dataset = function(){
            return this.connected_boxes.length  == 2;
+        };
+        this.get_equation = function(){
+            if (this.connected_boxes.length != 2) return '';
+            else return ' ' + this.connected_boxes[0].get_equation() + '.sub( ' + this.connected_boxes[1].get_equation() + ' , \'' + this.independent_variable + '\' )'
         };
         this.draw = function (ctx) {
             clearBox(ctx, this.x, this.y, this.width, this.height);
@@ -584,8 +601,8 @@ whenever any message comes through (whenever files are added, removed, or change
               else return false;
             }
         }
-        if(a.operator() && a.can_add() && b.dataset()){from = a; to = b}
-        else if(a.dataset() && b.operator() && b.can_add()) {from = b; to = a}
+        if(a.operator() && a.can_add()&& b!==null && b.dataset()){from = a; to = b}
+        else if(b !== null && a.dataset() && b.operator() && b.can_add()) {from = b; to = a}
         else {return false;}
         /*for (var i = 0; i < boxes.length && fcount < 2 && tcount < 2; ++i) {
             if (boxes[i].selected) {

@@ -15,12 +15,13 @@ from fileToJson import *
 from WRed.display.models import *
 from django import forms
 
-def concat_data(*args):
+'''def concat_data(*args):
     print 'concating...'
     out = Data('db/' + DataFile.objects.get(id = args[0]).md5 + '.file')
     for f in args[1:]:
         out = out + Data('db/' + DataFile.objects.get(id = f).md5 + '.file')
     return out
+'''
 
 class ViewFileForm(forms.Form):
     md5 = forms.CharField(max_length = 32)
