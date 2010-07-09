@@ -8,7 +8,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 import simplejson
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
-from WRed.file_parsing.file_operator import *
+#from WRed.file_parsing.file_operator import *
 from WRed.fileRead import *
 from WRed.fitting import *
 from fileToJson import *

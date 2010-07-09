@@ -139,6 +139,14 @@ Ext.onReady(function () {
 
 // [ CHART PANEL ]
 
+    var ChartStatusContainer = new Ext.Container({
+//        autoHeight:     true,
+        colspan:        3,
+        
+        id:             'ChartStatusContainer',
+        html:           '<p></p>',
+    });
+
     /* ComboBoxes allow user to specify X and Y cooordinates for the graph, they are populated with field data when the file is initially loaded and do not get updated if the file is changed, since it is unlikely that new parameters will be added, even in live data. */
     var xChoice = new Ext.form.ComboBox({
         fieldLabel:     'X axis',
@@ -379,10 +387,8 @@ Ext.onReady(function () {
         //fittingFunction = record.data.id;
         
         if (fittingFunction === '' || fittingFunction == '-1')
-            Ext.Msg.show({ title: 'Form incomplete', msg: 'Please select a function.', buttons: Ext.Msg.OK, icon: Ext.Msg.ERROR, fn: function () {} } );
+            Ext.Msg.alert('Form incomplete', 'Please select a function.');
         else {
-            Ext.Msg.alert('Form complete', 'Submitting function...');
-            
             data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
             makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData', 'functionID': FunctionSelect.getValue(),
                                  'xData': JSON.stringify(data.x), 'yData': JSON.stringify(data.y) }, doFitInstruction);
@@ -394,23 +400,21 @@ Ext.onReady(function () {
     function fitSeries (button, event) {
         var checkedIndices = getCheckedIndices();
     
-        var dataSeries = globalPlots.plot[checkedIndices[0]]
-        var dataData = dataPointsToCols(dataSeries.data)
-        var functionSeries = globalPlots.plot[checkedIndices[1]]
-        var functionData = dataPointsToCols(functionSeries.data)
-
+        var dataSeries = globalPlots.plot[checkedIndices[0]];
+        var functionSeries = globalPlots.plot[checkedIndices[1]];
         
-//        if (fittingFunction === '' || fittingFunction == '-1')
-//            Ext.Msg.show({ title: 'Form incomplete', msg: 'Please select serie(s).', buttons: Ext.Msg.OK, icon: Ext.Msg.ERROR, fn: function () {} } );
-//        else {
-            Ext.Msg.alert('Form complete', 'Submitting function for fitting...');
-            
+        if (typeof dataSeries == 'undefined' || typeof functionSeries == 'undefined')
+            Ext.Msg.alert('Form incomplete', 'Please select at least one data series and at least one function.');
+        else {
+            var dataData = dataPointsToCols(dataSeries.data);
+            var functionData = dataPointsToCols(functionSeries.data);
+
             data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
             makeFittingRequest({ 'actionID': 3, 'actionName': 'sendData', 'legendIndex': checkedIndices[1],
                                  'functionID': functionSeries.functionID, 'functionParams': JSON.stringify(functionSeries.functionParams),
                                  'dataData': JSON.stringify(dataData), 'functionData': JSON.stringify(functionData) }, doFitInstruction);
             updateLegend();
-//        }
+        }
     }
     
     function doFitInstruction(responseObject) {
@@ -422,6 +426,7 @@ Ext.onReady(function () {
                 break;
             case 'askDrag':
                 askDrag(responseJSON);
+                doPlotting(responseJSON);
                 break;
             case 'doingDrag':
                 doPlotting(responseJSON, plotDataSeries.length - 1);
@@ -435,20 +440,22 @@ Ext.onReady(function () {
         allowNextRequest = true;
     }
     function askPoint(responseJSON) {
-        Ext.Msg.alert(responseJSON['messageTitle'], responseJSON['messageText']);
+        updateFittingStatus(responseJSON);
         
         $('#PlotContainer').one('plotclick', function (event, pos, item) {
+            updateFittingStatus();
             makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPoint', 'dataType': 'askPoint',
                                  'xPos': pos.x, 'yPos': pos.y, 'xID': responseJSON['xID'], 'yID': responseJSON['yID'] }, doFitInstruction);
         });
     }
     function askDrag(responseJSON) {
-        Ext.Msg.alert(responseJSON['messageTitle'], responseJSON['messageText']);
+        updateFittingStatus(responseJSON);
 
         $('#PlotContainer').one('dragstart', { 'responseJSON': responseJSON }, onDragStart);
         $('#PlotContainer').bind('drag', function() {}); // To trigger dragstart/dragend events
         $('#PlotContainer').one('dragend', function (event) {
             $('#PlotContainer').unbind('plothover', onDrag);
+            updateFittingStatus();
             console.log('End');
         });
     }
@@ -514,15 +521,13 @@ Ext.onReady(function () {
         };
 
         var plotHoverDataSeries = plotDataSeries;
-                console.log('p',plotDataSeries, residplotDataSeries);
-        if (replaceIndex) {
-            console.log('replacing');
+                //console.log('p',plotDataSeries, residplotDataSeries);
+        if (replaceIndex)
             plotHoverDataSeries[replaceIndex] = newPlotData;
-        }
         else
             plotHoverDataSeries.push(newPlotData);
 
-console.log('ph', plotHoverDataSeries);
+//console.log('ph', plotHoverDataSeries);
 
         //plot = $.plot($('#PlotContainer'), plotHoverDataSeries, plotOptions);
         plot.setData(plotHoverDataSeries);
@@ -539,13 +544,13 @@ console.log('ph', plotHoverDataSeries);
         };
 
         var residplotHoverDataSeries = residplotDataSeries;
-                console.log('rp',plotDataSeries, residplotDataSeries);
+                //console.log('rp',plotDataSeries, residplotDataSeries);
         if (replaceIndex)
             residplotHoverDataSeries[replaceIndex] = newResidPlotData;
         else
             residplotHoverDataSeries.push(newResidPlotData);
 
-console.log('rph', residplotHoverDataSeries);
+//console.log('rph', residplotHoverDataSeries);
 
         //residplot = $.plot($('#ResidPlotContainer'), residplotHoverDataSeries, residplotOptions);
         residplot.setData(residplotHoverDataSeries);
@@ -554,15 +559,53 @@ console.log('rph', residplotHoverDataSeries);
         residplot.draw();
         
         
-                console.log(plotDataSeries, residplotDataSeries);
-                console.log(plot.getData(), residplot.getData());
+                //console.log(plotDataSeries, residplotDataSeries);
+                //console.log(plot.getData(), residplot.getData());
     }
     
-    
+    function updateFittingStatus(responseJSON) {
+        var statusBar = $('#ChartStatusContainer');
+        if (responseJSON) {
+            statusBar.slideDown();
+            statusBar.html('<p><strong>' + responseJSON['messageTitle'] + ':</strong> ' + responseJSON['messageText'] + '</p>');
+        }
+        else
+            statusBar.slideUp();
+    }
     
     function clearCurve (button, event) {
-
-
+        var checkedIndices = getCheckedIndices();
+        
+        if (checkedIndices.length == 0) {
+            Ext.Msg.alert('Error in clearing curve', 'Please select at least one curve to clear.');
+        }
+        else if (jQuery.inArray(0, checkedIndices) !== -1) {
+            Ext.Msg.alert('Error in clearing curve', 'You can\'t clear the data itself, silly!');
+        }
+        else {
+            Ext.Msg.confirm('Confirm clearing of curves',
+                            'Are you sure you want to clear ' + ((checkedIndices.length > 1) ? 'these ' + checkedIndices.length + ' curves?'
+                                                                                             : 'this curve?'),
+                            function (confirm) {
+                if (confirm == 'yes') {
+                    var plotDataSeries = plot.getData();
+                    var residplotDataSeries = residplot.getData();
+                    var newPlotDataSeries = [], newResidplotDataSeries = [];
+                    
+                    for (var index = 0; index < plotDataSeries.length; index ++) {
+                        if (jQuery.inArray(index, checkedIndices) == -1) {
+                            newPlotDataSeries.push(plotDataSeries[index]);
+                            newResidplotDataSeries.push(residplotDataSeries[index]);
+                        }
+                    }
+                    
+                    plot.setData(newPlotDataSeries);
+                    plot.draw();
+                    residplot.setData(newResidplotDataSeries);
+                    residplot.draw();
+                }
+            });
+        }
     }
 
     function makeFittingRequest (params, successFunction) {
@@ -625,7 +668,7 @@ console.log('rph', residplotHoverDataSeries);
         width:          900,
         
         id:             'ChartPanel',
-        items:          [ yChoiceContainer, ChartContainer, ChartInfoContainer, xyCornerContainer, xChoiceContainer, yResidContainer, ResidChartContainer ],
+        items:          [ ChartStatusContainer, yChoiceContainer, ChartContainer, ChartInfoContainer, xyCornerContainer, xChoiceContainer, yResidContainer, ResidChartContainer ],
         tools:          [{
                             id: 'refresh',
                             qtip: 'Refresh chart',
