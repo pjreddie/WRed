@@ -3,11 +3,21 @@
 /* This mainly deals with animating the pipeline and is not close to being finished,
 since I think you're more interested in the other aspects, I'm going to leave out comments
 until it is further along...*/
-
+var addImg = new Image();
+addImg.src = 'http://famfamfam.com/lab/icons/silk/icons/add.png';
+var subImg = new Image();
+subImg.src = 'http://famfamfam.com/lab/icons/silk/icons/delete.png'
 
 //*******EXT Stuff***********
 Ext.onReady(function () {
-
+    var myCanvas = new Ext.Element(document.createElement('canvas'));
+    myCanvas.set({
+	width: 1000,
+	height: 1000,
+        //style: "width: 500; height: 500;",
+        id: 'myCanvas',}
+    );
+    myCanvas.appendTo(document.body);
     var conn = new Ext.data.Connection();
 
     function drawBox(ctx, _x, _y, _width, _height, _color) {
@@ -47,21 +57,56 @@ Ext.onReady(function () {
     }
 
     function PlusBox(x, y, width, height) {
+        this.operator = function(){
+           return true;
+        }
+        this.dataset = function(){
+           return this.connected_boxes.length > 0;
+        };
         this.deselect = function () {
             this.selected = false;
         };
         this.x = x;
         this.y = y;
         this.chart = function () {
-
+            if(this.dataset()){
+            conn.request({
+                url: '../json/evaluate/',
+                method: 'GET',
+                params: {'equation': this.get_equation(),}, success: function (responseObject) {
+                    var json_response = Ext.decode(responseObject.responseText);
+                    creloadData(json_response.data);
+                }, failure: function () {
+                    Ext.Msg.alert('Error', 'Failed JSON request');
+                }
+            });
+         }
         }
         this.width = width;
         this.height = height;
         this.selected = false;
+        this.can_add = function(){
+            return true;
+        };
+        this.add = function(child){
+            this.connected_boxes.push(child);
+        };
         this.connected_boxes = [];
+        this.get_equation = function(){
+            var eq = '( '
+            if(this.connected_boxes.length > 0){
+              eq += this.connected_boxes[0].get_equation();
+              for(var i = 1; i < this.connected_boxes.length; ++i){
+                  eq += ' + ' + this.connected_boxes[i].get_equation();
+              }
+            }
+            eq += ' )';
+            return eq;
+        }
         this.draw = function (ctx) {
             clearBox(ctx, this.x, this.y, this.width, this.height);
-            drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(255,0,0)');
+            drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(0,255,0)');
+            ctx.drawImage(addImg, this.x - this.width/2, this.y - this.height/2, this.width, this.height);
             if (this.selected) {
                 this.highlight(ctx);
             }
@@ -72,6 +117,8 @@ Ext.onReady(function () {
     }
 
     function MinusBox(x, y, width, height) {
+        
+                
         this.deselect = function () {
             this.selected = false;
         };
@@ -82,9 +129,22 @@ Ext.onReady(function () {
         this.height = height;
         this.selected = false;
         this.connected_boxes = [];
+        this.can_add = function(){
+            return this.connected_boxes.length < 2;
+        };
+        this.add = function(child){
+            this.connected_boxes.push(child);
+        };
+        this.operator = function(){
+           return this.connected_boxes.length < 2;
+        }
+        this.dataset = function(){
+           return this.connected_boxes.length  == 2;
+        };
         this.draw = function (ctx) {
             clearBox(ctx, this.x, this.y, this.width, this.height);
-            drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(0,255,0)');
+            drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(255,0,0)');
+            ctx.drawImage(subImg, this.x - this.width/2, this.y - this.height/2, this.width, this.height);
             if (this.selected) {
                 this.highlight(ctx);
             }
@@ -135,15 +195,22 @@ Ext.onReady(function () {
     }
 
     function FileBox(x, y) {
+        this.operator = function(){
+           return false;
+        }
+        this.dataset = function(){
+           return true;
+        };
+        
         this.files = [];
         this.x = x;
         this.y = y;
         this.get_equation = function(){
-            var eq = 'concat_data(' + this.files[0].file.data['id'];
+            var eq = '( ' + this.files[0].file.data['id'];
             for(var i = 1; i < this.files.length; ++i){
-                eq += ', ' + this.files[i].file.data['id'];
+                eq += ' + ' + this.files[i].file.data['id'];
             }
-            eq += ')'
+            eq += ' )'
             return eq;
         };
         this.chart = function () {
@@ -161,13 +228,11 @@ Ext.onReady(function () {
                     }
                 }
             } else {
-            var ids;
             conn.request({
                 url: '../json/evaluate/',
                 method: 'GET',
                 params: {'equation': this.get_equation(),}, success: function (responseObject) {
                     var json_response = Ext.decode(responseObject.responseText);
-                    console.log(json_response.data);
                     creloadData(json_response.data);
                 }, failure: function () {
                     Ext.Msg.alert('Error', 'Failed JSON request');
@@ -207,7 +272,7 @@ Ext.onReady(function () {
             }
             if (this.selected) this.highlight(ctx);
         };
-        this.highlight = function (ctx) {
+        this.highlight = function (ctx) {	
             drawBox(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
         };
     }
@@ -510,17 +575,25 @@ whenever any message comes through (whenever files are added, removed, or change
 
 
     function disconnected() {
-        var count = 0;
-        for (var i = 0; i < boxes.length && count < 3; ++i) {
-            if (boxes[i].selected) {
-                if (count === 0) from = boxes[i];
-                else if (count == 1) to = boxes[i];
-                ++count;
+        var fcount = true, tcount = true;
+        var a = null, b = null;
+        for (var i = 0; i < boxes.length; ++i) {
+            if(boxes[i].selected){
+              if(!a) a = boxes[i];
+              else if(!b) b = boxes[i];
+              else return false;
             }
         }
-        if (count != 2) {
-            return false;
-        } else {
+        if(a.operator() && a.can_add() && b.dataset()){from = a; to = b}
+        else if(a.dataset() && b.operator() && b.can_add()) {from = b; to = a}
+        else {return false;}
+        /*for (var i = 0; i < boxes.length && fcount < 2 && tcount < 2; ++i) {
+            if (boxes[i].selected) {
+                if (fcount && boxes[i].operator() && boxes[i].can_add()) {from = boxes[i]; fcount = false;}
+                else if (tcount && boxes[i].dataset()) {to = boxes[i]; tcount = false;}
+                else return false;
+            }
+        }*/
             var connected = false;
             for (var j = 0; j < from.connected_boxes.length; ++j) {
                 if (from.connected_boxes[j] == to) connected = true;
@@ -529,8 +602,6 @@ whenever any message comes through (whenever files are added, removed, or change
                 if (to.connected_boxes[j] == from) connected = true;
             }
             return !connected;
-        }
-        return false;
     }
 
     function disconnector() {
@@ -545,8 +616,8 @@ whenever any message comes through (whenever files are added, removed, or change
     }
 
     function connector() {
-        if (disconnected()) {
-            from.connected_boxes.push(to);
+        if (disconnected() && from.can_add()) {
+            from.add(to);
         }
     }
     var canvasContainer = new Ext.BoxComponent({
@@ -592,9 +663,10 @@ whenever any message comes through (whenever files are added, removed, or change
         tbar: toolbar,
         region: 'center',
         title: 'Pipeline',
-        autoWidth: true,
+//        autoWidth: true,
         autoHeight: true,
         id: 'pipeline',
+//	layout: 'fit',
         items: [canvasContainer],
     });
 
@@ -615,7 +687,7 @@ whenever any message comes through (whenever files are added, removed, or change
 
     function redraw(e) {
         var coords = imgCoords(e);
-        ctx.clearRect(0, 0, 500, 500);
+        ctx.clearRect(0, 0, 1000, 1000);
 
         for (var i = 0; i < boxes.length; ++i) {
             //boxes[i].draw(ctx);
@@ -636,10 +708,10 @@ whenever any message comes through (whenever files are added, removed, or change
 
             break;
         case 'plus':
-            new PlusBox(coords[0], coords[1], 30, 30).draw(ctx);
+            new PlusBox(coords[0], coords[1], 16, 16).draw(ctx);
             break;
         case 'minus':
-            new MinusBox(coords[0], coords[1], 30, 30).draw(ctx);
+            new MinusBox(coords[0], coords[1], 16, 16).draw(ctx);
             break;
         case 'pointer':
             break;
@@ -674,10 +746,10 @@ whenever any message comes through (whenever files are added, removed, or change
             var coords = imgCoords(e);
             switch (selected) {
             case 'plus':
-                boxes.push(new PlusBox(coords[0], coords[1], 30, 30));
+                boxes.push(new PlusBox(coords[0], coords[1], 16, 16));
                 break;
             case 'minus':
-                boxes.push(new MinusBox(coords[0], coords[1], 30, 30));
+                boxes.push(new MinusBox(coords[0], coords[1], 16, 16));
                 break;
             case 'file':
                 var fb = new FileBox(coords[0], coords[1]);
@@ -708,7 +780,7 @@ whenever any message comes through (whenever files are added, removed, or change
             if (connected()) {
                 plMenu.items.get('connect').disable();
                 plMenu.items.get('disconnect').enable();
-            } else if (disconnected()) {
+            } else if (disconnected() && from.can_add()) {
                 plMenu.items.get('connect').enable();
                 plMenu.items.get('disconnect').disable();
             } else {
@@ -791,10 +863,10 @@ whenever any message comes through (whenever files are added, removed, or change
                 }
             }
             redraw(e);
-        } else if (e.getKey() == 67 && e.ctrlKey) {
+        } else if (e.getKey() == 67) {
             connector();
             e.stopEvent();
-        } else if (e.getKey() == 68 && e.ctrlKey) {
+        } else if (e.getKey() == 68) {
             disconnector();
             e.stopEvent();
         }
@@ -847,13 +919,11 @@ whenever any message comes through (whenever files are added, removed, or change
         valueField: 'id',
         displayField: 'name',
         split: true,
-        region: 'east',
         collapsible: true,
         width: 500,
         height: 300,
         minSize: 100,
         maxSize: 500,
-
         id: 'ChartPanel',
         items: [ChartContainer],
 

@@ -1,8 +1,12 @@
 from json_parser import read_standards
 import copy
-
+def split_det(s):
+    for i in range(len(s)):
+        if ord(s[i]) in range(48,58):
+            return [s[:i], int(s[i:])-1]
+    return s
 class Standard:
-    def __init__(self, name, units = 'unknown', epsilon = .0001, distinct = False, interpolatable = False, spectator = False, friends = None, plottable = None, metadata = False, _comment = None):
+    def __init__(self, name, detector = False,units = 'unknown', epsilon = .0001, distinct = False, interpolatable = False, spectator = False, friends = None, plottable = None, metadata = False, _comment = None):
         self.name = name
         self.units = units
         self.distinct = distinct
@@ -12,6 +16,7 @@ class Standard:
         self.plottable = plottable
         self.metadata = metadata
         self._comment = _comment
+        self.detector = detector
 
 class Data:
     def __init__(self,filename):
@@ -36,14 +41,31 @@ class Data:
         self.data = []
         for i in range(1,len(t)):
             self.data.append([[None]] * len(self.standards))
+            #'Detector', 'AnalyzerBlade','SDC','TDC', 'PSDC','DDC', 'MonoBlade'
             for j in range(len(t[0])):
-                try:
-                    ind = self.standardsN.index(t[0][j])
-                    self.data[i-1][ind] = [t[i][j]]
-                except ValueError:
-                    self.standardsN.append(t[0][j])
-                    self.standards.append(Standard(t[0][j]).__dict__)
-                    self.data[i-1].append([t[i][j]])
+                split_name = split_det(t[0][j])
+                if split_name != t[0][j]:
+                    try:
+                        ind = self.standardsN.index(split_name[0])
+                        if(len(self.data[i-1][ind]) <= split_name[1]):
+                            self.data[i-1][ind].extend([None]*(split_name[1] - len(self.data[i-1][ind])+1))
+                        self.data[i-1][ind][split_name[1]] = t[i][j]
+                    except ValueError:
+                        ind = len(self.standardsN)
+                        self.standardsN.append(split_name[0])
+                        self.standards.append(Standard(split_name[0], True).__dict__)
+                        self.data[i-1].append([None])
+                        if(len(self.data[i-1][ind]) <= split_name[1]):
+                            self.data[i-1][ind].extend([None]*(split_name[1] - len(self.data[i-1][ind])+1))
+                        self.data[i-1][ind][split_name[1]] = t[i][j]
+                else:
+                    try:
+                        ind = self.standardsN.index(t[0][j])
+                        self.data[i-1][ind] = [t[i][j]]
+                    except ValueError:
+                        self.standardsN.append(t[0][j])
+                        self.standards.append(Standard(t[0][j]).__dict__)
+                        self.data[i-1].append([t[i][j]])
         f = file(filename, 'r')
         for lines in f:
             lines = lines.split()
@@ -76,19 +98,29 @@ class Data:
                     out += (' ' + str(val))
                 out += ('\n')
         out += ('#Columns')
-        for s in self.standards:
-            if not s['metadata']:
-                out += (' ' + s['name'].rjust(13))
+        for i in range(len(self.standards)):
+            if not self.standards[i]['metadata']:
+                if self.standards[i]['detector']:
+                    for j in range(len(self.data[0][i])):
+                       out +=  (' ' + (self.standards[i]['name'] + str(j).rjust(2,'0')).rjust(13))
+                else:
+                    out += (' ' + self.standards[i]['name'].rjust(13))
         for p in self.data:
             out += ('\n        ')
             for i in range(len(p)):
                 if not self.standards[i]['metadata'] and p[i] and len(p[i]):
-                    valstr = p[i][0]
-                    for val in p[i][1:]:
-                        valstr+='_' + val
-                    out += (' ' + str(valstr).rjust(13))
+                    if self.standards[i]['detector']:
+                        for val in p[i][:]:
+                            out += (' ' + str(val).rjust(13))
+                    else:
+                        valstr = p[i][0]
+                        for val in p[i][1:]:
+                            valstr+='_' + val
+                        out += (' ' + str(valstr).rjust(13))
         return out
-
+    def interpolate(self, iv):
+        iv_idx = self.standardsN.index(iv)
+        detectors = ['']
     def __add__(self, d):
         def combine(p1, p2):
             pass
