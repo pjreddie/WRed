@@ -1,3 +1,15 @@
+#ChartStatusContainer {
+  margin:         10px;
+  display:        none;
+}
+#ChartStatusContainer p {
+  padding:        5px;
+  border:         1px solid  #bb6;
+  background:     #f3f3bc;
+  font:           14px/1.2 'Arial', 'Tahoma', 'Verdana', 'Helvetica', sans-serif;
+}
+
+
 .ChoiceContainer {
   margin:         10px;
 }
