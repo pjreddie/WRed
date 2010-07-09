@@ -5,6 +5,7 @@ import md5, os
 from display.models import *
 from django.db import models, transaction
 from utilities import data_abstraction
+from file_operator import *
 
 def handle_uploaded_file(files, proposal_id):
     filename = files.name
@@ -52,14 +53,10 @@ def addfile(filestr, filename, proposal_id, dirty):
         )
         if not created:
             f.dirty = False
-    filein = file(filestr, 'rb') # open in binary mode
-    fileout = file('db/' + m.hexdigest() + '.file', 'wb')
-    while True:
-        t = filein.read(1024)
-        if len(t) == 0: break # end of file
-        fileout.write(t)
-    fileout.close()
-    filein.close()
+    a = Data(filestr)
+    a.correct_scan()
+    a.write('db/' + m.hexdigest() + '.file')
+    
     fd = open(filestr, 'r')
     t = []
     for lines in fd:

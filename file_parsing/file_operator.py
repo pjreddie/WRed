@@ -1,4 +1,5 @@
 from json_parser import read_standards
+import scanparser3
 import numpy as np
 import copy
 from scipy import interpolate
@@ -61,18 +62,39 @@ class Data:
                     self.data[i-1][t[0][j]] = [float(t[i][j])]
                 except ValueError:
                     self.data[i-1][t[0][j]] = [t[i][j]]
-        self.detectors = ['Detector',]
+        self.detectors = ['Detector','_Detector']
         for s in self.standards:
             if s[:8] == 'Analyzer' and s[-5:] == 'Group':
                 self.detectors.extend(self.data[0][s])
+                for d in self.data[0][s]:
+                    self.detectors.append('_' + d)
         for d in self.detectors:
-            if '_' + d in self.standards:
-                self.standards['_' + d] = Standards().__dict__
-                for p in self.data:
-                    p['_' + d] = p[d]
+            if d in self.standards and d[0] is not '_':
+                if '_' + d not in self.standards:
+                    self.standards['_' + d] = Standard().__dict__
+                    for p in self.data:
+                        p['_' + d] = p[d]
+    def correct_scan(self):
+        if 'ScanDescr' in self.standards and self.standards['ScanDescr']['metadata']:
+            scanstr = '' + self.data[0]['ScanDescr'][0]
+            for s in self.data[0]['ScanDescr'][1:]:
+                scanstr += ' ' + s
+            myparser = scanparser3.scanparser(scanstr)
+            scanlc = myparser.get_varying()
+            scan = []
+            for s in self.standards:
+                if s.lower() in scanlc:
+                    scan.append(s)
+            self.standards['Scan'] = Standard(metadata = True).__dict__
+            self.standards['ScanRanges'] = Standard(metadata = True).__dict__
+            for p in self.data:
+                p['ScanRanges'] = scan
+                p['Scan'] = scan
+            
     def write(self, filename):
         f = file(filename, 'w')
         f.write(self.to_string())
+        f.close()
     def to_string(self):
         out = ''
         for s in self.standards:

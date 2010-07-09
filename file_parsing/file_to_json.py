@@ -1,11 +1,10 @@
 #Author: Joe Redmon
-#fileToJson.py
+#file_to_json.py
 
 import md5, os
 import simplejson
 from display.models import MetaData, DataFile
 from django.db import models
-from utilities import data_abstraction
 
 def displayfile(filestr):
     f = open(filestr, 'r')

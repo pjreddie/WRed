@@ -9,9 +9,9 @@ import simplejson
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from WRed.file_parsing.file_operator import *
-from WRed.fileRead import *
+from WRed.file_parsing.file_read import *
 from WRed.fitting import *
-from fileToJson import *
+from WRed.file_parsing.file_to_json import *
 from WRed.display.models import *
 from django import forms
 

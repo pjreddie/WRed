@@ -75,7 +75,7 @@ Ext.onReady(function () {
                     method: 'GET',
                     params: {'equation': this.get_equation(),}, success: function (responseObject) {
                         var json_response = Ext.decode(responseObject.responseText);
-                        creloadData(json_response.data);
+                        creloadData(json_response);
                     }, failure: function () {
                         Ext.Msg.alert('Error', 'Failed JSON request');
                     }
@@ -118,7 +118,7 @@ Ext.onReady(function () {
 
     function MinusBox(x, y, width, height) {
         
-        this.independent_variable = 'A3';
+        this.independent_variable = 'QY';
         this.deselect = function () {
             this.selected = false;
         };
@@ -129,7 +129,7 @@ Ext.onReady(function () {
                     method: 'GET',
                     params: {'equation': this.get_equation(),}, success: function (responseObject) {
                         var json_response = Ext.decode(responseObject.responseText);
-                        creloadData(json_response.data);
+                        creloadData(json_response);
                     }, failure: function () {
                         Ext.Msg.alert('Error', 'Failed JSON request');
                     }
@@ -185,7 +185,7 @@ Ext.onReady(function () {
                 params: {},
                 success: function (responseObject) {
                     var json_response = Ext.decode(responseObject.responseText);
-                    creloadData(json_response.data);
+                    creloadData(json_response);
                 }, failure: function () {
                     Ext.Msg.alert('Error', 'Failed JSON request');
                 }
@@ -250,12 +250,57 @@ Ext.onReady(function () {
                 method: 'GET',
                 params: {'equation': this.get_equation(),}, success: function (responseObject) {
                     var json_response = Ext.decode(responseObject.responseText);
-                    creloadData(json_response.data);
+                    creloadData(json_response);
                 }, failure: function () {
                     Ext.Msg.alert('Error', 'Failed JSON request');
                 }
             });
             }
+        };
+        this.width = 30;
+        this.height = 30;
+        this.tbwidth = 2;
+        this.tbheight = 12;
+        this.selected = false;
+        this.connected_boxes = [];
+        this.deselect = function () {
+            this.selected = false;
+            for (var i = 0; i < this.files.length; ++i) this.files[i].deselect();
+        };
+        this.update = function (ctx) {
+            if (this.files.length != 0) {
+                this.tbwidth = 0;
+                for (var i = 0; i < this.files.length; ++i) {
+                    this.files[i].update(ctx);
+                    this.tbwidth = Math.max(this.tbwidth, this.files[i].width + 4);
+                }
+                this.height = this.tbheight * this.files.length + 4 * (this.files.length + 1);
+                this.width = this.tbwidth + 10;
+            }
+        };
+        this.draw = function (ctx) {
+            this.update(ctx);
+            var cury = this.y - this.height / 2 + this.tbheight / 2 + 4;
+            clearBox(ctx, this.x, this.y, this.width, this.height);
+            drawBox(ctx, this.x, this.y, this.width, this.height, 'rgb(0,0,255)');
+            for (var i = 0; i < this.files.length; ++i) {
+                this.files[i].draw(ctx, this.x, cury, this.tbwidth, this.tbheight);
+                cury += this.tbheight + 4;
+            }
+            if (this.selected) this.highlight(ctx);
+        };
+        this.highlight = function (ctx) {	
+            drawBox(ctx, this.x, this.y, this.width + 4, this.height + 4, 'rgb(0,0,0)');
+        };
+    }
+    
+    function FilterBox(x, y) {
+
+        this.x = x;
+        this.y = y;
+        this.inputs = [];
+        this.chart = function () {
+            
         };
         this.width = 30;
         this.height = 30;
@@ -964,7 +1009,7 @@ whenever any message comes through (whenever files are added, removed, or change
                 method: 'GET',
                 params: {}, success: function (responseObject) {
                     var json_response = Ext.decode(responseObject.responseText);
-                    creloadData(json_response.data);
+                    creloadData(json_response);
                 }, failure: function () {
                     Ext.Msg.alert('Error', 'Failed JSON request');
                 }
@@ -974,7 +1019,9 @@ whenever any message comes through (whenever files are added, removed, or change
 
     /* Same idea as in all_files.js, when new data comes, we must re-initialize our store to update the plot */
 
-    function creloadData(pts) {
+    function creloadData(response) {
+        var pts = response.data;
+        var meta = response.metadata;
         var cfieldData = pts[0];
         pts.splice(0, 1);
         var cgridColumns = [];
@@ -994,10 +1041,16 @@ whenever any message comes through (whenever files are added, removed, or change
         var cstore = new Ext.data.ArrayStore({
             fields: cstoreFields,
         });
+        var iv = 'QY'
+        for (var i = 0; i < meta.length; ++i){
+            if (meta[i].name == 'Scan'){
+                iv = meta[i].data.split(' ')[0];
 
+            }
+        }
         cstore.loadData(pts);
         cstores.push(cstore);
-        drawChart(cstores, 'A4', 'Detector', 'ChartContainer');
+        drawChart(cstores, iv, 'Detector', 'ChartContainer');
     }
     var viewport = new Ext.Viewport({
         layout: 'border',
@@ -1010,9 +1063,13 @@ function getData(store, xChoice, yChoice) {
     var dataResults = [];
     for (var recordIndex = 0; recordIndex < store.getCount(); recordIndex++) {
         var record = store.getAt(recordIndex);
-
-        // Calculate error bars with square roots; not included in data file as it should be
-        var data = [+record.get(xChoice), +record.get(yChoice), +Math.sqrt(record.get(yChoice))]; // + to convert string to number
+        var data;
+        // Calculate error bars with variance if available, else square roots
+        if(record.get('_' + yChoice)){
+            data = [+record.get(xChoice), +record.get(yChoice), +Math.sqrt(record.get('_' + yChoice))]; // + to convert string to number
+        }else{
+            data = [+record.get(xChoice), +record.get(yChoice), +Math.sqrt(record.get(yChoice))]; // + to convert string to number
+        }
         dataResults.push(data);
     }
 

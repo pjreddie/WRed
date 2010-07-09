@@ -16,7 +16,7 @@ Ext.onReady(function () {
     var storeFields = [];
     var metadataObj = {};
     var dataArray = [];
-
+    var iv = 'A4'
     // Initialize grid for data view
     var GridPanel = new Ext.grid.GridPanel({
         title:          'Data table',
@@ -496,7 +496,7 @@ Ext.onReady(function () {
         items:          [ ChartTabPanel ],
     }).show();
     
-    tabs.setActiveTab('DataTab');
+    tabs.setActiveTab('ChartTab');
 
     tabs.render();
     var first = true;
@@ -509,10 +509,6 @@ Ext.onReady(function () {
 
     /* Draws the chart when the user activates the chart tab. If no choice is specified for the graph, it defaults to A4 and Detector */
     function activateChart() {
-        if (xChoice.getValue() == '' || yChoice.getValue == '') {
-            xChoice.setValue('A4');
-            yChoice.setValue('Detector');
-        }
         drawChart(store, xChoice.getValue(), yChoice.getValue(), 'PlotContainer');
     }
 
@@ -531,7 +527,14 @@ Ext.onReady(function () {
                 responseJSON = Ext.decode(responseObject.responseText);
                 metadataObj = responseJSON.metadata;
                 MetadataStore.loadData(metadataObj);
-                
+                if(first){
+                    yChoice.setValue('Detector');
+                    for( var i = 0; i< metadataObj.length; ++i){
+                        if (metadataObj[i].name == 'Scan'){
+                            xChoice.setValue(metadataObj[i].data.split(' ')[0]);
+                        }
+                    }
+                }
                 dataArray = responseJSON.data;
                 reloadData();
                 loadMask.hide();
@@ -566,8 +569,8 @@ Ext.onReady(function () {
         colModel = new Ext.grid.ColumnModel({ columns: gridColumns });
         GridPanel.reconfigure(store, colModel);
 
-        if (tabs.getActiveTab().getId() == 'chart') {
-            activateChart(tabs.getActiveTab());
+        if (tabs.getActiveTab().getId() == 'ChartTab') {
+            activateChart();
         }
     }
     
