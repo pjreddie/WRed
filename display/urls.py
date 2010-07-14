@@ -24,4 +24,6 @@ urlpatterns = patterns('',
     (r'^files/forms/delete/$', delete_file),
     (r'^files/pipeline/$', pipeline),
     (r'^files/fitting/(\w+)/$', fitting_request_action),
+    (r'^Alex/edit-grid/', direct_to_template, {'template': 'edit-grid.html'}),
+	(r'^files/testbob/', runcalc),
 )

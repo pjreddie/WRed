@@ -13,6 +13,7 @@ from WRed.file_parsing.file_read import *
 from WRed.fitting import *
 from WRed.file_parsing.file_to_json import *
 from WRed.display.models import *
+from WRed.runcalc import *
 from django import forms
 
 '''def concat_data(*args):
