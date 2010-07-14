@@ -110,6 +110,8 @@ function init() {
         split: true,
         region: 'west',
         collapsible: true,
+        enableDragDrop: true,
+        ddGroup: 'dd_files',
         width: 300,
         height: 500,
         minSize: 100,
@@ -129,6 +131,29 @@ function init() {
         })*/
 
     });
+    
+    var canvas_dd_target = myCanvas;
+    var formPanelDropTarget = new Ext.dd.DropTarget(canvas_dd_target, {
+		ddGroup     : 'dd_files',
+		notifyEnter : function(ddSource, e, data) {
+		    selected = 'file';
+			selectedFiles = ddSource.dragData.selections;
+			//Add some flare to invite drop.
+
+			myCanvas.highlight();
+		},
+		notifyOut  : function(ddS, e, data){
+		    selected = 'pointer';
+		    redraw(e);
+		},
+		notifyDrop  : function(ddSource, e, data){
+
+			// Reference the record (single selection) for readability
+            selected = 'pointer';
+			return(true);
+		}
+	});
+    
     grid.on('rowdblclick', function (grid, rowIndex, e) {
         window.location = '../' + (store.getAt(rowIndex).get('id'));
     });
@@ -299,7 +324,14 @@ whenever any message comes through (whenever files are added, removed, or change
             handler: disconnector,
             id: 'disconnect',
             icon: 'http://famfamfam.com/lab/icons/silk/icons/disconnect.png',
-        }],
+        },
+        {
+            text: 'Save To File',
+            handler: save,
+            id: 'save',
+            icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png',
+        },
+        ],
     });
 
     function connected() {
@@ -340,6 +372,7 @@ whenever any message comes through (whenever files are added, removed, or change
                 else return false;
             }
         }
+        if (a===null) {return false;}
         if (a.operator() && a.can_add() && b !== null && b.dataset()) {
             from = a;
             to = b
@@ -389,28 +422,71 @@ whenever any message comes through (whenever files are added, removed, or change
             }
         }
     }
+    function save() {
+    }
+    var initDragZone = function(v) {
+		v.dragZone = new Ext.dd.DragZone(Ext.getBody(), {
+			getDragData: function(e) {
+				// .button-draggable == class of the button you want to drag around
+				if(sourceEl = e.getTarget('.button-draggable')) {
+					d = sourceEl.cloneNode(true);
+					d.id = Ext.id();
+					return v.dragData = {
+						sourceEl: sourceEl,
+						repairXY: Ext.fly(sourceEl).getXY(),
+						ddel: d
+					}
+				}
+			},
+
+			onDrag: function(e) {
+				// !Important: manually fix the default position of Ext-generated proxy element
+				// Uncomment these line to see the Ext issue
+				var proxy = Ext.DomQuery.select('*', this.getDragEl());
+				proxy[2].style.position = '';
+			},
+
+			getRepairXY: function() {
+				return this.dragData.repairXY;
+			}
+		});
+	};
+
+    
     var canvasContainer = new Ext.BoxComponent({
         el: 'myCanvas',
         id: 'canvasContainer',
+
     });
-    var toolbar = new Ext.Toolbar();
+    
+    var toolbar = new Ext.Toolbar({
+
+    });
     toolbar.add({
         text: 'Add',
         id: 'plus',
         icon: 'http://famfamfam.com/lab/icons/silk/icons/add.png',
-        enableToggle: true,
-        toggleGroup: 'toggle',
-        toggleHandler: onItemToggle,
-        pressed: false,
+        cls: 'button-draggable',
+        listeners: {
+			render: initDragZone
+		}
+        //enableToggle: true,
+        //toggleGroup: 'toggle',
+        //toggleHandler: onItemToggle,
+        //pressed: false,
     }, {
         text: 'Subtract',
         id: 'minus',
         icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
-        enableToggle: true,
-        toggleGroup: 'toggle',
-        toggleHandler: onItemToggle,
-        pressed: false,
-    }, {
+        cls: 'button-draggable',
+        listeners: {
+			render: initDragZone
+		}
+        //enableToggle: true,
+        //toggleGroup: 'toggle',
+        //toggleHandler: onItemToggle,
+        //pressed: false,
+    }, /*{
         text: 'File',
         id: 'file',
         icon: 'http://famfamfam.com/lab/icons/silk/icons/page.png',
@@ -418,15 +494,19 @@ whenever any message comes through (whenever files are added, removed, or change
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
         pressed: false,
-    }, {
+    }, */{
         text: 'Filter',
         id: 'filter',
         icon: 'http://famfamfam.com/lab/icons/silk/icons/calculator.png',
-        enableToggle: true,
-        toggleGroup: 'toggle',
-        toggleHandler: onItemToggle,
-        pressed: false,
-    }, {
+        cls: 'button-draggable',
+        listeners: {
+			render: initDragZone
+		}
+        //enableToggle: true,
+        //toggleGroup: 'toggle',
+        //toggleHandler: onItemToggle,
+        //pressed: false,
+    } /*{
         text: 'Pointer',
         id: 'pointer',
         icon: 'http://famfamfam.com/lab/icons/silk/icons/cursor.png',
@@ -434,7 +514,32 @@ whenever any message comes through (whenever files are added, removed, or change
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
         pressed: true,
-    });
+    }*/
+    );
+        // Make the panel droppable to the button
+	var initDropZone = function(g) {
+		g.dropZone = new Ext.dd.DropZone(g.body, {
+
+			getTargetFromEvent: function(e) {
+				return e.getTarget('#myCanvas');
+			},
+
+			onNodeOver : function(target, dd, e, data){
+			    selected = data.sourceEl.id;
+				return Ext.dd.DropZone.prototype.dropAllowed;
+			},
+            onNodeOut: function(target, dd, e, data){
+			    selected = 'pointer';
+			    redraw(e);
+			},
+			onNodeDrop : function(target, dd, e, data) {
+				// !Important: We assign the dragged element to be set to new drop position
+                selected = 'pointer';
+				return true;
+			}	
+
+		});
+	};
 
     var pipelinePanel = new Ext.Panel({
         tbar: toolbar,
@@ -445,6 +550,10 @@ whenever any message comes through (whenever files are added, removed, or change
         id: 'pipeline',
         //	layout: 'fit',
         items: [canvasContainer],
+        listeners: {
+			render: initDropZone
+		},
+
     });
 
     function onItemToggle(button, state) {
@@ -467,9 +576,16 @@ whenever any message comes through (whenever files are added, removed, or change
         ctx.clearRect(0, 0, 1000, 1000);
 
         for (var i = 0; i < boxes.length; ++i) {
-            //boxes[i].draw(ctx);
-            for (var j = 0; j < boxes[i].connected_boxes.length; ++j) {
-                connect(ctx, boxes[i], boxes[i].connected_boxes[j]);
+            if (boxes[i].color_connections){
+                for (var j = 0; j < boxes[i].connected_boxes.length; ++j) {
+                    if (j == 0) connect(ctx, boxes[i], boxes[i].connected_boxes[j], 'rgb(0,0,255)');
+                    else if(j == 1) connect(ctx, boxes[i], boxes[i].connected_boxes[j], 'rgb(255,0,0)');
+                    else connect(ctx, boxes[i], boxes[i].connected_boxes[j], 'rgb(0,0,255)');
+                }
+            }else{
+                for (var j = 0; j < boxes[i].connected_boxes.length; ++j) {
+                    connect(ctx, boxes[i], boxes[i].connected_boxes[j], 'rgb(0,0,0)');
+                }
             }
         }
         for (var i = 0; i < boxes.length; ++i) {
@@ -519,11 +635,23 @@ whenever any message comes through (whenever files are added, removed, or change
         toReturn[1] -= canvasContainer.getPosition()[1];
         return toReturn;
     }
-    var from, to;
-
+    var from, to, toSave;
+    function savable(e){
+        var coords = imgCoords(e);
+        toSave = null;
+        for (var i = 0; i < boxes.length; ++i) {
+            if (boxes[i].x - boxes[i].width / 2 <= coords[0] && boxes[i].x + boxes[i].width / 2 >= coords[0] && boxes[i].y - boxes[i].height / 2 <= coords[1] && boxes[i].y + boxes[i].height / 2 >= coords[1]) {
+                if (boxes[i].dataset()){
+                    toSave = boxes[i];
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     function mouseUp(e) {
         canvas.un('mousemove', moveSelected);
-        if (e.button === 0) {
+        if (true) {
             var coords = imgCoords(e);
             switch (selected) {
             case 'plus':
@@ -560,7 +688,8 @@ whenever any message comes through (whenever files are added, removed, or change
                     boxes[i].chart();
                 }
             }
-        } else if (e.button == 2 || e.button == 1) {
+        }
+        if (e.button == 2 || e.button == 1) {
             if (connected()) {
                 plMenu.items.get('connect').disable();
                 plMenu.items.get('disconnect').enable();
@@ -571,6 +700,8 @@ whenever any message comes through (whenever files are added, removed, or change
                 plMenu.items.get('disconnect').disable();
                 plMenu.items.get('connect').disable();
             }
+            if (savable(e)) plMenu.items.get('save').enable();
+            else plMenu.items.get('save').disable();
             plMenu.showAt(e.getXY());
             e.stopEvent();
         }
@@ -578,7 +709,7 @@ whenever any message comes through (whenever files are added, removed, or change
     }
 
     function mouseDown(e) {
-        if (e.button === 0) {
+        if (true) {
             var newS = false;
             var noneS = true;
             var coords = imgCoords(e);
@@ -620,7 +751,8 @@ whenever any message comes through (whenever files are added, removed, or change
                 break;
             default:
             }
-        } else if (e.button == 2 || e.button == 1) {
+        }
+        if (e.button == 2 || e.button == 1) {
             e.stopEvent();
         }
         redraw(e);
@@ -737,8 +869,7 @@ whenever any message comes through (whenever files are added, removed, or change
         }
     }
 
-    /* Same idea as in all_files.js, when new data comes, we must re-initialize our store to update the plot */
-    var iv = 'QY'
+
 
 
     var viewport = new Ext.Viewport({

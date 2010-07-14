@@ -161,6 +161,8 @@ class Data:
                                 p[s] = [p[s][0] - interps[s](p[iv][0])]
                         except ValueError:
                             break
+                        except TypeError:
+                            p[s][0] = None
                     else:
                         p[s][0] = None
                 except KeyError:
