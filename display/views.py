@@ -13,6 +13,7 @@ from WRed.file_parsing.file_read import *
 from WRed.fitting import *
 from WRed.file_parsing.file_to_json import *
 from WRed.display.models import *
+from WRed.runcalc import *
 from django import forms
 
 '''def concat_data(*args):
@@ -161,7 +162,9 @@ def delete_file(request):
 @login_required
 def all_files(request):
     return render_to_response('all_files.html')
-
+@login_required
+def pipeline(request):
+    return render_to_response('pipeline.html')
 def evaluate(request):
     json = {
         'file': {},
@@ -184,6 +187,7 @@ def evaluate(request):
             parsed_eq = eq[0]
             for a in eq[1:]:
                 parsed_eq += ' ' + a
+            print parsed_eq
             return HttpResponse(simplejson.dumps(displaystring(eval(parsed_eq).__str__())))
     return HttpResponse(simplejson.dumps(json))
 @login_required
@@ -198,7 +202,7 @@ def login_view(request):
         if user is not None and user.is_active:
             print '********LOGIN SUCCESSFUL*********'
             auth.login(request, user)
-            return HttpResponseRedirect('/WRed/files/all/')
+            return HttpResponseRedirect(request.GET.get('next'))
         else:
             return HttpResponse('Go Away!')
     elif request.method == 'GET':

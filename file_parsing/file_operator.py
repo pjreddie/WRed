@@ -151,8 +151,8 @@ class Data:
                 
         interps = bkg.interpolate_data(iv)
         for p in out.data:
-            for s in out.standards:
-                if s in self.detectors:
+            for s in self.detectors:
+                try:
                     if s in interps:
                         try:
                             if s[0] == '_':
@@ -161,8 +161,27 @@ class Data:
                                 p[s] = [p[s][0] - interps[s](p[iv][0])]
                         except ValueError:
                             break
+                        except TypeError:
+                            p[s][0] = None
                     else:
                         p[s][0] = None
+                except KeyError:
+                    pass
+        return out
+    def monitor_normalization(self, m0):
+        pass
+    def detailed_balance(self):
+        out = copy.deepcopy(self)
+        beta_times_temp = 11.6
+        for p in out.data:
+            temp = p['Temp'][0]
+            beta = beta_times_temp / temp
+            E = p['E'][0]
+            for s in out.detectors:
+                try:
+                    p[s][0] = p[s][0] * np.exp(-beta*E/2)
+                except KeyError:
+                    pass
         return out
     def __add__(self, d):
         def combine(p1, p2):
