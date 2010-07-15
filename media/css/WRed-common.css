@@ -1,11 +1,11 @@
 #ChartStatusContainer {
   margin:         10px;
-  display:        none;
 }
 #ChartStatusContainer p {
   padding:        5px;
+  height:         1em;/*
   border:         1px solid  #bb6;
-  background:     #f3f3bc;
+  background:     #f3f3bc;*/
   font:           14px/1.2 'Arial', 'Tahoma', 'Verdana', 'Helvetica', sans-serif;
 }
 
@@ -63,8 +63,11 @@
   margin:         10px;
 }
 #LegendContainer li {
-  font:           12px/1 'Arial', 'Tahoma', 'Verdana', 'Helvetica', sans-serif;
+  font:           12px/1.2 'Arial', 'Tahoma', 'Verdana', 'Helvetica', sans-serif;
   margin-bottom:  6px;
+}
+#LegendContainer li p {
+  margin-bottom:  4p;
 }
 #LegendContainer input {
   vertical-align: top;
