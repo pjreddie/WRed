@@ -1,5 +1,17 @@
+'''
+Alex Yee
+
+Edit History
+7/8/2010: Stared work on code. Added the star method, compliments of Dr. Ratcliff II, and completed the calcB method.
+7/9/2010: Wrote the calcUB and UBtestrun methods. Used previous experiment data to confirm the results of the calcUB method
+           Also wrote the calcIdealAngles method to calculate chi and phi for the special case when omega = 0.
+7/13/2010: Created and tested the calcIdealAngles2, which employs scipy's fsolve to solve 6 equations for phi, chi, omega1, omega2, theta1 and theta2
+'''
+
 import numpy as N 
 import scipy
+import scipy.optimize
+from openopt import NLSP
 
 def star(a,b,c,alpha,beta,gamma):
    "Calculate unit cell volume, reciprocal cell volume, reciprocal lattice parameters"
@@ -91,11 +103,99 @@ def calcUB(h1, k1, l1, h2, k2, l2, omega1, chi1, phi1, omega2, chi2, phi2, Bmatr
    Tp = N.array([t1p, t2p, t3p],'Float64').T
    
    #calculating the UB matrix
-   Umatrix = N.dot(Tp, Tc.T) #may not transpose the Tc matrix correctly !!CHECK THIS!!
+   Umatrix = N.dot(Tp, Tc.T) 
    UBmatrix = N.dot(Umatrix, Bmatrix)
    return UBmatrix
    
 
+
+def calcIdealAngles(h, UBmatrix, Bmatrix, wavelength, stars):
+   "Calculates the remaining angles with omega given as 0"
+   "Returns (twotheta, theta, omega, chi, phi)"
+   '''myUBmatrix=N.array([[ -0.8495486120866541,0.8646150711829229,-1.055554030805845],
+                     [-0.7090402876860106,0.7826211792587279,1.211714627203656],
+                     [1.165768160358335,1.106088263216144,-0.03224481098900243]],'Float64')
+   '''
+   hp = N.dot(UBmatrix, h)
+   phi = N.degrees(N.arctan2(hp[1], hp[0]))
+   chi = N.degrees(N.arctan2(hp[2], N.sqrt(hp[0]**2 + hp[1]**2)))
+      
+   q = calcq (h[0], h[1], h[2], stars)
+   twotheta = N.degrees(2 * N.arcsin(wavelength * q / 4 / N.pi))
+   theta = twotheta / 2
+   omega = 0
+      
+   #print 'chi',chi, 180-chi
+   #print 'phi',phi,180+phi
+   return twotheta, theta, omega, chi, phi
+      
+      
+def calcIdealAngles2(h1, h2, UBmatrix, wavelength):
+   "Calculates the theta and omega values for both h vectors and calculates their shared chi and phi values by solving a system of equations."
+   #Accepts two vectors, h1 and h2, the UB matrix, the wavelength
+   h1p = N.dot(UBmatrix, h1)
+   h2p = N.dot(UBmatrix, h2)
+   x0=[0,0.0,0,0,0,0]
+   
+   #Old code (scipy.optimize.fsolve) produced inaccurate results with far-off estimates
+   #solutions = scipy.optimize.fsolve(equations, x0, args=(h1p, h2p, wavelength)) 
+   p = NLSP(equations, x0,args=(h1p, h2p, wavelength))
+   r = p.solve('nlp:ralg')
+   #print 'solution:', r.xf
+   solutions=r.xf
+   return N.degrees(solutions)%360
+   #returns an array of 6 angles [chi, phi, theta1, omega1, theta2, omega2]
+    
+def equations(x, h1p, h2p, wavelength):
+   #x vector are the intial estimates
+   chi = x[0]
+   phi = x[1]
+   theta1 = x[2]
+   omega1 = x[3]
+   theta2 = x[4]
+   omega2 = x[5]
+   outvec=[h1p[0] - 2/wavelength * N.sin(theta1) * (N.cos(omega1)*N.cos(chi)*N.cos(phi) - N.sin(omega1)*N.sin(phi)),
+           h1p[1] - 2/wavelength * N.sin(theta1) * (N.cos(omega1)*N.cos(chi)*N.sin(phi) + N.sin(omega1)*N.cos(phi)),
+           h1p[2] - 2/wavelength * N.sin(theta1) * N.cos(omega1)*N.sin(chi),
+           h2p[0] - 2/wavelength * N.sin(theta2) * (N.cos(omega2)*N.cos(chi)*N.cos(phi) - N.sin(omega2)*N.sin(phi)),
+           h2p[1] - 2/wavelength * N.sin(theta2) * (N.cos(omega2)*N.cos(chi)*N.sin(phi) + N.sin(omega2)*N.cos(phi)),
+           h2p[2] - 2/wavelength * N.sin(theta2) * N.cos(omega2)*N.sin(chi)]  
+   #print 'outvec',outvec
+   #print 'x',N.degrees(x)%360
+   return outvec
+    
+    
+# ******************************* START - METHODS FOR CALCULATING Q ******************************* 
+def scalar(x1, y1, z1, x2, y2, z2, stars):
+   "calculates scalar product of two vectors"
+   a = stars['astar']
+   b = stars['bstar']
+   c = stars['cstar']
+   alpha = N.radians(stars['alphastar'])
+   beta = N.radians(stars['betastar'])
+   gamma = N.radians(stars['gammastar'])
+
+   s=x1*x2*a**2+y1*y2*b**2+z1*z2*c**2+(x1*y2+x2*y1)*a*b*N.cos(gamma)+(x1*z2+x2*z1)*a*c*N.cos(beta)+(z1*y2+z2*y1)*c*b*N.cos(alpha)
+   return s
+
+
+def modvec(x, y, z, stars):
+   "Calculates modulus of a vector defined by its fraction cell coordinates"
+   "or Miller indexes"
+   m=N.sqrt(scalar(x, y, z, x, y, z, stars))
+   return m
+
+
+
+def calcq(H, K, L, stars):
+   "Given reciprocal-space coordinates of a vector, calculate its coordinates in the Cartesian space."
+   q = modvec(H, K, L, stars);
+   return q
+          
+# ******************************* END - METHODS FOR CALCULATING Q ******************************* 
+          
+# **************************************** UB MATRIX TESTING CODE ****************************************
+  
 def UBtestrun():
    "Test method to calculate UB matrix given input"
    #a, b, c, alpha, beta, gamma, h1, k1, l1, omega1, chi1, phi1, h2, k2, l2, omega2, chi2, phi2 = input('enter data: ')
@@ -121,27 +221,17 @@ def UBtestrun():
    astar,bstar,cstar,alphastar,betastar,gammastar = star(a, b, c, alpha, beta, gamma)
    Bmatrix = calcB(astar, bstar, cstar, alphastar, betastar, gammastar, c, alpha)
    UB=calcUB(h1, k1, l1, h2, k2, l2, omega1, chi1, phi1, omega2, chi2, phi2, Bmatrix)
-   calcIdealAngles(N.array([1,1,1],'Float64'),UB,0,Bmatrix)
+   #calcIdealAngles(N.array([1,1,1],'Float64'),UB,0,Bmatrix)
+   hv1=[1,0,0]
+   hv2=[0,1,0]
+   result = calcIdealAngles2(hv1, hv2, UB, 2.35916)
    print UB
+   print result
+   print 'chi',(180-result[0])%360
+   print 'phi',(result[1]+180)%360
+# **************************************** END OF UB MATRIX TESTING CODE ****************************************  
 
-def calcIdealAngles(h, UBmatrix, omega, Bmatrix):
-   "Calculates the remaining angles that sets the h vector to the ideal reflecting position"
-   "Returns (twotheta, theta, omega, chi, phi)"
-   myUBmatrix=N.array([[ -0.8495486120866541,0.8646150711829229,-1.055554030805845],
-                     [-0.7090402876860106,0.7826211792587279,1.211714627203656],
-                     [1.165768160358335,1.106088263216144,-0.03224481098900243]],'Float64')
-   hp = N.dot(UBmatrix, h)
-   if omega == 0:
-      phi = N.degrees(N.arctan2(hp[1], hp[0]))
-      chi = N.degrees(N.arctan2(hp[2], N.sqrt(hp[0]**2 + hp[1]**2)))
-      twotheta = 0
-      theta= 0
-      #print 'chi',chi, 180-chi
-      #print 'phi',phi,180+phi
-      return twotheta, theta, omega, chi, phi
-      print 'done'
-      
-   
+
 if __name__=="__main__":
    pi=N.pi
    a=2*pi; b=2*pi; c=2*pi
