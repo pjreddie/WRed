@@ -229,19 +229,35 @@ function onReadyFunction () {
         items:          [ PlotContainer ],
     });
     
-    LegendSeriesStore = new Ext.data.JsonStore({
-        data:           globalPlots.plot,
+    LegendDataSeriesStore = new Ext.data.JsonStore({
+        data:           globalDataSeries.plot,
         fields:         [ 'label', 'data', 'points', 'lines', 'color' ],
         autoLoad:       true,
     });
-    var LegendSeriesTemplate = new Ext.XTemplate(
-        '<ul id="legendSeries">',
+    LegendFunctionSeriesStore = new Ext.data.JsonStore({
+        data:           globalFunctionSeries.plot,
+        fields:         [ 'label', 'data', 'points', 'lines', 'color' ],
+        autoLoad:       true,
+    });
+    var LegendDataSeriesTemplate = new Ext.XTemplate(
+        '<h2>Data</h2>',
+        '<ul class="legendSeries" id="legendDataSeries">',
         '<tpl for=".">',
-            '<li id="legendSeries{#}">',
-                '<input type="checkbox" name="legendSeriesCheck{#}" id="legendSeriesCheck{#}" />',
-                '<label for="legendSeriesCheck{#}"><span style="-moz-box-shadow: 0 0 0 1px {color}; -webkit-box-shadow: 0 0 0 1px {color}; background-color: {color};"></span>{label}</label>',
+            '<li id="legendDataSeries{#}">',
+                '<input type="checkbox" name="legendDataSeriesCheck{#}" id="legendDataSeriesCheck{#}" />',
+                '<label for="legendDataSeriesCheck{#}"><span style="-moz-box-shadow: 0 0 0 1px {color}; -webkit-box-shadow: 0 0 0 1px {color}; background-color: {color};"></span>{label}</label>',
+            '</li>',
+        '</tpl></ul>'
+    );
+    var LegendFunctionSeriesTemplate = new Ext.XTemplate(
+        '<h2>Functions</h2>',
+        '<ul class="legendSeries" id="legendFunctionSeries">',
+        '<tpl for=".">',
+            '<li id="legendFunctionSeries{#}">',
+                '<input type="checkbox" name="legendFunctionSeriesCheck{#}" id="legendFunctionSeriesCheck{#}" />',
+                '<label for="legendFunctionSeriesCheck{#}"><span style="-moz-box-shadow: 0 0 0 1px {color}; -webkit-box-shadow: 0 0 0 1px {color}; background-color: {color};"></span>{label}</label>',
                 '<div>',
-                '<tpl if="(curF = globalPlots.plot[xindex - 1].functionInfo)">',
+                '<tpl if="(curF = globalFunctionSeries.plot[xindex - 1].functionInfo)">',
                     '<p>&chi;&#178; = {[curF.chisq]}</p>',
                     '<tpl for="curF.fitFunctionParamsArray">',
                         '<p>{name} = {value} &plusmn; {err}</p>',
@@ -251,12 +267,20 @@ function onReadyFunction () {
             '</li>',
         '</tpl></ul>'
     );
-    var LegendContainer = new Ext.DataView({
-        tpl:            LegendSeriesTemplate,
-        store:          LegendSeriesStore,
+    var LegendDataSeriesContainer = new Ext.DataView({
+        tpl:            LegendDataSeriesTemplate,
+        store:          LegendDataSeriesStore,
         itemSelector:   'li',
     
-        id:             'LegendContainer',
+        id:             'LegendDataSeriesContainer',
+        autoWidth:      true,
+    });
+    var LegendFunctionSeriesContainer = new Ext.DataView({
+        tpl:            LegendFunctionSeriesTemplate,
+        store:          LegendFunctionSeriesStore,
+        itemSelector:   'li',
+    
+        id:             'LegendFunctionSeriesContainer',
         autoWidth:      true,
     });
     var ChartInfoContainer = new Ext.Container({
@@ -266,7 +290,7 @@ function onReadyFunction () {
         rowspan:        3,
         
         id:             'ChartInfoContainer',
-        items:          [ LegendContainer ],
+        items:          [ LegendDataSeriesContainer, LegendFunctionSeriesContainer ],
     });
     var yResidContainer = new Ext.Container({
         id:             'yResidualsContainer',
@@ -382,6 +406,14 @@ function onReadyFunction () {
         id:             'CreateFunctionButton',
         cls:            'submitButton',
     });
+     AddFunctionToSelectedCurveButton = new Ext.Button({
+        text:           'Add function to selected curve',
+        type:           'submit',
+        handler:        fitFunction,
+        
+        id:             'AddFunctionToSelectedCurveButton',
+        cls:            'submitButton',
+    });
     var FitThisSeriesButton = new Ext.Button({
         text:           'Fit this series',
         type:           'submit',
@@ -406,19 +438,31 @@ function onReadyFunction () {
         if (fittingFunction === '' || fittingFunction == '-1')
             Ext.Msg.alert('Form incomplete', 'Please select a function.');
         else {
-            data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
-            makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData', 'functionID': FunctionSelect.getValue(),
-                                 'xData': JSON.stringify(data.x), 'yData': JSON.stringify(data.y) }, doFitInstruction);
+            var data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
+            if (button.id === 'CreateFunctionButton') {
+                makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData', 'functionID': FunctionSelect.getValue(),
+                                     'data': JSON.stringify(data) }, doFitInstruction);
+            }
+            else if (button.id === 'AddFunctionToSelectedCurveButton') {
+                var checkedIndices = getCheckedIndices();
+                var selectedFunctionIndex = checkedIndices[0];
+                var selectedFunctionSeries = globalFunctionSeries.plot[selectedFunctionIndex];
+                
+                makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData', 'functionID': FunctionSelect.getValue(),
+                                     'data': JSON.stringify(data), 'prevFunctions': JSON.stringify(selectedFunctionSeries) }, doFitInstruction);
+            }
         }
     }
     function getCheckedIndices() {
-        return $('#legendSeries input[type=checkbox]:checked').map(function() { if (this.checked) return $('#legendSeries li input').index(this); });
+        var checkedDataSeriesIndices = $('#legendDataSeries input[type=checkbox]:checked').map(function() { if (this.checked) return $('#legendDataSeries li input').index(this); });
+        var checkedFunctionSeriesIndices = $('#legendFunctionSeries input[type=checkbox]:checked').map(function() { if (this.checked) return $('#legendFunctionSeries li input').index(this); });
+        return { dataSeries: checkedDataSeriesIndices, functionSeries: checkedFunctionSeriesIndices };
     }
     function fitSeries (button, event) {
         var checkedIndices = getCheckedIndices();
-    
-        var dataSeries = globalPlots.plot[checkedIndices[0]];
-        var functionSeries = globalPlots.plot[checkedIndices[1]];
+    console.log(checkedIndices);
+        var dataSeries     = globalDataSeries.plot[checkedIndices.dataSeries[0]];
+        var functionSeries = globalFunctionSeries.plot[checkedIndices.functionSeries[0]];
         
         if (typeof dataSeries == 'undefined' || typeof functionSeries == 'undefined')
             Ext.Msg.alert('Form incomplete', 'Please select at least one data series and at least one function.');
@@ -427,7 +471,7 @@ function onReadyFunction () {
             var functionData = dataPointsToCols(functionSeries.data);
 
             data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
-            makeFittingRequest({ 'actionID': 3, 'actionName': 'sendData', 'legendIndex': checkedIndices[1],
+            makeFittingRequest({ 'actionID': 3, 'actionName': 'sendData', 'legendIndex': checkedIndices.functionSeries[0],
                                  'functionID': functionSeries.functionID, 'functionParams': JSON.stringify(functionSeries.functionParams),
                                  'dataData': JSON.stringify(dataData), 'functionData': JSON.stringify(functionData) }, doFitInstruction);
             updateLegend();
@@ -446,7 +490,7 @@ function onReadyFunction () {
                 doPlotting(responseJSON);
                 break;
             case 'doingDrag':
-                doPlotting(responseJSON, globalDataSeries.plot.length - 1);
+                doPlotting(responseJSON, globalFunctionSeries.plot.length - 1);
                 break;
             case 'doFit':
                 doPlotting(responseJSON, responseJSON.legendIndex);
@@ -521,33 +565,35 @@ function onReadyFunction () {
         return pos;
     }
     
-    function doPlotting (responseJSON, replaceIndex) {        
+    function doPlotting (responseJSON, functionSeriesReplaceIndex) {
         fitpoints = responseJSON.fit;
         
         FunctionName = FunctionSelectStore.getById(FunctionSelect.getValue()).data.name;
+        console.log(FunctionName, functionSeriesReplaceIndex);
         
         newPlotData = {
             label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': ' + FunctionName,
             data:     fitpoints,
             points:   { show: false },
             lines:    { show: true },
+            seriesType: 'function',
             
             functionID: responseJSON.functionID,
             functionParams: responseJSON.functionParams,
             functionInfo: responseJSON.functionInfo,
         };
 
-        var plotHoverDataSeries = globalFunctionSeries.plot;
+        var plotHoverFunctionSeries = globalFunctionSeries.plot;
 
-        if (replaceIndex)
-            plotHoverDataSeries[replaceIndex] = newPlotData;
+        if (functionSeriesReplaceIndex)
+            plotHoverFunctionSeries[functionSeriesReplaceIndex] = newPlotData;
         else
-            plotHoverDataSeries.push(newPlotData);
+            plotHoverFunctionSeries.push(newPlotData);
 
-        //console.log('ph', plotHoverDataSeries);
+        //console.log('ph', plotHoverFunctionSeries);
 
-        //plot = $.plot($('#PlotContainer'), plotHoverDataSeries, plotOptions);
-        //plot.setData(plotHoverDataSeries);
+        //plot = $.plot($('#PlotContainer'), plotHoverFunctionSeries, plotOptions);
+        //plot.setData(plotHoverFunctionSeries);
         //plot.setupGrid();
         //plot.draw();
         
@@ -560,26 +606,26 @@ function onReadyFunction () {
             lines:    { show: true },
         };
 
-        var residplotHoverDataSeries = globalFunctionSeries.residplot;
+        var residplotHoverFunctionSeries = globalFunctionSeries.residplot;
         
-        if (replaceIndex)
-            residplotHoverDataSeries[replaceIndex] = newResidPlotData;
+        if (functionSeriesReplaceIndex)
+            residplotHoverFunctionSeries[functionSeriesReplaceIndex] = newResidPlotData;
         else
-            residplotHoverDataSeries.push(newResidPlotData);
+            residplotHoverFunctionSeries.push(newResidPlotData);
 
-        //console.log('rph', residplotHoverDataSeries);
+        //console.log('rph', residplotHoverFunctionSeries);
 
-        //residplot = $.plot($('#ResidPlotContainer'), residplotHoverDataSeries, residplotOptions);
-        //residplot.setData(residplotHoverDataSeries);
+        //residplot = $.plot($('#ResidPlotContainer'), residplotHoverFunctionSeries, residplotOptions);
+        //residplot.setData(residplotHoverFunctionSeries);
         //residplot.axis()
         //residplot.setupGrid();
         //residplot.draw();
         
         
-                //console.log(plotDataSeries, residplotDataSeries);
+                //console.log(plotFunctionSeries, residplotFunctionSeries);
                 //console.log(plot.getData(), residplot.getData());
         
-        updatePlots('PlotContainer');
+        updatePlots('PlotContainer', true); // "true" suppresses plot.setupGrid() so points outside data's y-axis extrema 
     }
     
     function updateFittingStatus(responseJSON) {
@@ -597,33 +643,28 @@ function onReadyFunction () {
     function clearCurve (button, event) {
         var checkedIndices = getCheckedIndices();
         
-        if (checkedIndices.length == 0) {
+        if (checkedIndices.functionSeries.length == 0) {
             Ext.Msg.alert('Error in clearing curve', 'Please select at least one curve to clear.');
         }
-        else if (jQuery.inArray(0, checkedIndices) !== -1) {
+        else if (checkedIndices.dataSeries.length) {
             Ext.Msg.alert('Error in clearing curve', 'You can\'t clear the data itself, silly!');
         }
         else {
             Ext.Msg.confirm('Confirm clearing of curves',
-                            'Are you sure you want to clear ' + ((checkedIndices.length > 1) ? 'these ' + checkedIndices.length + ' curves?'
-                                                                                             : 'this curve?'),
+                            'Are you sure you want to clear ' + ((checkedIndices.length > 1) ? 'these ' + checkedIndices.functionSeries.length + ' curves?' : 'this curve?'),
                             function (confirm) {
                 if (confirm == 'yes') {
-                    var plotDataSeries = plot.getData();
-                    var residplotDataSeries = residplot.getData();
-                    var newPlotDataSeries = [], newResidplotDataSeries = [];
+                    var newPlotFunctionSeries = [], newResidplotFunctionSeries = [];
                     
-                    for (var index = 0; index < plotDataSeries.length; index ++) {
-                        if (jQuery.inArray(index, checkedIndices) == -1) {
-                            newPlotDataSeries.push(plotDataSeries[index]);
-                            newResidplotDataSeries.push(residplotDataSeries[index]);
+                    for (var index = 0; index < globalFunctionSeries.plot.length; index ++) {
+                        if (jQuery.inArray(index, checkedIndices.functionSeries) == -1) {
+                            newPlotFunctionSeries.push(globalFunctionSeries.plot[index]);
+                            newResidplotFunctionSeries.push(globalFunctionSeries.residplot[index]);
                         }
                     }
                     
-                    plot.setData(newPlotDataSeries);
-                    plot.draw();
-                    residplot.setData(newResidplotDataSeries);
-                    residplot.draw();
+                    globalFunctionSeries = { plot: newPlotFunctionSeries, residplot: newResidplotFunctionSeries };
+                    updatePlots('PlotContainer');
                 }
             });
         }
@@ -656,7 +697,7 @@ function onReadyFunction () {
         bodyStyle:      'padding: 10px;',
 
         id:             'FittingPanel',
-        items:          [ FunctionSelect, CreateFunctionButton, FitThisSeriesButton, ClearThisCurveButton ],
+        items:          [ FunctionSelect, CreateFunctionButton, AddFunctionToSelectedCurveButton, FitThisSeriesButton, ClearThisCurveButton ],
         tools:          [ { id: 'gear' }, { id: 'help' } ],
     });
     
@@ -903,28 +944,47 @@ function onReadyFunction () {
 
 
     function updateLegend() {
+        // get data with flot's added properties
         if (typeof plot !== 'undefined')
             globalPlots.plot = plot.getData();
-        LegendSeriesStore.loadData(globalPlots.plot);
+            
+        LegendDataSeriesStore.loadData(globalDataSeries.plot);
+        LegendFunctionSeriesStore.loadData(globalFunctionSeries.plot);
         // we should remember inputs that are already checked?
-        $('#legendSeries input:checkbox').bind('click', legendSeriesClick); // jQuery's .live() should be good
+        $('.legendSeries input:checkbox').bind('click', legendSeriesClick); // jQuery's .live() should be good
     }
 
     function legendSeriesClick() {
         checkedIndices = getCheckedIndices();
-        if (checkedIndices.length) {
-            if (checkedIndices.length > 1)
+        
+        if (checkedIndices.dataSeries.length) {
+            AddFunctionToSelectedCurveButton.disable();
+            ClearThisCurveButton.disable();
+            console.log(checkedIndices);
+            if (checkedIndices.functionSeries.length) {
                 FitThisSeriesButton.enable();
-            else
+            }
+            else {
                 FitThisSeriesButton.disable();
-            FitThisSeriesButton.setText('Fit ' + ((checkedIndices.length > 1) ? 'these ' + checkedIndices.length + ' series' : 'this series'));
-            ClearThisCurveButton.enable();
-            ClearThisCurveButton.setText('Clear ' + ((checkedIndices.length > 1) ? 'these ' + checkedIndices.length + ' curves' : 'this curve'));
+            }
         }
         else {
             FitThisSeriesButton.disable();
-            ClearThisCurveButton.disable();
+            if (checkedIndices.functionSeries.length >= 1) {
+                if (checkedIndices.functionSeries.length > 1)
+                    AddFunctionToSelectedCurveButton.disable();
+                else
+                
+                    AddFunctionToSelectedCurveButton.enable();
+                ClearThisCurveButton.enable();
+            }
+            else {
+                ClearThisCurveButton.disable();
+                AddFunctionToSelectedCurveButton.disable();
+            }
         }
+        FitThisSeriesButton.setText('Fit ' + ((checkedIndices.functionSeries.length > 1) ? 'these ' + checkedIndices.functionSeries.length + ' series' : 'this series'));
+        ClearThisCurveButton.setText('Clear ' + ((checkedIndices.functionSeries.length > 1) ? 'these ' + checkedIndices.functionSeries.length + ' curves' : 'this curve'));
     }
     
     function initializePlots(chart) {
@@ -1035,58 +1095,93 @@ function onReadyFunction () {
     }
 
     function initializeData(store, xChoice, yChoice) {
-        var seriesData = getData(store, xChoice, yChoice);
+        var plotSeriesData = getData(store, xChoice, yChoice);
         
-        var seriesPointsOptions = {
+        var plotSeriesPointsOptions = {
             show: true,
             errorbars: 'y',
             yerr: { show: true, upperCap: '-', lowerCap: '-' },
         };
         var plotDataSeries = {
             label:    xChoice + ' vs. ' + yChoice + ': Series 1',
-            data:     seriesData,
-            points:   seriesPointsOptions,
+            data:     plotSeriesData,
+            points:   plotSeriesPointsOptions,
             lines:    { show: false },
             color:    'rgb(0, 0, 0)',
+            seriesType: 'data',
         };
         globalDataSeries.plot.push(plotDataSeries);
         
-        var residseriesPointsOptions = {
+        var residplotSeriesPointsOptions = {
             show: true,
         };
         var residplotDataSeries = {
             label:    '',
             data:     [],
-            points:   residseriesPointsOptions,
+            points:   residplotSeriesPointsOptions,
             lines:    { show: true },
             color:    'rgb(255, 51, 51)',
         };
         globalDataSeries.residplot.push(residplotDataSeries);
-        console.log(globalDataSeries);
+
         console.log('initData', stage);
     }
     
-    function updatePlots(chart) {
+    function updatePlots(chart, preventSetupGrid) {
+        console.log('updatePlots');
+        
         var plotContainer      = $('#'      + chart);
         var residplotContainer = $('#Resid' + chart);
         
         var updatePlotData = globalDataSeries.plot.concat(globalFunctionSeries.plot);
         var updateResidplotData = globalDataSeries.residplot.concat(globalFunctionSeries.residplot);
         
-        console.log(updatePlotData);
-        console.log(updateResidplotData);
-        
         plot.setData(updatePlotData);
-        plot.setupGrid();
-        plot.draw();
         residplot.setData(updateResidplotData);
-        residplot.setupGrid();
+        if (!preventSetupGrid) {
+            plot.setupGrid();
+            residplot.setupGrid();
+        }
+        
+        //updateGlobals();
+        
+        plot.draw();
         residplot.draw();
         
         // Copy initial x-axis scale on plot to residplot
         var plotInitialAxesScales = plot.getAxesScales();
         residplot.axis([ plotInitialAxesScales[0], plotInitialAxesScales[1], null, null ]);
     }
+    
+    function updateGlobals() {
+        
+        var plotData = plot.getData();
+        var residplotData = residplot.getData();
+        var newDataSeries = { plot: [], residplot: [] };
+        var newFunctionSeries = { plot: [], residplot: [] };
+        
+        console.log(plotData);
+        for (var index = 0; index < plotData.length; index ++) {
+            console.log(index);
+            console.log(plotData[index]);
+            if (plotData[index].seriesType == 'data') {
+                newDataSeries.plot.push(plotData[index]);
+                newDataSeries.residplot.push(residplotData[index]);
+            }
+            else if (plotData[index].seriesType == 'function') {
+                newFunctionSeries.plot.push(plotData[index]);
+                newFunctionSeries.residplot.push(residplotData[index]);            
+            }
+        }
+        console.log(globalDataSeries);
+        console.log(globalFunctionSeries);
+        console.log(newDataSeries);
+        console.log(newFunctionSeries);
+        console.log(globalDataSeries == newDataSeries);
+        globalDataSeries = newDataSeries;
+        globalFunctionSeries = newFunctionSeries;
+    }
+    a=updateGlobals;
     
     /* Initialize Flot generation, draw the chart with error bars */
     function drawChart(store, xChoice, yChoice, chart) {

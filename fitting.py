@@ -46,8 +46,8 @@ def fitting_request_action(request, idNum):
         
         
         if actionID == '1':
-            xData = simplejson.loads(request.POST['xData'])
-            yData = simplejson.loads(request.POST['yData'])
+            xData = simplejson.loads(request.POST['data'])['x']
+            yData = simplejson.loads(request.POST['data'])['y']
             functionID = int(request.POST['functionID'])
             function = getFunctionClass(functionID)()
             
