@@ -21,7 +21,7 @@ Ext.onReady(function () {
             editor: new Ext.form.NumberField({
                 allowBlank: false,
                 allowDecimals: true,
-                decimalPrecision: 10, 
+                decimalPrecision: 7, 
             })
         },
         columns: [
@@ -64,7 +64,7 @@ Ext.onReady(function () {
             editor: new Ext.form.NumberField({
                 allowBlank: false,
                 allowDecimals: true,
-                decimalPrecision: 10,
+                decimalPrecision: 7,
             })
         },
         columns: [
@@ -185,43 +185,43 @@ Ext.onReady(function () {
     var aField = new Ext.form.NumberField({
         fieldLabel: 'a',
         allowBlank: false,
-        decimalPrecision: 10,
+        decimalPrecision: 7,
         anchor: '-10',
     });
     var bField = new Ext.form.NumberField({
         fieldLabel: 'b',
         allowBlank: false,
-        decimalPrecision: 10,
+        decimalPrecision: 7,
         anchor: '-10',
     });
     var cField = new Ext.form.NumberField({
         fieldLabel: 'c',
         allowBlank: false,
-        decimalPrecision: 10,
+        decimalPrecision: 7,
         anchor: '-10',
     });
     var alphaField = new Ext.form.NumberField({
         fieldLabel: 'α',
         allowBlank: false,
-        decimalPrecision: 10,
+        decimalPrecision: 7,
         anchor: '-10',
     });
     var betaField = new Ext.form.NumberField({
         fieldLabel: 'β',
         allowBlank: false,
-        decimalPrecision: 10,
+        decimalPrecision: 7,
         anchor: '-10',
     });
     var gammaField = new Ext.form.NumberField({
         fieldLabel: 'γ',
         allowBlank: false,
-        decimalPrecision: 10,
+        decimalPrecision: 7,
         anchor: '-10',
     });
     var wavelengthField = new Ext.form.NumberField({
         fieldLabel: 'Wavelength',
         allowBlank: true,
-        decimalPrecision: 10,
+        decimalPrecision: 7,
     });
     
     
@@ -229,37 +229,37 @@ Ext.onReady(function () {
     var h1Field = new Ext.form.NumberField({
         fieldLabel: 'h1',
         allowBlank: false,
-        decimalPrecision: 10,
+        decimalPrecision: 7,
         anchor: '-10',
     });
     var k1Field = new Ext.form.NumberField({
         fieldLabel: 'k1',
         allowBlank: false,
-        decimalPrecision: 10,
+        decimalPrecision: 7,
         anchor: '-10',
     });
     var l1Field = new Ext.form.NumberField({
         fieldLabel: 'l1',
         allowBlank: false,
-        decimalPrecision: 10,
+        decimalPrecision: 7,
         anchor: '-10',
     });
     var h2Field = new Ext.form.NumberField({
         fieldLabel: 'h2',
         allowBlank: false,
-        decimalPrecision: 10,
+        decimalPrecision: 7,
         anchor: '-10',
     });
     var k2Field = new Ext.form.NumberField({
         fieldLabel: 'k2',
         allowBlank: false,
-        decimalPrecision: 10,
+        decimalPrecision: 7,
         anchor: '-10',
     });
     var l2Field = new Ext.form.NumberField({
         fieldLabel: 'l2',
         allowBlank: false,
-        decimalPrecision: 10,
+        decimalPrecision: 7,
         anchor: '-10',
     });
     
@@ -379,7 +379,7 @@ Ext.onReady(function () {
                 'wavelength' : wavelengthField.getValue(),
                 'numrows' : idealDataStore.getCount(), //gives how many rows
             }); 
-            for (var j = 0; j < idealDataStore.getCount(); j++){
+            for (var j = 0; j < numrows; j++){
                 //gets all the data from the Ideal Data table
                 var record = idealDataStore.getAt(j)
                 params['data'].push(record.data);
@@ -423,11 +423,10 @@ Ext.onReady(function () {
                 'h2'        : h2Field.getValue(),
                 'k2'        : k2Field.getValue(),
                 'l2'        : l2Field.getValue(),
-                'numrows'   : idealDataStore.getCount(), //gives how many rows
+                'numrows'   : numrows, //gives how many rows
             });
-            for (var j = 0; j < idealDataStore.getCount(); j++){
+            for (var j = 0; j < numrows; j++){
                 //gets all the data from the Ideal Data table
-                //TODO only get the (h, k, l)
                 var record = idealDataStore.getAt(j)
                 params['data'].push(record.data);
             }
@@ -447,19 +446,12 @@ Ext.onReady(function () {
         }
     };
     
-    test1 =[];
     function successFunction(responseObject) {
         idealdata = Ext.decode(responseObject.responseText);
-        //idealdata = responseObject;
-        //print('resp: '+responseObject);
-        //idealdata = Ext.decode(responseObject);
-        test1 = idealdata;
-        //print('test1: ' + test1);
-        //console.log(idealdata);
-
+        console.log(idealdata);
+        
         changes = ['twotheta', 'theta', 'omega', 'chi', 'phi'];
         for (var i = 0; i < idealDataStore.getCount(); i++){
-            console.log(i);
             record = idealDataStore.getAt(i); 
             for (var c in changes) {
                 fieldName = changes[c];
@@ -503,16 +495,19 @@ Ext.onReady(function () {
         typeAhead   : true,
         mode        : 'local',
         
-        triggerAction:  'all', //Lets you see all drop down options
+        triggerAction:  'all', //Lets you see all drop down options when arrow is clicked
         selectOnFocus:  true,
         value        : 'Omega = 0',
         
         listeners: {
-        // delete the previous query in the beforequery event or set
-        // combo.lastQuery = null (this will reload the store the next time it expands)
-            beforequery: function(qe){
-                //qe.combo.lastQuery = '';
-                delete qe.combo.lastQuery;
+            afterquery: function(){
+                //TODO if not on 'Scattering Plane' mode, hide the scattering plane vector input section
+                if (myCombo.getValue() == 'Scattering Plane'){
+                    bottomFieldset.hide();
+                }
+                else{
+                    bottomFielset.show();
+                }
             }
         }
 
@@ -622,6 +617,8 @@ Ext.onReady(function () {
         title       : 'Scattering Plane Vectors',
         border      : false,
         defaultType : 'numberfield',
+        //collapsible : true,
+        //collapsed   : true,
         defaults    : {
             allowBlank : false,
             decimalPrecision: 10,

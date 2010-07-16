@@ -129,22 +129,46 @@ def calcIdealAngles(h, UBmatrix, Bmatrix, wavelength, stars):
    #print 'phi',phi,180+phi
    return twotheta, theta, omega, chi, phi
       
-      
-def calcIdealAngles2(h1, h2, UBmatrix, wavelength):
-   "Calculates the theta and omega values for both h vectors and calculates their shared chi and phi values by solving a system of equations."
-   #Accepts two vectors, h1 and h2, the UB matrix, the wavelength
+
+
+def calcScatteringPlane (h1, h2, UBmatrix, wavelength):
+   "Calculates the chi and phi for the scattering plane defined by h1 and h2. Used with calcIdealAngles2."
+   #Accepts two scattering plane vectors, h1 and h2, and the UB matrix
    h1p = N.dot(UBmatrix, h1)
    h2p = N.dot(UBmatrix, h2)
-   x0=[0,0.0,0,0,0,0]
+   
+   x0 = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+   p0 = NLSP(equations, x0, args=(h1p, h2p, wavelength))
+   r0 = p0.solve('nlp:ralg')
+   chi = N.degrees(r0.xf[0]) #xf is the final array, xf[0] = chi
+   phi = N.degrees(r0.xf[1]) #                       xf[1] = phi
+   
+   return chi, phi
+   
+def calcIdealAngles2 (desiredh, chi, phi, UBmatrix, wavelength, stars):
+   "Calculates the twotheta, theta, and omega values for a desired h vector. Uses chi and phi from calcScatteringPlane."
+   #Accepts the desired h vector, chi, phi, the UB matrix, the wavelength, and the stars dictionary
+   
+   desiredhp = N.dot(UBmatrix, desiredh)
    
    #Old code (scipy.optimize.fsolve) produced inaccurate results with far-off estimates
    #solutions = scipy.optimize.fsolve(equations, x0, args=(h1p, h2p, wavelength)) 
-   p = NLSP(equations, x0,args=(h1p, h2p, wavelength))
+   
+   x0 = [0.0, 0.0]
+   p = NLSP(secondequations, x0, args=(desiredhp, chi, phi, wavelength))
    r = p.solve('nlp:ralg')
-   #print 'solution:', r.xf
-   solutions=r.xf
-   return N.degrees(solutions)%360
-   #returns an array of 6 angles [chi, phi, theta1, omega1, theta2, omega2]
+   omega = r.xf[1]
+   
+   # theta = r1.xf[0]  # ------ SOLVER POTENTIALLY INACCURATE FOR THETA ------
+   
+   q = calcq (desiredh[0], desiredh[1], desiredh[2], stars)
+   twotheta = N.degrees(2.0 * N.arcsin(wavelength * q / 4.0 / N.pi))
+   theta = twotheta/2.0 - omega   # ------ ALTERNATE SOLUTION FOR THETA ------
+    
+   solutions = [twotheta, theta, omega]
+   return N.degrees(solutions) % 360
+   #returns an array of 3 angles [twotheta, theta, omega]
+    
     
 def equations(x, h1p, h2p, wavelength):
    #x vector are the intial estimates
@@ -154,14 +178,20 @@ def equations(x, h1p, h2p, wavelength):
    omega1 = x[3]
    theta2 = x[4]
    omega2 = x[5]
-   outvec=[h1p[0] - 2/wavelength * N.sin(theta1) * (N.cos(omega1)*N.cos(chi)*N.cos(phi) - N.sin(omega1)*N.sin(phi)),
-           h1p[1] - 2/wavelength * N.sin(theta1) * (N.cos(omega1)*N.cos(chi)*N.sin(phi) + N.sin(omega1)*N.cos(phi)),
-           h1p[2] - 2/wavelength * N.sin(theta1) * N.cos(omega1)*N.sin(chi),
-           h2p[0] - 2/wavelength * N.sin(theta2) * (N.cos(omega2)*N.cos(chi)*N.cos(phi) - N.sin(omega2)*N.sin(phi)),
-           h2p[1] - 2/wavelength * N.sin(theta2) * (N.cos(omega2)*N.cos(chi)*N.sin(phi) + N.sin(omega2)*N.cos(phi)),
-           h2p[2] - 2/wavelength * N.sin(theta2) * N.cos(omega2)*N.sin(chi)]  
-   #print 'outvec',outvec
-   #print 'x',N.degrees(x)%360
+   outvec=[h1p[0] - 2.0/wavelength * N.sin(theta1) * (N.cos(omega1)*N.cos(chi)*N.cos(phi) - N.sin(omega1)*N.sin(phi)),
+           h1p[1] - 2.0/wavelength * N.sin(theta1) * (N.cos(omega1)*N.cos(chi)*N.sin(phi) + N.sin(omega1)*N.cos(phi)),
+           h1p[2] - 2.0/wavelength * N.sin(theta1) * N.cos(omega1)*N.sin(chi),
+           h2p[0] - 2.0/wavelength * N.sin(theta2) * (N.cos(omega2)*N.cos(chi)*N.cos(phi) - N.sin(omega2)*N.sin(phi)),
+           h2p[1] - 2.0/wavelength * N.sin(theta2) * (N.cos(omega2)*N.cos(chi)*N.sin(phi) + N.sin(omega2)*N.cos(phi)),
+           h2p[2] - 2.0/wavelength * N.sin(theta2) * N.cos(omega2)*N.sin(chi)]  
+   return outvec
+   
+def secondequations(x, hp, chi, phi, wavelength):
+   theta = x[0]
+   omega = x[1]
+   outvec=[hp[0] - 2.0/wavelength * N.sin(theta) * (N.cos(omega)*N.cos(chi)*N.cos(phi) - N.sin(omega)*N.sin(phi)),
+           hp[1] - 2.0/wavelength * N.sin(theta) * (N.cos(omega)*N.cos(chi)*N.sin(phi) + N.sin(omega)*N.cos(phi)),
+           hp[2] - 2.0/wavelength * N.sin(theta) * N.cos(omega)*N.sin(chi)]
    return outvec
     
     
