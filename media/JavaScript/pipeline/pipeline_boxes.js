@@ -3,6 +3,7 @@ var conn = new Ext.data.Connection();
 
 var iv = 'QY'
 function PlusBox(x, y, width, height) {
+    this.remove = function(){};
     this.color_connections = false;
     this.update = function(){};
     this.moveable = true;
@@ -70,6 +71,7 @@ function PlusBox(x, y, width, height) {
 }
 
 function MinusBox(x, y, width, height) {
+    this.remove = function(){};
     this.color_connections = true;
     this.update = function(){};
     this.moveable = true;
@@ -116,10 +118,9 @@ function MinusBox(x, y, width, height) {
     this.get_equation = function () {
         if (this.connected_boxes.length != 2) return '';
         else {
-            if(this.independent_variable ===null)
-                return ' ' + this.connected_boxes[0].get_equation() + '.sub( ' + this.connected_boxes[1].get_equation() + ' , \'' + iv + '\' )';
-            else
-                return ' ' + this.connected_boxes[0].get_equation() + '.sub( ' + this.connected_boxes[1].get_equation() + ' , \'' + this.independent_variable + '\' )'
+            if(this.independent_variable ===null) this.independent_variable = iv;
+                
+            return ' ' + this.connected_boxes[0].get_equation() + '.sub( ' + this.connected_boxes[1].get_equation() + ' , \'' + this.independent_variable + '\' )'
         }
     };
     this.draw = function (ctx) {
@@ -136,6 +137,7 @@ function MinusBox(x, y, width, height) {
 }
 
 function TextBox(file) {
+    this.remove = function(){};
     this.color_connections = false;
     this.moveable = false;
     this.deselect = function () {
@@ -179,6 +181,7 @@ function TextBox(file) {
 }
 
 function FileBox(x, y) {
+    this.remove = function(){};
     this.color_connections = false;
     this.moveable = true;
     this.operator = function () {
@@ -268,6 +271,16 @@ function FileBox(x, y) {
 }
 
 function InputBox(input, parent) {
+    this.remove = function(b){
+        for(var j = 0; j < b.length; ++j){
+            if(b[j].connected_boxes[0] && b[j].connected_boxes[0] == this) {
+                var temp = b[j];
+                b.splice(j,1);
+                temp.remove(b);
+                --j;
+            }
+        }
+    };
     this.color_connections = false;
     this.moveable = false;
     this.parent = parent;
@@ -309,6 +322,25 @@ function InputBox(input, parent) {
 }
 
 function OutputBox(input, parent) {
+    this.remove = function(b){
+        for(var j = 0; j < b.length; ++j){
+            if(b[j].outputs){
+                for(var k = 0; k < b[j].outputs.length; ++k){
+                    if (b[j].outputs[k] == this){
+                        b[j].outputs.splice(k,1);
+                    } 
+                }
+            }
+            for (var i  = 0; i < this.connected_boxes.length; ++i){
+                if(b[j] == this.connected_boxes[i]) {
+                    var temp = b[j];
+                    b.splice(j,1);
+                    temp.remove(b);
+                    --j;
+                }
+            }
+        }
+    };
     this.color_connections = false;
     this.dataset = true;
     this.operator = false;
@@ -366,6 +398,18 @@ function OutputBox(input, parent) {
 }
 
 function FilterBox(x, y, text) {
+    this.remove = function(b){
+        for (var i  = 0; i < this.outputs.length; ++i){
+            for(var j = 0; j < b.length; ++j){
+                if(b[j] == this.outputs[i]) {
+                    var temp = b[j]
+                    b.splice(j,1);
+                    temp.remove(b);
+                    --j;
+                }
+            }
+        }
+    };
     this.color_connections = false;
     this.moveable = true;
     this.operator = function () {

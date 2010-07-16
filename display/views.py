@@ -34,10 +34,15 @@ class UploadLiveFileForm(forms.Form):
     filename = forms.CharField(max_length = 100)
 class DeleteFileForm(forms.Form):
     md5 = forms.CharField(max_length = 32)
+class DownloadFileForm(forms.Form):
+    id = forms.IntegerField()
 class WaitForUpdateForm(forms.Form):
     pass
 class EvaluateEquationForm(forms.Form):
-    equation = forms.CharField(max_length = 500)
+    equation = forms.CharField(max_length = 1000)
+class EvaluateSaveEquationForm(forms.Form):
+    equation = forms.CharField(max_length = 1000)
+    file_name = forms.CharField(max_length = 200)
 #Handles GET requests for individual files, returns a json object of the data file
 @login_required
 def json_file_display(request, idNum):
@@ -165,6 +170,7 @@ def all_files(request):
 @login_required
 def pipeline(request):
     return render_to_response('pipeline.html')
+@login_required
 def evaluate(request):
     json = {
         'file': {},
@@ -191,8 +197,56 @@ def evaluate(request):
             return HttpResponse(simplejson.dumps(displaystring(eval(parsed_eq).__str__())))
     return HttpResponse(simplejson.dumps(json))
 @login_required
+def evaluate_and_save(request):
+    json = {
+        'file': {},
+        'errors': {},
+        'text': {},
+        'success': False,
+    }
+    print 'evaluate'
+    if request.method == 'GET':
+        form = EvaluateSaveEquationForm(request.GET, request.FILES)
+        if form.is_valid():
+            print 'evaluating: ', request.GET['equation']
+            eq = request.GET['equation']
+            eq = eq.split();
+            for i in range(len(eq)):
+                try:
+                    eq[i] = 'Data("db/" + DataFile.objects.get(id = ' + str(int(eq[i])) + ').md5 + ".file")'
+                except ValueError:
+                    pass
+            parsed_eq = eq[0]
+            for a in eq[1:]:
+                parsed_eq += ' ' + a
+            print parsed_eq
+            eval(parsed_eq + '.write("db/temp_eval")')
+            addfile('db/temp_eval',request.GET['file_name'], request.user.username,False)
+            json['success'] = True
+            return HttpResponse(simplejson.dumps(json))
+    return HttpResponse(simplejson.dumps(json))
+
+@login_required
 def view_file(request, idNum):
     return render_to_response('view_file.html', {'id': idNum})
+    
+@login_required
+def download(request):
+    if request.method == 'GET':
+        form = DownloadFileForm(request.GET, request.FILES)
+        print request.GET['id']
+        rFile = DataFile.objects.get(id = request.GET['id'])
+        if request.user.is_authenticated() and (request.user.username == str(rFile.proposal_id) or request.user.is_superuser):
+            print 'Good To Go!'
+            md5 = rFile.md5
+            data = file('db/' + md5 + '.file')
+            response = HttpResponse(data, mimetype='application/force-download')
+            response['Content-Disposition'] = 'attachment; filename=' + rFile.name
+            return response
+        else:
+            print 'Not authenticated!'
+    return HttpResponse('Go Login!')
+
 def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username', '')

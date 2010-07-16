@@ -35,6 +35,8 @@ class Data:
             template[s] = [None]
         for lines in f:
             lines = lines.split()
+            if len(lines) == 0:
+                continue
             if lines[0] == '#Columns':
                 t.append(lines[1:])
                 break
@@ -51,7 +53,7 @@ class Data:
         self.data = []
         for s in t[0]:
             if s in self.standards:
-                pass
+                self.standards[s]['metadata'] = False
             else:
                 self.standards[s] = Standard().__dict__
                 template[s] = [None]

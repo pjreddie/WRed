@@ -35,6 +35,7 @@ def addfile(filestr, filename, proposal_id, dirty):
     print m.hexdigest()
     filein.close()
     f = DataFile()
+    print 1
     if dirty:
         f, created = DataFile.objects.get_or_create(
             name = filename, 
@@ -53,19 +54,24 @@ def addfile(filestr, filename, proposal_id, dirty):
         )
         if not created:
             f.dirty = False
+    print 2
     a = Data(filestr)
+    print 3
     a.correct_scan()
+    print 4
     a.write('db/' + m.hexdigest() + '.file')
-    
+    print 5
     fd = open(filestr, 'r')
+    print 6
     t = []
     for lines in fd:
         lines = lines.split()
+        if len(lines) == 0:
+            continue
         if lines[0] == '#Columns':
             print 'Columns'
             t.append(lines[1:])
             break
-
     for lines in fd:
         if lines[0] == '#': break
         t.append(lines.split())
@@ -73,7 +79,6 @@ def addfile(filestr, filename, proposal_id, dirty):
     rows = t[1:]
     variables = t[0]
     out = []
-
     for j in range(len(variables)):
         column = []
         for i in range(len(rows)):

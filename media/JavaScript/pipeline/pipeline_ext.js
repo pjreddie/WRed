@@ -165,9 +165,12 @@ function init() {
             text: 'Delete',
             handler: deleteRow,
             icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
+        },{
+            text: 'Download',
+            handler: download,
+            icon:'http://famfamfam.com/lab/icons/silk/icons/disk.png',
         }],
     }); /*Sends a POST request to server to delete a file*/
-
     function deleteRow() {
 
         conn.request({
@@ -179,6 +182,21 @@ function init() {
             success: function (responseObject) {},
             failure: function () {}
         });
+    }
+    function download() {
+
+        /*conn.request({
+            url: '../forms/download/',
+            method: 'GET',
+            params: {
+                'id': store.getAt(rowRightClicked).get('id')
+            },
+            success: function (responseObject) {
+                window.open(responseObject);
+            },
+            failure: function () {}
+        });*/
+        window.open('../forms/download/?id=' + store.getAt(rowRightClicked).get('id'));
     }
     grid.on('rowcontextmenu', function (grid, rowIndex, e) {
         rowRightClicked = rowIndex;
@@ -423,6 +441,73 @@ whenever any message comes through (whenever files are added, removed, or change
         }
     }
     function save() {
+        var form = new Ext.form.FormPanel({
+            baseCls: 'x-plain',
+            layout:'absolute',
+            defaultType: 'textfield',
+
+            items: [{
+                x: 0,
+                y: 5,
+                xtype:'label',
+                text: 'File Name:'
+            },{
+                x: 60,
+                y: 0,
+                name: 'name',
+                anchor:'100%'  // anchor width by percentage
+            }]
+        });
+        var win = new Ext.Window({
+            title : 'Save To Database...',
+            width : 300,
+            height : 100,
+            layout:'fit',
+            closeAction:'hide',
+            plain: true,
+            items: form,
+            buttons: [{
+                text:'Save',
+                handler: function(){
+                    console.log(form.getForm().getFieldValues());
+                    conn.request({
+                        url: '../json/evaluate/save/',
+                        method: 'GET',
+                        params: {
+                            'equation': toSave.get_equation(),
+                            'file_name': form.getForm().getFieldValues().name,
+                        },
+                        success: function (responseObject) {
+                            win.hide();
+                        },
+                        failure: function () {
+                            win.hide();
+                        }
+                    });
+                }
+            },{
+                text: 'Cancel',
+                handler: function(){
+                    win.hide();
+                }
+            }]
+        });
+        win.show();
+        /*conn.request({
+                    url: '../json/evaluate/',
+                    method: 'GET',
+                    params: {
+                        'equation': this.get_equation(),
+                    },
+                    success: function (responseObject) {
+                        var json_response = Ext.decode(responseObject.responseText);
+                        creloadData(json_response);
+                    },
+                    failure: function () {
+                        Ext.Msg.alert('Error', 'Failed JSON request');
+                    }
+        });*/
+    
     }
     var initDragZone = function(v) {
 		v.dragZone = new Ext.dd.DragZone(Ext.getBody(), {
@@ -768,6 +853,7 @@ whenever any message comes through (whenever files are added, removed, or change
                 if (boxes[i].selected) {
                     var temp = boxes[i];
                     boxes.splice(i, 1);
+                    temp.remove(boxes);
                     for (var j = 0; j < boxes.length; ++j) {
                         for (var k = 0; k < boxes[j].connected_boxes.length; ++k) {
                             if (boxes[j].connected_boxes[k] == temp) {
