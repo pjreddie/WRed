@@ -1,7 +1,9 @@
 
 var conn = new Ext.data.Connection();
 
+var iv = 'QY'
 function PlusBox(x, y, width, height) {
+    this.color_connections = false;
     this.update = function(){};
     this.moveable = true;
     this.operator = function () {
@@ -68,9 +70,10 @@ function PlusBox(x, y, width, height) {
 }
 
 function MinusBox(x, y, width, height) {
+    this.color_connections = true;
     this.update = function(){};
     this.moveable = true;
-    this.independent_variable = iv;
+    this.independent_variable = null;
     this.deselect = function () {
         this.selected = false;
     };
@@ -112,7 +115,12 @@ function MinusBox(x, y, width, height) {
     };
     this.get_equation = function () {
         if (this.connected_boxes.length != 2) return '';
-        else return ' ' + this.connected_boxes[0].get_equation() + '.sub( ' + this.connected_boxes[1].get_equation() + ' , \'' + this.independent_variable + '\' )'
+        else {
+            if(this.independent_variable ===null)
+                return ' ' + this.connected_boxes[0].get_equation() + '.sub( ' + this.connected_boxes[1].get_equation() + ' , \'' + iv + '\' )';
+            else
+                return ' ' + this.connected_boxes[0].get_equation() + '.sub( ' + this.connected_boxes[1].get_equation() + ' , \'' + this.independent_variable + '\' )'
+        }
     };
     this.draw = function (ctx) {
         clear_box(ctx, this.x, this.y, this.width, this.height);
@@ -128,6 +136,7 @@ function MinusBox(x, y, width, height) {
 }
 
 function TextBox(file) {
+    this.color_connections = false;
     this.moveable = false;
     this.deselect = function () {
         this.selected = false;
@@ -170,6 +179,7 @@ function TextBox(file) {
 }
 
 function FileBox(x, y) {
+    this.color_connections = false;
     this.moveable = true;
     this.operator = function () {
         return false;
@@ -258,6 +268,7 @@ function FileBox(x, y) {
 }
 
 function InputBox(input, parent) {
+    this.color_connections = false;
     this.moveable = false;
     this.parent = parent;
     this.deselect = function () {
@@ -298,6 +309,7 @@ function InputBox(input, parent) {
 }
 
 function OutputBox(input, parent) {
+    this.color_connections = false;
     this.dataset = true;
     this.operator = false;
     this.moveable = false;
@@ -354,6 +366,7 @@ function OutputBox(input, parent) {
 }
 
 function FilterBox(x, y, text) {
+    this.color_connections = false;
     this.moveable = true;
     this.operator = function () {
         return true;

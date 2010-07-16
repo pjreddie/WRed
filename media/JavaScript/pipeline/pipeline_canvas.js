@@ -49,9 +49,9 @@ function draw_arrow(ctx, x0, y0, x1, y1) {
 
 }
 
-function connect(ctx, from, to) {
+function connect(ctx, from, to, color) {
     ctx.beginPath();
-    ctx.strokeStyle = 'rgb(0,0,0)';
+    ctx.strokeStyle = color;
     ctx.moveTo(from.x, from.y)
     ctx.bezierCurveTo(to.x, from.y, from.x, to.y, to.x, to.y);
     ctx.stroke();
