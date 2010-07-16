@@ -45,7 +45,7 @@ def runcalc2(request):
     
     #LOADING THE UB MATRIX AND STARS DICTIONARY FROM DJANGO'S CACHE
     UBmatrix = request.session['UBmatrix']
-    stars = request.session['stars'] 
+    stars = request.session['stars'] #TODO check float 
     
 
     #wavelength was a string for some reason...
@@ -67,17 +67,18 @@ def runcalc2(request):
     
 def calculateUB(request):
     "Calculates the UB matrix and stores it in Django for use in the runcal# methods"
-    #requestObject = simplejson.loads(request.POST.keys()[0]) 
-    #data = requestObject['data']
-    #a, b, c, alpha, beta, gamma, h1, k1, l1, chi1, phi1, h2, k2, l2, chi2, phi2, wavelength = float(data[2]['a']), float(data[2]['b']), float(data[2]['c']), float(data[2]['alpha']), float(data[2]['beta']), float(data[2]['gamma']), float(data[0]['h']), float(data[0]['k']), float(data[0]['l']), float(data[0]['chi']), float(data[0]['phi']), float(data[1]['h']), float(data[1]['k']), float(data[1]['l']), float(data[1]['chi']), float(data[1]['phi']), float(data[2]['wavelength']
-   
+    requestObject = simplejson.loads(request.POST.keys()[0]) 
+    data = requestObject['data']
+    a, b, c, alpha, beta, gamma, h1, k1, l1, chi1, phi1, h2, k2, l2, chi2, phi2 = float(data[2]['a']), float(data[2]['b']), float(data[2]['c']), float(data[2]['alpha']), float(data[2]['beta']), float(data[2]['gamma']), float(data[0]['h']), float(data[0]['k']), float(data[0]['l']), float(data[0]['chi']), float(data[0]['phi']), float(data[1]['h']), float(data[1]['k']), float(data[1]['l']), float(data[1]['chi']), float(data[1]['phi'])
+
     #hardcoding in data for test purposes
-    a, b, c, alpha, beta, gamma, h1, k1, l1, omega1, chi1, phi1, h2, k2, l2, omega2, chi2, phi2, wavelength = 3.9091,3.9091,3.9091,90.,90.,90.,1.,1.,0.,0.,89.62,.001,0.,0.,1.,0.,-1.286,131.063, 2.35916
+    #a, b, c, alpha, beta, gamma, h1, k1, l1, omega1, chi1, phi1, h2, k2, l2, omega2, chi2, phi2, wavelength = 3.9091,3.9091,3.9091,90.,90.,90.,1.,1.,0.,0.,89.62,.001,0.,0.,1.,0.,-1.286,131.063, 2.35916
     
     #data given as  2 sets of {h,k,l,2theta,theta,chi,phi} and numberFields {a, b, c, alpha, beta, gamma, wavelength}
     #UB args: (h1, k1, l1, h2, k2, l2, omega1, chi1, phi1, omega2, chi2, phi2, Bmatrix)
 
-    astar,bstar,cstar,alphastar,betastar,gammastar = star(a, b, c, alpha, beta, gamma)
+    
+    astar, bstar, cstar, alphastar, betastar, gammastar = star(a, b, c, alpha, beta, gamma)
     starDict = {'astar': astar, 'bstar': bstar, 'cstar': cstar, 'alphastar': alphastar, 'betastar': betastar, 'gammastar': gammastar}
     
     Bmatrix = calcB(astar,bstar,cstar,alphastar,betastar,gammastar,c, alpha)

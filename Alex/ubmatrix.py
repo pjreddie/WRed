@@ -153,20 +153,25 @@ def calcIdealAngles2 (desiredh, chi, phi, UBmatrix, wavelength, stars):
    
    #Old code (scipy.optimize.fsolve) produced inaccurate results with far-off estimates
    #solutions = scipy.optimize.fsolve(equations, x0, args=(h1p, h2p, wavelength)) 
-   
-   x0 = [0.0, 0.0]
-   p = NLSP(secondequations, x0, args=(desiredhp, chi, phi, wavelength))
-   r = p.solve('nlp:ralg')
-   omega = r.xf[1]
-   
-   # theta = r1.xf[0]  # ------ SOLVER POTENTIALLY INACCURATE FOR THETA ------
-   
+
    q = calcq (desiredh[0], desiredh[1], desiredh[2], stars)
-   twotheta = N.degrees(2.0 * N.arcsin(wavelength * q / 4.0 / N.pi))
+   #print 'calculation WR'
+   #print 'wl',wavelength
+   #print 'q', q
+   twotheta = 2.0 * N.arcsin(wavelength * q / 4.0 / N.pi)
+    
+   x0 = [0.0, 0.0]
+   p = NLSP(secondequations, x0, args=(desiredhp, chi, phi, wavelength, twotheta))
+   r = p.solve('nlp:ralg')
+   omega = r.xf[0]
    theta = twotheta/2.0 - omega   # ------ ALTERNATE SOLUTION FOR THETA ------
+   
+   
+   #theta = r.xf[1]  # ------ SOLVER POTENTIALLY INACCURATE FOR THETA ------
+    
     
    solutions = [twotheta, theta, omega]
-   return N.degrees(solutions) % 360
+   return N.degrees(solutions) #% 360
    #returns an array of 3 angles [twotheta, theta, omega]
     
     
@@ -186,9 +191,11 @@ def equations(x, h1p, h2p, wavelength):
            h2p[2] - 2.0/wavelength * N.sin(theta2) * N.cos(omega2)*N.sin(chi)]  
    return outvec
    
-def secondequations(x, hp, chi, phi, wavelength):
-   theta = x[0]
-   omega = x[1]
+def secondequations(x, hp, chi, phi, wavelength,tth):
+   #theta = x[0]
+   #omega = x[1]
+   omega=x[0]
+   theta=tth/2
    outvec=[hp[0] - 2.0/wavelength * N.sin(theta) * (N.cos(omega)*N.cos(chi)*N.cos(phi) - N.sin(omega)*N.sin(phi)),
            hp[1] - 2.0/wavelength * N.sin(theta) * (N.cos(omega)*N.cos(chi)*N.sin(phi) + N.sin(omega)*N.cos(phi)),
            hp[2] - 2.0/wavelength * N.sin(theta) * N.cos(omega)*N.sin(chi)]

@@ -60,7 +60,7 @@ Ext.onReady(function () {
         defaults: {
             sortable: false,
             align: 'right',
-            width: 60,
+            width: 65,
             editor: new Ext.form.NumberField({
                 allowBlank: false,
                 allowDecimals: true,
@@ -484,7 +484,7 @@ Ext.onReady(function () {
     var myComboStore = new Ext.data.ArrayStore({
         data: [[1, 'Omega = 0'], [2, 'Scattering Plane']],
         fields: ['id', 'mode'],
-        idIndex: 0, // !!!!!!
+        idIndex: 0, 
     });
     
     var myCombo = new Ext.form.ComboBox ({
@@ -770,7 +770,7 @@ Ext.onReady(function () {
 
     var BottomPanel = new Ext.Panel({
         layout: 'table',
-        title: 'Desired Data',
+        //title: 'Desired Data',
         width: 790,
         layoutConfig: {
             columns: 2
