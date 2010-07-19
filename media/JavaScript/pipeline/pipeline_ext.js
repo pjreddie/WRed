@@ -14,6 +14,7 @@ subImg.src = 'http://famfamfam.com/lab/icons/silk/icons/delete.png'
 Ext.onReady(init);
 function init() {
     var myCanvas = new Ext.Element(document.createElement('canvas'));
+    a=myCanvas;
     myCanvas.set({
         width: 1000,
         height: 1000,
@@ -286,10 +287,331 @@ requests later, so we add them to the Store differently*/
         grid.reconfigure(store, colModel);
 
     }
+        var toolbar = new Ext.Toolbar({
+
+    });
+    function save_pipeline() {
+        var form = new Ext.form.FormPanel({
+            baseCls: 'x-plain',
+            layout:'absolute',
+            defaultType: 'textfield',
+
+            items: [{
+                x: 0,
+                y: 5,
+                xtype:'label',
+                text: 'Pipeline Name:'
+            },{
+                x: 60,
+                y: 0,
+                name: 'name',
+                anchor:'100%'  // anchor width by percentage
+            }]
+        });
+        var win = new Ext.Window({
+            title : 'Save Pipeline...',
+            width : 300,
+            height : 100,
+            layout:'fit',
+            closeAction:'hide',
+            plain: true,
+            items: form,
+            buttons: [{
+                text:'Save',
+                handler: function(){
+                    conn.request({
+                        url: '../forms/save_pipeline/',
+                        method: 'POST',
+                        params: {
+                            'pipeline': Ext.encode(boxes),
+                            'name': form.getForm().getFieldValues().name,
+                        },
+                        success: function (responseObject) {
+                            win.hide();
+                        },
+                        failure: function () {
+                            win.hide();
+                        }
+                    });
+                }
+            },{
+                text: 'Cancel',
+                handler: function(){
+                    win.hide();
+                }
+            }]
+        });
+        win.show();
+    }
+    function save() {
+        var form = new Ext.form.FormPanel({
+            baseCls: 'x-plain',
+            layout:'absolute',
+            defaultType: 'textfield',
+
+            items: [{
+                x: 0,
+                y: 5,
+                xtype:'label',
+                text: 'File Name:'
+            },{
+                x: 60,
+                y: 0,
+                name: 'name',
+                anchor:'100%'  // anchor width by percentage
+            }]
+        });
+        var win = new Ext.Window({
+            title : 'Save To Database...',
+            width : 300,
+            height : 100,
+            layout:'fit',
+            closeAction:'hide',
+            plain: true,
+            items: form,
+            buttons: [{
+                text:'Save',
+                handler: function(){
+                    console.log(form.getForm().getFieldValues());
+                    conn.request({
+                        url: '../json/evaluate/save/',
+                        method: 'GET',
+                        params: {
+                            'equation': toSave.get_equation(),
+                            'file_name': form.getForm().getFieldValues().name,
+                        },
+                        success: function (responseObject) {
+                            win.hide();
+                        },
+                        failure: function () {
+                            win.hide();
+                        }
+                    });
+                }
+            },{
+                text: 'Cancel',
+                handler: function(){
+                    win.hide();
+                }
+            }]
+        });
+        win.show();
+    }
+    var initDragZone = function(v) {
+		v.dragZone = new Ext.dd.DragZone(Ext.getBody(), {
+			getDragData: function(e) {
+				// .button-draggable == class of the button you want to drag around
+				if(sourceEl = e.getTarget('.button-draggable')) {
+					d = sourceEl.cloneNode(true);
+					d.id = Ext.id();
+					return v.dragData = {
+						sourceEl: sourceEl,
+						repairXY: Ext.fly(sourceEl).getXY(),
+						ddel: d
+					}
+				}
+			},
+
+			onDrag: function(e) {
+				// !Important: manually fix the default position of Ext-generated proxy element
+				// Uncomment these line to see the Ext issue
+				var proxy = Ext.DomQuery.select('*', this.getDragEl());
+				proxy[2].style.position = '';
+			},
+
+			getRepairXY: function() {
+				return this.dragData.repairXY;
+			}
+		});
+	};
+    var my_pipeline_menu = [];
+    toolbar.add({
+        text: 'Add',
+        id: 'plus',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/add.png',
+        cls: 'button-draggable',
+        listeners: {
+			render: initDragZone
+		}
+        //enableToggle: true,
+        //toggleGroup: 'toggle',
+        //toggleHandler: onItemToggle,
+        //pressed: false,
+    }, {
+        text: 'Subtract',
+        id: 'minus',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
+        cls: 'button-draggable',
+        listeners: {
+			render: initDragZone
+		}
+        //enableToggle: true,
+        //toggleGroup: 'toggle',
+        //toggleHandler: onItemToggle,
+        //pressed: false,
+    }, /*{
+        text: 'File',
+        id: 'file',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/page.png',
+        enableToggle: true,
+        toggleGroup: 'toggle',
+        toggleHandler: onItemToggle,
+        pressed: false,
+    }, */{
+        text: 'Filter',
+        id: 'filter',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/calculator.png',
+        cls: 'button-draggable',
+        listeners: {
+			render: initDragZone
+		}
+        //enableToggle: true,
+        //toggleGroup: 'toggle',
+        //toggleHandler: onItemToggle,
+        //pressed: false,
+    },'->',{
+        text: 'Save Current Pipeline',
+        id: 'save_pipeline',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png',
+        handler: save_pipeline,
+
+    },{
+        text: 'Load Pipeline',
+        id: 'load_pipeline',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/folder_heart.png',
+        menu: [
+            {
+                text: 'Templates',
+                id: 'templates',
+                icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+                menu: ['-'
+                ],
+            },{
+                text: 'My Pipelines',
+                id: 'my_pipelines',
+                icon: 'http://famfamfam.com/lab/icons/silk/icons/table.png',
+                menu: ['-'],
+            }
+        ],
+
+
+        //enableToggle: true,
+        //toggleGroup: 'toggle',
+        //toggleHandler: onItemToggle,
+        //pressed: false,
+    } /*{
+        text: 'Pointer',
+        id: 'pointer',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/cursor.png',
+        enableToggle: true,
+        toggleGroup: 'toggle',
+        toggleHandler: onItemToggle,
+        pressed: true,
+    }*/);
+        // Make the panel droppable to the button
+	var initDropZone = function(g) {
+		g.dropZone = new Ext.dd.DropZone(g.body, {
+
+			getTargetFromEvent: function(e) {
+				return e.getTarget('#myCanvas');
+			},
+
+			onNodeOver : function(target, dd, e, data){
+			    selected = data.sourceEl.id;
+				return Ext.dd.DropZone.prototype.dropAllowed;
+			},
+            onNodeOut: function(target, dd, e, data){
+			    selected = 'pointer';
+			    redraw(e);
+			},
+			onNodeDrop : function(target, dd, e, data) {
+				// !Important: We assign the dragged element to be set to new drop position
+                selected = 'pointer';
+				return true;
+			}	
+
+		});
+	};
+
+    
+    var canvasContainer = new Ext.BoxComponent({
+        el: 'myCanvas',
+        id: 'canvasContainer',
+
+    });
+    var pipelinePanel = new Ext.Panel({
+        tbar: toolbar,
+        region: 'center',
+        title: 'Pipeline',
+        //        autoWidth: true,
+        autoHeight: true,
+        id: 'pipeline',
+        //	layout: 'fit',
+        items: [canvasContainer],
+        listeners: {
+			render: initDropZone
+		},
+
+    });
+    pipelines = [];
+    function recreate_box(b){
+        var temp;
+        switch(b.type){
+            case 'PlusBox':
+                temp = new PlusBox(b.x, b.y, b.width, b.height);
+                break;
+            case 'MinusBox':
+                break;
+            case 'TextBox':
+                break;
+            case 'FileBox':
+                break;
+            case 'InputBox':
+                break;
+            case 'OutputBox':
+                break;
+            case 'FilterBox':
+                break;
+        }
+    }
+    function load_pipeline(b, e){
+        boxes = [];
+        var tp = pipelines[b.id];
+        for(var i = 0; i < tp.length; ++i){
+            
+        }
+    }
+    
 /*Retrieve data in json format via a GET request to the server. This is used
 anytime there is new data, and initially to populate the table.*/
 
     function update() {
+        conn.request({
+            url: '../all/json_pipelines/',
+            method: 'GET',
+            params: {
+            },
+            success: function (responseObject) {
+                var json_response = Ext.decode(responseObject.responseText);
+                my_pipeline_menu = [];
+                pipelines = [];
+                var menu = new Ext.menu.Menu({id: 'pipeline_menu', items:[]});
+                for(var i = 0; i < json_response.length; ++i){
+                    menu.add({
+                        text: json_response[i].name,
+                        id: ''+i,
+                        handler: load_pipeline,
+                        icon: 'http://famfamfam.com/lab/icons/silk/icons/table.png',});
+                    pipelines.push(Ext.decode(json_response[i].pipeline));
+                    
+                }
+                toolbar.get('load_pipeline').menu.items.get('my_pipelines').menu = menu;
+                toolbar.doLayout();
+            },
+            failure: function () {
+
+            }
+        });
         conn.request({
             url: '../all/json/',
             method: 'GET',
@@ -309,7 +631,7 @@ whenever any message comes through (whenever files are added, removed, or change
     stomp = new STOMPClient();
     stomp.onopen = function () {};
     stomp.onclose = function (c) {
-        //alert('Lost Connection, Code: ' + c);
+        alert('Lost Connection, Code: ' + c);
     };
     stomp.onerror = function (error) {
         alert("Error: " + error);
@@ -322,6 +644,7 @@ whenever any message comes through (whenever files are added, removed, or change
     };
     stomp.onmessageframe = function (frame) {
         update();
+
     };
     stomp.connect('localhost', 61613);
 
@@ -344,7 +667,7 @@ whenever any message comes through (whenever files are added, removed, or change
             icon: 'http://famfamfam.com/lab/icons/silk/icons/disconnect.png',
         },
         {
-            text: 'Save To File',
+            text: 'Save To Database',
             handler: save,
             id: 'save',
             icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png',
@@ -440,206 +763,9 @@ whenever any message comes through (whenever files are added, removed, or change
             }
         }
     }
-    function save() {
-        var form = new Ext.form.FormPanel({
-            baseCls: 'x-plain',
-            layout:'absolute',
-            defaultType: 'textfield',
 
-            items: [{
-                x: 0,
-                y: 5,
-                xtype:'label',
-                text: 'File Name:'
-            },{
-                x: 60,
-                y: 0,
-                name: 'name',
-                anchor:'100%'  // anchor width by percentage
-            }]
-        });
-        var win = new Ext.Window({
-            title : 'Save To Database...',
-            width : 300,
-            height : 100,
-            layout:'fit',
-            closeAction:'hide',
-            plain: true,
-            items: form,
-            buttons: [{
-                text:'Save',
-                handler: function(){
-                    console.log(form.getForm().getFieldValues());
-                    conn.request({
-                        url: '../json/evaluate/save/',
-                        method: 'GET',
-                        params: {
-                            'equation': toSave.get_equation(),
-                            'file_name': form.getForm().getFieldValues().name,
-                        },
-                        success: function (responseObject) {
-                            win.hide();
-                        },
-                        failure: function () {
-                            win.hide();
-                        }
-                    });
-                }
-            },{
-                text: 'Cancel',
-                handler: function(){
-                    win.hide();
-                }
-            }]
-        });
-        win.show();
-        /*conn.request({
-                    url: '../json/evaluate/',
-                    method: 'GET',
-                    params: {
-                        'equation': this.get_equation(),
-                    },
-                    success: function (responseObject) {
-                        var json_response = Ext.decode(responseObject.responseText);
-                        creloadData(json_response);
-                    },
-                    failure: function () {
-                        Ext.Msg.alert('Error', 'Failed JSON request');
-                    }
-        });*/
-    
-    }
-    var initDragZone = function(v) {
-		v.dragZone = new Ext.dd.DragZone(Ext.getBody(), {
-			getDragData: function(e) {
-				// .button-draggable == class of the button you want to drag around
-				if(sourceEl = e.getTarget('.button-draggable')) {
-					d = sourceEl.cloneNode(true);
-					d.id = Ext.id();
-					return v.dragData = {
-						sourceEl: sourceEl,
-						repairXY: Ext.fly(sourceEl).getXY(),
-						ddel: d
-					}
-				}
-			},
 
-			onDrag: function(e) {
-				// !Important: manually fix the default position of Ext-generated proxy element
-				// Uncomment these line to see the Ext issue
-				var proxy = Ext.DomQuery.select('*', this.getDragEl());
-				proxy[2].style.position = '';
-			},
 
-			getRepairXY: function() {
-				return this.dragData.repairXY;
-			}
-		});
-	};
-
-    
-    var canvasContainer = new Ext.BoxComponent({
-        el: 'myCanvas',
-        id: 'canvasContainer',
-
-    });
-    
-    var toolbar = new Ext.Toolbar({
-
-    });
-    toolbar.add({
-        text: 'Add',
-        id: 'plus',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/add.png',
-        cls: 'button-draggable',
-        listeners: {
-			render: initDragZone
-		}
-        //enableToggle: true,
-        //toggleGroup: 'toggle',
-        //toggleHandler: onItemToggle,
-        //pressed: false,
-    }, {
-        text: 'Subtract',
-        id: 'minus',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
-        cls: 'button-draggable',
-        listeners: {
-			render: initDragZone
-		}
-        //enableToggle: true,
-        //toggleGroup: 'toggle',
-        //toggleHandler: onItemToggle,
-        //pressed: false,
-    }, /*{
-        text: 'File',
-        id: 'file',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/page.png',
-        enableToggle: true,
-        toggleGroup: 'toggle',
-        toggleHandler: onItemToggle,
-        pressed: false,
-    }, */{
-        text: 'Filter',
-        id: 'filter',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/calculator.png',
-        cls: 'button-draggable',
-        listeners: {
-			render: initDragZone
-		}
-        //enableToggle: true,
-        //toggleGroup: 'toggle',
-        //toggleHandler: onItemToggle,
-        //pressed: false,
-    } /*{
-        text: 'Pointer',
-        id: 'pointer',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/cursor.png',
-        enableToggle: true,
-        toggleGroup: 'toggle',
-        toggleHandler: onItemToggle,
-        pressed: true,
-    }*/
-    );
-        // Make the panel droppable to the button
-	var initDropZone = function(g) {
-		g.dropZone = new Ext.dd.DropZone(g.body, {
-
-			getTargetFromEvent: function(e) {
-				return e.getTarget('#myCanvas');
-			},
-
-			onNodeOver : function(target, dd, e, data){
-			    selected = data.sourceEl.id;
-				return Ext.dd.DropZone.prototype.dropAllowed;
-			},
-            onNodeOut: function(target, dd, e, data){
-			    selected = 'pointer';
-			    redraw(e);
-			},
-			onNodeDrop : function(target, dd, e, data) {
-				// !Important: We assign the dragged element to be set to new drop position
-                selected = 'pointer';
-				return true;
-			}	
-
-		});
-	};
-
-    var pipelinePanel = new Ext.Panel({
-        tbar: toolbar,
-        region: 'center',
-        title: 'Pipeline',
-        //        autoWidth: true,
-        autoHeight: true,
-        id: 'pipeline',
-        //	layout: 'fit',
-        items: [canvasContainer],
-        listeners: {
-			render: initDropZone
-		},
-
-    });
 
     function onItemToggle(button, state) {
         if (state) selected = button.id;
@@ -651,6 +777,7 @@ whenever any message comes through (whenever files are added, removed, or change
     var selectedBox = [];
     //******Drawing Stuff*********
     var boxes = [];
+    f = boxes;
     var canvas = Ext.get('myCanvas');
     var ctx = canvas.dom.getContext('2d');
     ctx.globalAlpha = 1.0;
@@ -680,7 +807,7 @@ whenever any message comes through (whenever files are added, removed, or change
         case 'file':
             var fb = new FileBox(coords[0], coords[1]);
             for (var i = 0; i < selectedFiles.length; ++i) {
-                fb.files.push(new TextBox(selectedFiles[i]));
+                fb.files.push(new TextBox({'File Name': selectedFiles[i].data['File Name'], 'id':selectedFiles[i].data['id']}));
             }
             fb.draw(ctx);
 
@@ -748,7 +875,7 @@ whenever any message comes through (whenever files are added, removed, or change
             case 'file':
                 var fb = new FileBox(coords[0], coords[1]);
                 for (var i = 0; i < selectedFiles.length; ++i) {
-                    fb.files.push(new TextBox(selectedFiles[i]));
+                    fb.files.push(new TextBox({'File Name': selectedFiles[i].data['File Name'], 'id':selectedFiles[i].data['id']}));
                 }
                 boxes.push(fb);
                 break;

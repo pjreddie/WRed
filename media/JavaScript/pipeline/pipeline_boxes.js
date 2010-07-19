@@ -3,6 +3,8 @@ var conn = new Ext.data.Connection();
 
 var iv = 'QY'
 function PlusBox(x, y, width, height) {
+    this.type = 'PlusBox';
+    this.id = Math.random();
     this.remove = function(){};
     this.color_connections = false;
     this.update = function(){};
@@ -71,6 +73,8 @@ function PlusBox(x, y, width, height) {
 }
 
 function MinusBox(x, y, width, height) {
+    this.type = 'MinusBox';
+    this.id = Math.random();
     this.remove = function(){};
     this.color_connections = true;
     this.update = function(){};
@@ -137,6 +141,8 @@ function MinusBox(x, y, width, height) {
 }
 
 function TextBox(file) {
+    this.type = 'TextBox';
+    this.id = Math.random();
     this.remove = function(){};
     this.color_connections = false;
     this.moveable = false;
@@ -144,12 +150,12 @@ function TextBox(file) {
         this.selected = false;
     };
     this.file = file;
-    this.text = file.data['File Name'];
+    this.text = file['File Name'];
     this.width = 0;
     this.height = TEXTHEIGHT;
     this.chart = function () {
         conn.request({
-            url: '../json/' + this.file.data['id'] + '/',
+            url: '../json/' + this.file['id'] + '/',
             method: 'GET',
             params: {},
             success: function (responseObject) {
@@ -181,6 +187,8 @@ function TextBox(file) {
 }
 
 function FileBox(x, y) {
+    this.type = 'FileBox';
+    this.id = Math.random();
     this.remove = function(){};
     this.color_connections = false;
     this.moveable = true;
@@ -195,9 +203,9 @@ function FileBox(x, y) {
     this.x = x;
     this.y = y;
     this.get_equation = function () {
-        var eq = '( ' + this.files[0].file.data['id'];
+        var eq = '( ' + this.files[0].file['id'];
         for (var i = 1; i < this.files.length; ++i) {
-            eq += ' + ' + this.files[i].file.data['id'];
+            eq += ' + ' + this.files[i].file['id'];
         }
         eq += ' )'
         return eq;
@@ -271,6 +279,8 @@ function FileBox(x, y) {
 }
 
 function InputBox(input, parent) {
+    this.type = 'InputBox';
+    this.id = Math.random();
     this.remove = function(b){
         for(var j = 0; j < b.length; ++j){
             if(b[j].connected_boxes[0] && b[j].connected_boxes[0] == this) {
@@ -322,6 +332,8 @@ function InputBox(input, parent) {
 }
 
 function OutputBox(input, parent) {
+    this.type = 'OutputBox';
+    this.id = Math.random();
     this.remove = function(b){
         for(var j = 0; j < b.length; ++j){
             if(b[j].outputs){
@@ -398,6 +410,8 @@ function OutputBox(input, parent) {
 }
 
 function FilterBox(x, y, text) {
+    this.type = 'FilterBox';
+    this.id = Math.random();
     this.remove = function(b){
         for (var i  = 0; i < this.outputs.length; ++i){
             for(var j = 0; j < b.length; ++j){

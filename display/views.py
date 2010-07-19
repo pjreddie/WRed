@@ -2,6 +2,7 @@
 #views.py
 
 import os
+from django.db.models.signals import post_save, post_delete
 from multiprocessing import Queue
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response, get_object_or_404
@@ -24,6 +25,23 @@ from django import forms
     return out
 '''
 
+#Tells clients subscribed to channels that an update has occurred
+def updated_callback(sender, **kwargs):
+    proxy = xmlrpclib.ServerProxy("http://localhost:8045")
+    print("transmitting...")
+    try:
+      proxy.transmit('/updates/files/all', 'Update!!')
+      proxy.transmit('/updates/files/' + str(kwargs['instance'].id), 'Update to that file!!')
+    except:
+      print "transmission failed, error: ",sys.exc_info()[0]
+    print "...end of transmission"
+
+#Important! These are the signals connectors so that every time a DataFile is saved
+#or deleted, the updated_callback method is called to send out the signal that something
+#has changed
+post_save.connect(updated_callback, sender = DataFile)
+post_delete.connect(updated_callback, sender = DataFile)
+
 class ViewFileForm(forms.Form):
     md5 = forms.CharField(max_length = 32)
 class UploadFileForm(forms.Form):
@@ -43,6 +61,9 @@ class EvaluateEquationForm(forms.Form):
 class EvaluateSaveEquationForm(forms.Form):
     equation = forms.CharField(max_length = 1000)
     file_name = forms.CharField(max_length = 200)
+class SavePipelineForm(forms.Form):
+    name = forms.CharField(max_length = 50)
+    pipeline = forms.CharField(max_length = 10000)
 #Handles GET requests for individual files, returns a json object of the data file
 @login_required
 def json_file_display(request, idNum):
@@ -99,6 +120,30 @@ def json_all_files(request):
     for row in variables[1:]:
         row.extend(['N/A']*(len(variables[0]) - len(row)))
     return HttpResponse(simplejson.dumps(variables))
+
+@login_required
+def json_pipelines(request):
+    pipelines = Pipeline.objects.filter(proposal_id = request.user.username)
+    json = []
+    for p in pipelines:
+        json.append({'name': p.name, 'pipeline' :p.pipeline})
+    return HttpResponse(simplejson.dumps(json))
+    
+@login_required
+def save_pipeline(request):
+    json = {
+        'errors': {},
+        'text': {},
+        'success': False,
+    }
+    if request.method == 'POST':
+        print "Live Data Post Request"
+        form = SavePipelineForm(request.POST, request.FILES)
+        if form.is_valid():
+            p = Pipeline(proposal_id = request.user.username, name = request.POST['name'], pipeline = request.POST['pipeline'])
+            p.save()
+            json['success'] = True
+    return HttpResponse(simplejson.dumps(json))
 #Handles POST requests to upload static files (cannot be update or changed later)
 @login_required
 def upload_file(request):

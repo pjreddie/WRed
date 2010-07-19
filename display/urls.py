@@ -20,7 +20,12 @@ urlpatterns = patterns('',
     (r'^files/json/evaluate/$', evaluate),
     (r'^files/json/evaluate/save/$', evaluate_and_save),
     (r'^files/json/(\w+)/$', json_file_display),
+    
     (r'^files/all/json/$', json_all_files),
+
+    (r'^files/all/json_pipelines/$', json_pipelines),
+    (r'^files/forms/save_pipeline/$', save_pipeline),
+
     (r'^files/forms/upload/$', upload_file),
     (r'^files/forms/upload/live/$', upload_file_live),
     (r'^files/forms/delete/$', delete_file),
