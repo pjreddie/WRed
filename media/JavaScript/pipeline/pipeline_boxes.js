@@ -3,6 +3,9 @@ var conn = new Ext.data.Connection();
 
 var iv = 'QY'
 function PlusBox(x, y, width, height) {
+    this.type = 'PlusBox';
+    this.id = Math.random();
+    this.remove = function(){};
     this.color_connections = false;
     this.update = function(){};
     this.moveable = true;
@@ -70,6 +73,9 @@ function PlusBox(x, y, width, height) {
 }
 
 function MinusBox(x, y, width, height) {
+    this.type = 'MinusBox';
+    this.id = Math.random();
+    this.remove = function(){};
     this.color_connections = true;
     this.update = function(){};
     this.moveable = true;
@@ -116,10 +122,9 @@ function MinusBox(x, y, width, height) {
     this.get_equation = function () {
         if (this.connected_boxes.length != 2) return '';
         else {
-            if(this.independent_variable ===null)
-                return ' ' + this.connected_boxes[0].get_equation() + '.sub( ' + this.connected_boxes[1].get_equation() + ' , \'' + iv + '\' )';
-            else
-                return ' ' + this.connected_boxes[0].get_equation() + '.sub( ' + this.connected_boxes[1].get_equation() + ' , \'' + this.independent_variable + '\' )'
+            if(this.independent_variable ===null) this.independent_variable = iv;
+                
+            return ' ' + this.connected_boxes[0].get_equation() + '.sub( ' + this.connected_boxes[1].get_equation() + ' , \'' + this.independent_variable + '\' )'
         }
     };
     this.draw = function (ctx) {
@@ -136,18 +141,21 @@ function MinusBox(x, y, width, height) {
 }
 
 function TextBox(file) {
+    this.type = 'TextBox';
+    this.id = Math.random();
+    this.remove = function(){};
     this.color_connections = false;
     this.moveable = false;
     this.deselect = function () {
         this.selected = false;
     };
     this.file = file;
-    this.text = file.data['File Name'];
+    this.text = file['File Name'];
     this.width = 0;
     this.height = TEXTHEIGHT;
     this.chart = function () {
         conn.request({
-            url: '../json/' + this.file.data['id'] + '/',
+            url: '../json/' + this.file['id'] + '/',
             method: 'GET',
             params: {},
             success: function (responseObject) {
@@ -179,6 +187,9 @@ function TextBox(file) {
 }
 
 function FileBox(x, y) {
+    this.type = 'FileBox';
+    this.id = Math.random();
+    this.remove = function(){};
     this.color_connections = false;
     this.moveable = true;
     this.operator = function () {
@@ -192,9 +203,9 @@ function FileBox(x, y) {
     this.x = x;
     this.y = y;
     this.get_equation = function () {
-        var eq = '( ' + this.files[0].file.data['id'];
+        var eq = '( ' + this.files[0].file['id'];
         for (var i = 1; i < this.files.length; ++i) {
-            eq += ' + ' + this.files[i].file.data['id'];
+            eq += ' + ' + this.files[i].file['id'];
         }
         eq += ' )'
         return eq;
@@ -268,6 +279,18 @@ function FileBox(x, y) {
 }
 
 function InputBox(input, parent) {
+    this.type = 'InputBox';
+    this.id = Math.random();
+    this.remove = function(b){
+        for(var j = 0; j < b.length; ++j){
+            if(b[j].connected_boxes[0] && b[j].connected_boxes[0] == this) {
+                var temp = b[j];
+                b.splice(j,1);
+                temp.remove(b);
+                --j;
+            }
+        }
+    };
     this.color_connections = false;
     this.moveable = false;
     this.parent = parent;
@@ -309,6 +332,27 @@ function InputBox(input, parent) {
 }
 
 function OutputBox(input, parent) {
+    this.type = 'OutputBox';
+    this.id = Math.random();
+    this.remove = function(b){
+        for(var j = 0; j < b.length; ++j){
+            if(b[j].outputs){
+                for(var k = 0; k < b[j].outputs.length; ++k){
+                    if (b[j].outputs[k] == this){
+                        b[j].outputs.splice(k,1);
+                    } 
+                }
+            }
+            for (var i  = 0; i < this.connected_boxes.length; ++i){
+                if(b[j] == this.connected_boxes[i]) {
+                    var temp = b[j];
+                    b.splice(j,1);
+                    temp.remove(b);
+                    --j;
+                }
+            }
+        }
+    };
     this.color_connections = false;
     this.dataset = true;
     this.operator = false;
@@ -366,6 +410,20 @@ function OutputBox(input, parent) {
 }
 
 function FilterBox(x, y, text) {
+    this.type = 'FilterBox';
+    this.id = Math.random();
+    this.remove = function(b){
+        for (var i  = 0; i < this.outputs.length; ++i){
+            for(var j = 0; j < b.length; ++j){
+                if(b[j] == this.outputs[i]) {
+                    var temp = b[j]
+                    b.splice(j,1);
+                    temp.remove(b);
+                    --j;
+                }
+            }
+        }
+    };
     this.color_connections = false;
     this.moveable = true;
     this.operator = function () {

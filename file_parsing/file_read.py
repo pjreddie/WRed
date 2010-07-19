@@ -26,15 +26,11 @@ def handle_uploaded_live_file(files, filename, proposal_id):
 @transaction.commit_manually
 def addfile(filestr, filename, proposal_id, dirty):
     m = md5.new()
-    filein = file(filestr, 'rb') # open in binary mode
-    
-    while True:
-        t = filein.read(1024)
-        if len(t) == 0: break # end of file
-        m.update(t)
+    a = Data(filestr)
+    m.update(a.__str__())
     print m.hexdigest()
-    filein.close()
     f = DataFile()
+    print 1
     if dirty:
         f, created = DataFile.objects.get_or_create(
             name = filename, 
@@ -46,6 +42,7 @@ def addfile(filestr, filename, proposal_id, dirty):
             os.remove(os.path.join('db', f.md5)+ '.file')
             f.md5 = m.hexdigest()
             f.metadata_set.all().delete()
+            f.save()
     else:
         f, created = DataFile.objects.get_or_create(
             md5 = m.hexdigest(),
@@ -53,19 +50,23 @@ def addfile(filestr, filename, proposal_id, dirty):
         )
         if not created:
             f.dirty = False
-    a = Data(filestr)
+            f.save()
+    print 3
     a.correct_scan()
+    print 4
     a.write('db/' + m.hexdigest() + '.file')
-    
-    fd = open(filestr, 'r')
+    print 5
+    fd = open('db/' + m.hexdigest() + '.file', 'r')
+    print 6
     t = []
     for lines in fd:
         lines = lines.split()
+        if len(lines) == 0:
+            continue
         if lines[0] == '#Columns':
             print 'Columns'
             t.append(lines[1:])
             break
-
     for lines in fd:
         if lines[0] == '#': break
         t.append(lines.split())
@@ -73,7 +74,6 @@ def addfile(filestr, filename, proposal_id, dirty):
     rows = t[1:]
     variables = t[0]
     out = []
-
     for j in range(len(variables)):
         column = []
         for i in range(len(rows)):
@@ -88,5 +88,4 @@ def addfile(filestr, filename, proposal_id, dirty):
             metadata.save()
         except ValueError:
             pass
-    f.save()
     transaction.commit()

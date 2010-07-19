@@ -347,21 +347,21 @@ Licensed under the MIT License ~ http://threedubmedia.googlecode.com/files/MIT-L
                     ' style="border:0px;position:absolute;cursor:pointer;right:1em;top:1em;z-index:2;" />'),
                 map = $('\
 <map name="@">\n\
-  <area id="@_right" alt="right" href="#right"   \n\
+  <area id="@_right" alt="right" hrf="#right"   \n\
     shape="poly" coords="80,40, 54,30, 44,40, 54,50" />\n\
-  <area id="@_left"  alt="left"  href="#left"    \n\
+  <area id="@_left"  alt="left"  hrf="#left"    \n\
     shape="poly" coords=" 0,40, 26,30, 36,40, 26,50" />\n\
-  <area id="@_up"    alt="up"    href="#up"      \n\
+  <area id="@_up"    alt="up"    hrf="#up"      \n\
     shape="poly" coords="40, 0, 30,26, 40,36, 50,26" />\n\
-  <area id="@_down"  alt="down"  href="#down"    \n\
+  <area id="@_down"  alt="down"  hrf="#down"    \n\
     shape="poly" coords="40,80, 30,54, 40,44, 50,54" />\n\
-  <area id="@_in"    alt="in"    href="#zoomin"  \n\
+  <area id="@_in"    alt="in"    hrf="#zoomin"  \n\
     shape="poly" coords="52,65, 55,58, 60,54, 70,54, 75,58, 78,65" />\n\
-  <area id="@_out"   alt="out"   href="#zoomout" \n\
+  <area id="@_out"   alt="out"   hrf="#zoomout" \n\
     shape="poly" coords="52,67, 55,74, 60,78, 70,78, 75,74, 78,67" />\n\
-  <area id="@_reset" alt="reset" href="#reset"   \n\
+  <area id="@_reset" alt="reset" hrf="#reset"   \n\
     shape="poly" coords="52,13, 55, 5, 60, 1, 70, 1, 75, 5, 78,13, 75,21 70,25, 60,25, 55, 21" />\n\
-  <area id="@_other" alt="other" href="#" shape="default" />\n\
+  <area id="@_other" alt="other" hrf="#" shape="default" />\n\
 </map>'.replace(/@/g,mapid));
 
             img.appendTo(placeholder);

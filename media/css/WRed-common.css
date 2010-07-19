@@ -59,27 +59,33 @@
 
 
 
-#LegendContainer {
+#ChartInfoContainer {
   margin:         10px;
 }
-#LegendContainer li {
+#ChartInfoContainer h2 {
+  font:           bold 15px/1.2 'Arial', 'Tahoma', 'Verdana', 'Helvetica', sans-serif;
+  margin-top:     16px;
+  margin-bottom:  8px;
+  border-bottom:  1px solid #888;
+}
+.legendSeries li {
   font:           12px/1.2 'Arial', 'Tahoma', 'Verdana', 'Helvetica', sans-serif;
   margin-bottom:  6px;
 }
-#LegendContainer li p {
+.legendSeries li p {
   margin-bottom:  4p;
 }
-#LegendContainer input {
+.legendSeries input {
   vertical-align: top;
 }
-#LegendContainer label span {
+.legendSeries label span {
   border:         1px solid white;
   padding:        0 7px;
   margin:         0 4px;
   -moz-box-shadow: 0 0 0 2px;
   -webkit-box-shadow:     0 0 0 2px;
 }
-#LegendContainer li div {
+.legendSeries li div {
   margin-left:    50px;
 }
 

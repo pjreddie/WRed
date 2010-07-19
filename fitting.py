@@ -33,7 +33,7 @@ def print_timing(func):
 def fitting_request_action(request, idNum):
     print 'USERNAME: ', request.user.username
     print 'Authenticated: ', request.user.is_authenticated()
-    print 'Request: ', request.POST
+    #print 'Request: ', request.POST
     
     if request.user.is_authenticated() and (request.user.username == str(idNum) or request.user.is_superuser):
         try:
@@ -46,8 +46,11 @@ def fitting_request_action(request, idNum):
         
         
         if actionID == '1':
-            xData = simplejson.loads(request.POST['xData'])
-            yData = simplejson.loads(request.POST['yData'])
+            data = simplejson.loads(request.POST['data'])
+            prevFunctions = simplejson.loads(request.POST['prevFunctions'])
+            
+            xData = simplejson.loads(request.POST['data'])['x']
+            yData = simplejson.loads(request.POST['data'])['y']
             functionID = int(request.POST['functionID'])
             function = getFunctionClass(functionID)()
             
@@ -56,7 +59,23 @@ def fitting_request_action(request, idNum):
             request.session['functionID'] = functionID
             request.session['function'] = function
             
-            addlParams = { 'xData': xData, 'yData': yData, 'functionID': functionID, 'actionID': 2 }
+            
+            functionGroup = FunctionGroup()
+            functionGroup.data = data
+            
+            if len(prevFunctions):
+                for prevFunctionInfo in prevFunctions:
+                    prevFunction = getFunctionClass(prevFunctionInfo['functionID'])()
+                    prevFunction.functionParams = prevFunctionInfo['functionParams']
+                    functionGroup.functions.append(prevFunction)
+                    
+            functionGroup.functions.append(function)
+
+            request.session['functionGroup'] = functionGroup
+            print functionGroup.functions
+            print '^^^^^^^^^^^^^^'
+            
+            addlParams = { 'functionID': functionID, 'actionID': 2 }  # 'xData': xData, 'yData': yData, 
             request.session['addlParams'] = addlParams
             
 
@@ -67,36 +86,44 @@ def fitting_request_action(request, idNum):
             
             
         elif actionID == '2':
+            xData = request.session['xData']
+            yData = request.session['yData']
+            function = request.session['function']
+            functionGroup = request.session['functionGroup']
+            
+            
             # Data Types
             if request.POST['dataType'] == 'askPoint':
-                request = defPoint(request)
+                request = defPoint(request, functionGroup)
             elif request.POST['dataType'] == 'askDrag':
-                request = defPoint(request)
+                request = defPoint(request, functionGroup)
 
-                xData = request.session['xData']
-                yData = request.session['yData']
-                function = request.session['function']
                 function.setFunctionParamsFromRequest(request)
                 
-                dragFit = createFunction(xData, yData, function)
+                # Update most recent function (maybe this is wrong)
+                functionGroup.functions[-1] = function
+                
+                dragFit = functionGroup.createFunction(xData, yData)
                 dragFit.update({ 'dataType': 'doingDrag' })
                 return HttpResponse(simplejson.dumps(dragFit))
             
             
             if not request.session['function'].fitInstructions:
-                xData = request.session['xData']
-                yData = request.session['yData']
-                function = request.session['function']
                 function.setFunctionParamsFromRequest(request)
                 
-                finishedFunction = createFunction(xData, yData, function)
+                # Update most recent function (maybe this is wrong)
+                functionGroup.functions[-1] = function
+                
+                finishedFunction = functionGroup.createFunction(xData, yData)
+                print finishedFunction
+                print '############'
                 return HttpResponse(simplejson.dumps(finishedFunction))
             else:
                 #guess width
                 #guessWidth = guess_width(xData, yData, peakX, peakY, backgroundY)
                 #guessWidth2 = guess_width2(xData, yData, peakX, peakY, backgroundY)
                 
-                nextFitInstruction = request.session['function'].fitInstructions.popleft()
+                nextFitInstruction = function.fitInstructions.popleft()
                 
                 response = fitInstructionResponse(nextFitInstruction, request.session['addlParams'])
                 return HttpResponse(response)
@@ -107,33 +134,57 @@ def fitting_request_action(request, idNum):
             yData = dataData['y']
             yErrData = dataData['yerr']
             
-            functionData = simplejson.loads(request.POST['functionData'])
-            functionID = int(request.POST['functionID'])
-            functionParams = simplejson.loads(request.POST['functionParams'])
-            function = getFunctionClass(functionID)()
-            function.setFunctionParamsFromRequest(request)
-            params = function.getFunctionParamsAsArray()
             
+            #functionData = simplejson.loads(request.POST['functionData']) # Not used at all
             
-            functkw = { 'xData': xData, 'yData': yData, 'yErr': yErrData, 'function': function }
+            functionInfos = simplejson.loads(request.POST['functionInfos'])
+            functionGroup = FunctionGroup()
+            functionGroup.data = dataData
+            
+            for functionInfo in functionInfos:
+                print functionInfo
+                functionID = int(functionInfo['functionID'])
+                functionParams = functionInfo['functionParams']
+                function = getFunctionClass(functionID)()
+                function.setFunctionParamsFromDict(functionParams)
+                functionGroup.functions.append(function)
+            
+            (params, slices) = functionGroup.getFunctionsParamsAsArray()
+            
+            functkw = { 'xData': xData, 'yData': yData, 'yErr': yErrData, 'functionGroup': functionGroup, 'slices': slices }
             mpfitResult = mpfit(mpfitFunction, params, functkw=functkw)
             
-            function.functionParams = function.getFunctionParamsFromArray(mpfitResult.params)
+            functionGroup.setFunctionsParamsFromArray(mpfitResult.params, slices)
 
-            finishedFit = createFunction(xData, yData, function)
-            chiSquared = sigfig(chisq(xData, yData, yErrData, function))
+            finishedFit = functionGroup.createFunction(xData, yData)
+            chiSquared = sigfig(functionGroup.chisq(xData, yData, yErrData))
             
-            # Map sigfig 
-            fitFunctionParams = function.getFunctionParamsFromArray(map(sigfig, mpfitResult.params))
-            fitFunctionParamsErr = function.getFunctionParamsFromArray(map(sigfig, mpfitResult.perror))
-            fitFunctionParamsArray = paramsJoin(fitFunctionParams, fitFunctionParamsErr)       
+            fitFunctionInfos = []
+            pointer = 0
+            counter = 0
+            for function in functionGroup.functions:
+                mpfitFunctionResult = dict(params=mpfitResult.params[pointer : pointer + slices[counter]],
+                                           perror=mpfitResult.perror[pointer : pointer + slices[counter]])
+                
+                # Map sigfigs
+                fitFunctionParams = function.getFunctionParamsFromArray(map(sigfig, mpfitResult.params))
+                fitFunctionParamsErr = function.getFunctionParamsFromArray(map(sigfig, mpfitResult.perror))
+                fitFunctionParamsArray = paramsJoin(fitFunctionParams, fitFunctionParamsErr)       
+                
+                fitFunctionInfo = { 'fitFunctionParams': fitFunctionParams, 'fitFunctionParamsErr': fitFunctionParamsErr, 'chisq': chiSquared,
+                                    'fitFunctionParamsArray': fitFunctionParamsArray }
+                
+                fitFunctionInfos.append(fitFunctionInfo)
+                
+                pointer += slices[counter]
+                counter += 1
             
-            functionInfo = { 'fitFunctionParams': fitFunctionParams, 'fitFunctionParamsErr': fitFunctionParamsErr, 'chisq': chiSquared,
-                             'fitFunctionParamsArray': fitFunctionParamsArray }
-
+            print fitFunctionInfos
+            print '*****'
+            print
 
             response = finishedFit
-            response.update({ 'legendIndex': request.POST['legendIndex'], 'functionInfo': functionInfo, 'dataType': 'doFit' })
+            response.update({ 'legendIndex': int(request.POST['legendIndex']), 'functionInfos': fitFunctionInfos, 'dataType': 'doFit' })
             return HttpResponse(simplejson.dumps(response))
             
         else:
@@ -144,39 +195,18 @@ def fitting_request_action(request, idNum):
 
 
 
-
-def createFunction(xData, yData, function):
-      functionDomain    = N.arange(min(xData), max(xData), abs(max(xData) - min(xData)) / 180.)
-      functionDataRange = N.arange(min(yData), max(yData), abs(max(yData) - min(yData)) / 180.)
-      
-      functionRange = function.function(functionDomain, functionDataRange)
-      functionData = zip(functionDomain, functionRange)
-      
-      functionY = function.function(xData, yData)
-      functionResiduals = N.subtract(functionY, yData)
-      functionResidualData = zip(xData, functionResiduals)
-
-      
-
-      print
-      print functionRange
-      print functionY
-      print
-      print '--------'
-      print
-      
-      JSONobj = dict(fit=functionData, resid=functionResidualData, functionID=function.functionID, functionParams=function.functionParams)
-      return JSONobj
-
-
-#def createFit(
-
-
 # --
 
-def defPoint(request):
-    request.session[request.POST['xID']] = float(request.POST['xPos'])
-    request.session[request.POST['yID']] = float(request.POST['yPos'])
+def defPoint(request, functionGroup):
+    xPos = float(request.POST['xPos'])
+    yPos = float(request.POST['yPos'])
+    
+    # We need to subtract the value from rest of the functions
+    if len(functionGroup.functions) > 1:
+        yPos -= functionGroup.getValueAtX(xPos)
+    
+    request.session[request.POST['xID']] = xPos
+    request.session[request.POST['yID']] = yPos
     return request
 
 def defDrag(request):
@@ -220,25 +250,16 @@ def paramsJoin(d1, d2):
 # --
 
 # Copied straight from William
-def chisq(xData, yData, yErr, function):
-    yCalc = function.function(xData, yData)
-    
-    yErr_temp = copy.deepcopy(yErr)
-#    zero_loc = N.where(yErr == 0)[0]
-#    if len(zero_loc) != 0:
-#        yErr_temp[zero_loc] = 1.0
-    chi = ((yData - yCalc) / yErr_temp) ** 2
-    
-    return chi.sum() / (len(yData) - len(function.functionParams))
 
 
-def mpfitFunction(params, parinfo=None, fjac=None, xData=None, yData=None, yErr=None, function=None):
+
+def mpfitFunction(params, parinfo=None, fjac=None, xData=None, yData=None, yErr=None, functionGroup=None, slices=None):
     # Parameter values are passed in "params"
     # If fjac==None then partial derivatives should not be
     # computed.  It will always be None if MPFIT is called with default flag.
-    
-    function.functionParams = function.getFunctionParamsFromArray(params)
-    yCalc = function.function(xData, yData)
+
+    functionGroup.setFunctionsParamsFromArray(params, slices)
+    yCalc = functionGroup.function(xData, yData)
     
     # Non-negative status value means MPFIT should continue, negative means
     # stop the calculation.

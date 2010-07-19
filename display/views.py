@@ -2,6 +2,7 @@
 #views.py
 
 import os
+from django.db.models.signals import post_save, post_delete
 from multiprocessing import Queue
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response, get_object_or_404
@@ -24,6 +25,23 @@ from django import forms
     return out
 '''
 
+#Tells clients subscribed to channels that an update has occurred
+def updated_callback(sender, **kwargs):
+    proxy = xmlrpclib.ServerProxy("http://localhost:8045")
+    print("transmitting...")
+    try:
+      proxy.transmit('/updates/files/all', 'Update!!')
+      proxy.transmit('/updates/files/' + str(kwargs['instance'].id), 'Update to that file!!')
+    except:
+      print "transmission failed, error: ",sys.exc_info()[0]
+    print "...end of transmission"
+
+#Important! These are the signals connectors so that every time a DataFile is saved
+#or deleted, the updated_callback method is called to send out the signal that something
+#has changed
+post_save.connect(updated_callback, sender = DataFile)
+post_delete.connect(updated_callback, sender = DataFile)
+
 class ViewFileForm(forms.Form):
     md5 = forms.CharField(max_length = 32)
 class UploadFileForm(forms.Form):
@@ -34,10 +52,18 @@ class UploadLiveFileForm(forms.Form):
     filename = forms.CharField(max_length = 100)
 class DeleteFileForm(forms.Form):
     md5 = forms.CharField(max_length = 32)
+class DownloadFileForm(forms.Form):
+    id = forms.IntegerField()
 class WaitForUpdateForm(forms.Form):
     pass
 class EvaluateEquationForm(forms.Form):
-    equation = forms.CharField(max_length = 500)
+    equation = forms.CharField(max_length = 1000)
+class EvaluateSaveEquationForm(forms.Form):
+    equation = forms.CharField(max_length = 1000)
+    file_name = forms.CharField(max_length = 200)
+class SavePipelineForm(forms.Form):
+    name = forms.CharField(max_length = 50)
+    pipeline = forms.CharField(max_length = 10000)
 #Handles GET requests for individual files, returns a json object of the data file
 @login_required
 def json_file_display(request, idNum):
@@ -94,6 +120,30 @@ def json_all_files(request):
     for row in variables[1:]:
         row.extend(['N/A']*(len(variables[0]) - len(row)))
     return HttpResponse(simplejson.dumps(variables))
+
+@login_required
+def json_pipelines(request):
+    pipelines = Pipeline.objects.filter(proposal_id = request.user.username)
+    json = []
+    for p in pipelines:
+        json.append({'name': p.name, 'pipeline' :p.pipeline})
+    return HttpResponse(simplejson.dumps(json))
+    
+@login_required
+def save_pipeline(request):
+    json = {
+        'errors': {},
+        'text': {},
+        'success': False,
+    }
+    if request.method == 'POST':
+        print "Live Data Post Request"
+        form = SavePipelineForm(request.POST, request.FILES)
+        if form.is_valid():
+            p = Pipeline(proposal_id = request.user.username, name = request.POST['name'], pipeline = request.POST['pipeline'])
+            p.save()
+            json['success'] = True
+    return HttpResponse(simplejson.dumps(json))
 #Handles POST requests to upload static files (cannot be update or changed later)
 @login_required
 def upload_file(request):
@@ -165,6 +215,7 @@ def all_files(request):
 @login_required
 def pipeline(request):
     return render_to_response('pipeline.html')
+@login_required
 def evaluate(request):
     json = {
         'file': {},
@@ -191,8 +242,56 @@ def evaluate(request):
             return HttpResponse(simplejson.dumps(displaystring(eval(parsed_eq).__str__())))
     return HttpResponse(simplejson.dumps(json))
 @login_required
+def evaluate_and_save(request):
+    json = {
+        'file': {},
+        'errors': {},
+        'text': {},
+        'success': False,
+    }
+    print 'evaluate'
+    if request.method == 'GET':
+        form = EvaluateSaveEquationForm(request.GET, request.FILES)
+        if form.is_valid():
+            print 'evaluating: ', request.GET['equation']
+            eq = request.GET['equation']
+            eq = eq.split();
+            for i in range(len(eq)):
+                try:
+                    eq[i] = 'Data("db/" + DataFile.objects.get(id = ' + str(int(eq[i])) + ').md5 + ".file")'
+                except ValueError:
+                    pass
+            parsed_eq = eq[0]
+            for a in eq[1:]:
+                parsed_eq += ' ' + a
+            print parsed_eq
+            eval(parsed_eq + '.write("db/temp_eval")')
+            addfile('db/temp_eval',request.GET['file_name'], request.user.username,False)
+            json['success'] = True
+            return HttpResponse(simplejson.dumps(json))
+    return HttpResponse(simplejson.dumps(json))
+
+@login_required
 def view_file(request, idNum):
     return render_to_response('view_file.html', {'id': idNum})
+    
+@login_required
+def download(request):
+    if request.method == 'GET':
+        form = DownloadFileForm(request.GET, request.FILES)
+        print request.GET['id']
+        rFile = DataFile.objects.get(id = request.GET['id'])
+        if request.user.is_authenticated() and (request.user.username == str(rFile.proposal_id) or request.user.is_superuser):
+            print 'Good To Go!'
+            md5 = rFile.md5
+            data = file('db/' + md5 + '.file')
+            response = HttpResponse(data, mimetype='application/force-download')
+            response['Content-Disposition'] = 'attachment; filename=' + rFile.name
+            return response
+        else:
+            print 'Not authenticated!'
+    return HttpResponse('Go Login!')
+
 def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username', '')

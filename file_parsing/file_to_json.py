@@ -13,6 +13,8 @@ def displayfile(filestr):
     
     for line in f:
         line_array = line.split()
+        if len(line_array) == 0:
+            continue
         if line[0] == '#':
             metadata_name = line_array[0][1:]
             metadata_data = ' '.join(line_array[1:])
@@ -36,6 +38,8 @@ def displaystring(st):
     for line in f:
         i+=1
         line_array = line.split()
+        if len(line_array) == 0:
+            continue
         if line[0] == '#':
             metadata_name = line_array[0][1:]
             metadata_data = ' '.join(line_array[1:])
