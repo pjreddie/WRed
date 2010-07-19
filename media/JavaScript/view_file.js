@@ -257,10 +257,16 @@ function onReadyFunction () {
                 '<input type="checkbox" name="legendFunctionSeriesCheck{#}" id="legendFunctionSeriesCheck{#}" />',
                 '<label for="legendFunctionSeriesCheck{#}"><span style="-moz-box-shadow: 0 0 0 1px {color}; -webkit-box-shadow: 0 0 0 1px {color}; background-color: {color};"></span>{label}</label>',
                 '<div>',
-                '<tpl if="(curF = globalFunctionSeries.plot[xindex - 1].functionInfo)">',
-                    '<p>&chi;&#178; = {[curF.chisq]}</p>',
-                    '<tpl for="curF.fitFunctionParamsArray">',
-                        '<p>{name} = {value} &plusmn; {err}</p>',
+                '<tpl if="curF = globalFunctionSeries.plot[xindex - 1].functionInfos"></tpl>',
+                '<tpl if="curF.length &gt; 1">',/*
+                    '<tpl for="this">',
+                        '<tpl if="console.log(88,values)"></tpl>',/*
+                        '<tpl if="curF.functionInfo">',
+                            '<p>&chi;&#178; = {[curF[xindex].functionInfo.chisq]}</p>',
+                            '<tpl for="curF.fitFunctionParamsArray">',
+                                '<p>{name} = {value} &plusmn; {err}</p>',
+                            '</tpl>',
+                        '</tpl>',*/
                     '</tpl>',
                 '</tpl>',
                 '</div>',
@@ -435,32 +441,56 @@ function onReadyFunction () {
         fittingFunction = FunctionSelect.getValue();
         //fittingFunction = record.data.id;
         
-        if (fittingFunction === '' || fittingFunction == '-1')
+        if (fittingFunction === '' || fittingFunction == '-1') {
             Ext.Msg.alert('Form incomplete', 'Please select a function.');
+        }
         else {
-            var data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
-            if (button.id === 'CreateFunctionButton') {
-                makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData', 'functionID': FunctionSelect.getValue(),
-                                     'data': JSON.stringify(data) }, doFitInstruction);
+            var checkedIndices = getCheckedIndices();
+            
+            if (button.id === 'AddFunctionToSelectedCurveButton' && !checkedIndices.functionSeries.length) {
+                Ext.Msg.alert('Form incomplete', 'Please select at least one curve to which you would like to add the function.');
             }
-            else if (button.id === 'AddFunctionToSelectedCurveButton') {
-                var checkedIndices = getCheckedIndices();
-                var selectedFunctionIndex = checkedIndices[0];
-                var selectedFunctionSeries = globalFunctionSeries.plot[selectedFunctionIndex];
+            else {
+                var data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
+                
+                var prevFunctions = [];
+                if (button.id === 'AddFunctionToSelectedCurveButton') {
+                    for (var checkedFunctionIndex = 0; checkedFunctionIndex < checkedIndices.functionSeries.length; checkedFunctionIndex ++) {
+                        console.log('==', selectedFunctionIndex);
+                        var selectedFunctionIndex = checkedIndices.functionSeries[checkedFunctionIndex];
+                        var selectedFunctionSeries = globalFunctionSeries.plot[selectedFunctionIndex];
+                        console.log(selectedFunctionSeries);
+                        prevFunctions = prevFunctions.concat(selectedFunctionSeries.functionInfos);
+                        console.log('Length: ', prevFunctions);
+                        console.log('==');
+                        /* { 'functionID':     selectedFunctionSeries.functionID,
+                             'functionParams': selectedFunctionSeries.functionParams,
+                             'functionIndex':  selectedFunctionIndex }*/
+                    }
+                    console.log(globalFunctionSeries.plot);
+                    console.log(prevFunctions);
+                }
                 
                 makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData', 'functionID': FunctionSelect.getValue(),
-                                     'data': JSON.stringify(data), 'prevFunctions': JSON.stringify(selectedFunctionSeries) }, doFitInstruction);
+                                     'data': JSON.stringify(data), 'prevFunctions': JSON.stringify(prevFunctions) }, doFitInstruction);
             }
         }
     }
+    
     function getCheckedIndices() {
-        var checkedDataSeriesIndices = $('#legendDataSeries input[type=checkbox]:checked').map(function() { if (this.checked) return $('#legendDataSeries li input').index(this); });
-        var checkedFunctionSeriesIndices = $('#legendFunctionSeries input[type=checkbox]:checked').map(function() { if (this.checked) return $('#legendFunctionSeries li input').index(this); });
+        var checkedDataSeriesIndices = $('#legendDataSeries input[type=checkbox]:checked').map(function() {
+            if (this.checked) return $('#legendDataSeries li input').index(this);
+        });
+        var checkedFunctionSeriesIndices = $('#legendFunctionSeries input[type=checkbox]:checked').map(function() {
+            if (this.checked) return $('#legendFunctionSeries li input').index(this);
+        });
+        
         return { dataSeries: checkedDataSeriesIndices, functionSeries: checkedFunctionSeriesIndices };
     }
+    
     function fitSeries (button, event) {
         var checkedIndices = getCheckedIndices();
-    console.log(checkedIndices);
+
         var dataSeries     = globalDataSeries.plot[checkedIndices.dataSeries[0]];
         var functionSeries = globalFunctionSeries.plot[checkedIndices.functionSeries[0]];
         
@@ -472,7 +502,7 @@ function onReadyFunction () {
 
             data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
             makeFittingRequest({ 'actionID': 3, 'actionName': 'sendData', 'legendIndex': checkedIndices.functionSeries[0],
-                                 'functionID': functionSeries.functionID, 'functionParams': JSON.stringify(functionSeries.functionParams),
+                                 'functionInfos': JSON.stringify(functionSeries.functionInfos),
                                  'dataData': JSON.stringify(dataData), 'functionData': JSON.stringify(functionData) }, doFitInstruction);
             updateLegend();
         }
@@ -570,6 +600,7 @@ function onReadyFunction () {
         
         FunctionName = FunctionSelectStore.getById(FunctionSelect.getValue()).data.name;
         console.log(FunctionName, functionSeriesReplaceIndex);
+        console.log('Functions retrieved: ', responseJSON.functionInfos);
         
         newPlotData = {
             label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': ' + FunctionName,
@@ -578,17 +609,15 @@ function onReadyFunction () {
             lines:    { show: true },
             seriesType: 'function',
             
-            functionID: responseJSON.functionID,
-            functionParams: responseJSON.functionParams,
-            functionInfo: responseJSON.functionInfo,
+            functionInfos: responseJSON.functionInfos,
         };
 
         var plotHoverFunctionSeries = globalFunctionSeries.plot;
 
         if (functionSeriesReplaceIndex)
-            plotHoverFunctionSeries[functionSeriesReplaceIndex] = newPlotData;
+            globalFunctionSeries.plot[functionSeriesReplaceIndex] = newPlotData;
         else
-            plotHoverFunctionSeries.push(newPlotData);
+            globalFunctionSeries.plot.push(newPlotData);
 
         //console.log('ph', plotHoverFunctionSeries);
 
@@ -609,9 +638,9 @@ function onReadyFunction () {
         var residplotHoverFunctionSeries = globalFunctionSeries.residplot;
         
         if (functionSeriesReplaceIndex)
-            residplotHoverFunctionSeries[functionSeriesReplaceIndex] = newResidPlotData;
+            globalFunctionSeries.residplot[functionSeriesReplaceIndex] = newResidPlotData;
         else
-            residplotHoverFunctionSeries.push(newResidPlotData);
+            globalFunctionSeries.residplot.push(newResidPlotData);
 
         //console.log('rph', residplotHoverFunctionSeries);
 
@@ -664,7 +693,7 @@ function onReadyFunction () {
                     }
                     
                     globalFunctionSeries = { plot: newPlotFunctionSeries, residplot: newResidplotFunctionSeries };
-                    updatePlots('PlotContainer');
+                    updatePlots('PlotContainer', true);
                 }
             });
         }
@@ -950,6 +979,8 @@ function onReadyFunction () {
             
         LegendDataSeriesStore.loadData(globalDataSeries.plot);
         LegendFunctionSeriesStore.loadData(globalFunctionSeries.plot);
+        
+        legendSeriesClick();
         // we should remember inputs that are already checked?
         $('.legendSeries input:checkbox').bind('click', legendSeriesClick); // jQuery's .live() should be good
     }
@@ -1229,8 +1260,20 @@ function onReadyFunction () {
     }
     */
 
-    function dragCheckHandler(menuItem, checked) {}
+    function dragCheckHandler (menuItem, checked) {}
 
-    function scaleCheckHandler(menuItem, checked) {}
+    function scaleCheckHandler (menuItem, checked) {}
+    
+    function randomColor () {
+        var rint = Math.round(0xffffff * Math.random());
+        return 'rgb(' + (rint >> 16) + ', ' + (rint >> 8 & 255) + ', ' + (rint & 255) + ')';
+    }
     
 }
+/*
+            if (button.id === 'CreateFunctionButton') {
+                makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData', 'functionID': FunctionSelect.getValue(),
+                                     'data': JSON.stringify(data), 'prevFunctions': JSON.stringify([]) }, doFitInstruction);
+            }
+            else if (button.id === 'AddFunctionToSelectedCurveButton') {
+*/
