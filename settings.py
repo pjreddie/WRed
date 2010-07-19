@@ -80,7 +80,7 @@ MIDDLEWARE_CLASSES = (
 #CACHE_BACKEND = 'db://ubdatatable'
 
 #Warning cache data may be evicted if server is restarted or cache fills up
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+#SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 
 ROOT_URLCONF = 'WRed.urls'
 
