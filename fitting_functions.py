@@ -57,8 +57,8 @@ class FunctionGroup(object):
             
 
     def createFunction(self, xData, yData):
-        functionDomain    = N.arange(min(xData), max(xData), abs(max(xData) - min(xData)) / 180.)
-        functionDataRange = N.arange(min(yData), max(yData), abs(max(yData) - min(yData)) / 180.)
+        functionDomain    = N.arange(min(xData), max(xData), abs(max(xData) - min(xData)) / 200.)
+        functionDataRange = N.arange(min(yData), max(yData), abs(max(yData) - min(yData)) / 200.)
 
         functionRanges = []
         functionYs = []
@@ -152,8 +152,8 @@ class Function(object):
         
 
     def createFunction(self, xData, yData):
-        functionDomain    = N.arange(min(xData), max(xData), abs(max(xData) - min(xData)) / 180.)
-        functionDataRange = N.arange(min(yData), max(yData), abs(max(yData) - min(yData)) / 180.)
+        functionDomain    = N.arange(min(xData), max(xData), abs(max(xData) - min(xData)) / 200.)
+        functionDataRange = N.arange(min(yData), max(yData), abs(max(yData) - min(yData)) / 200.)
         
         functionRange = self.function(functionDomain, functionDataRange)
         functionData = zip(functionDomain, functionRange)
@@ -234,14 +234,14 @@ class Gaussian(Function):
         self.functionID = 11
         self.functionName = 'Gaussian'
         self.fitInstructions  = deque([
-                                    { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
-                                      'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
+                                #   { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
+                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'peakX', 'yID': 'peakY',
-                                      'messageTitle': 'Step 2', 'messageText': 'Please click on the peak of the data' },
+                                      'messageTitle': 'Step 1', 'messageText': 'Please click on the peak of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'widthX', 'yID': 'widthY',
-                                      'messageTitle': 'Step 3', 'messageText': 'Please click on the width of the data' }
+                                      'messageTitle': 'Step 2', 'messageText': 'Please click on the width of the data' }
                                 ])
-        self.functionParams = { 'peakX': None, 'peakY': None, 'backgroundY': None, 'FWHM': None }
+        self.functionParams = { 'peakX': None, 'peakY': None, 'backgroundY': 0, 'FWHM': None }
 
     def function(self, Domain, Range):
         (peakX, peakY, backgroundY, FWHM) = (self.functionParams['peakX'], self.functionParams['peakY'], \
@@ -271,12 +271,12 @@ class GaussianDrag(Gaussian):
         self.functionID = 12
         self.functionName = 'Gaussian drag'
         self.fitInstructions  = deque([
-                                    { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
-                                      'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
+                                #   { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
+                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'peakX', 'yID': 'peakY',
-                                      'messageTitle': 'Step 2', 'messageText': 'Please click on the peak of the data' },
+                                      'messageTitle': 'Step 1', 'messageText': 'Please click on the peak of the data' },
                                     { 'dataType': 'askDrag', 'xIDstart': 'widthYst', 'yIDstart': 'widthYst', 'xIDend': 'widthX', 'yIDend': 'widthY',
-                                      'messageTitle': 'Step 3', 'messageText': 'Please drag on the width of the data' }
+                                      'messageTitle': 'Step 2', 'messageText': 'Please drag on the width of the data' }
                                 ])
 
 
@@ -288,14 +288,14 @@ class Lorentzian(Function):
         self.functionID = 21
         self.functionName = 'Lorentzian'
         self.fitInstructions  = deque([
-                                    { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
-                                      'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
+                                #   { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
+                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'peakX', 'yID': 'peakY',
-                                      'messageTitle': 'Step 2', 'messageText': 'Please click on the peak of the data' },
+                                      'messageTitle': 'Step 1', 'messageText': 'Please click on the peak of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'widthX', 'yID': 'widthY',
-                                      'messageTitle': 'Step 3', 'messageText': 'Please click on the width of the data' }
+                                      'messageTitle': 'Step 2', 'messageText': 'Please click on the width of the data' }
                                 ])
-        self.functionParams = { 'peakX': None, 'peakY': None, 'backgroundY': None, 'FWHM': None }
+        self.functionParams = { 'peakX': None, 'peakY': None, 'backgroundY': 0, 'FWHM': None }
 
     def function(self, Domain, Range):
         (peakX, peakY, backgroundY, FWHM) = (self.functionParams['peakX'], self.functionParams['peakY'], \
@@ -325,12 +325,12 @@ class LorentzianDrag(Lorentzian):
         self.functionID = 22
         self.functionName = 'Lorentzian drag'
         self.fitInstructions  = deque([
-                                    { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
-                                      'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
+                                #   { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
+                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'peakX', 'yID': 'peakY',
-                                      'messageTitle': 'Step 2', 'messageText': 'Please click on the peak of the data' },
+                                      'messageTitle': 'Step 1', 'messageText': 'Please click on the peak of the data' },
                                     { 'dataType': 'askDrag', 'xIDstart': 'widthYst', 'yIDstart': 'widthYst', 'xIDend': 'widthX', 'yIDend': 'widthY',
-                                      'messageTitle': 'Step 3', 'messageText': 'Please drag on the width of the data' }
+                                      'messageTitle': 'Step 2', 'messageText': 'Please drag on the width of the data' }
                                 ])
 
 

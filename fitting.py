@@ -152,7 +152,7 @@ def fitting_request_action(request, idNum):
             (params, slices) = functionGroup.getFunctionsParamsAsArray()
             
             functkw = { 'xData': xData, 'yData': yData, 'yErr': yErrData, 'functionGroup': functionGroup, 'slices': slices }
-            mpfitResult = mpfit(mpfitFunction, params, functkw=functkw)
+            mpfitResult = mpfit(mpfitFunction, params, functkw=functkw,ftol=1e-5)
             
             functionGroup.setFunctionsParamsFromArray(mpfitResult.params, slices)
 
@@ -171,8 +171,9 @@ def fitting_request_action(request, idNum):
                 fitFunctionParamsErr = function.getFunctionParamsFromArray(map(sigfig, mpfitResult.perror))
                 fitFunctionParamsArray = paramsJoin(fitFunctionParams, fitFunctionParamsErr)       
                 
-                fitFunctionInfo = { 'fitFunctionParams': fitFunctionParams, 'fitFunctionParamsErr': fitFunctionParamsErr, 'chisq': chiSquared,
+                fitFunctionInfo = { 'fitFunctionParams': fitFunctionParams, 'fitFunctionParamsErr': fitFunctionParamsErr,
                                     'fitFunctionParamsArray': fitFunctionParamsArray }
+                fitFunctionInfo.update(function.getJSON())
                 
                 fitFunctionInfos.append(fitFunctionInfo)
                 
@@ -184,7 +185,8 @@ def fitting_request_action(request, idNum):
             print
 
             response = finishedFit
-            response.update({ 'legendIndex': int(request.POST['legendIndex']), 'functionInfos': fitFunctionInfos, 'dataType': 'doFit' })
+            response.update({ 'functionInfos': fitFunctionInfos, 'fitInfo': { 'chisq': chiSquared },
+                              'legendIndex': int(request.POST['legendIndex']), 'dataType': 'doFit' })
             return HttpResponse(simplejson.dumps(response))
             
         else:
