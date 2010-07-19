@@ -9,8 +9,8 @@ Edit History
 '''
 
 import numpy as N 
-import scipy
-import scipy.optimize
+#import scipy
+#import scipy.optimize
 from openopt import NLSP
 
 def star(a,b,c,alpha,beta,gamma):
