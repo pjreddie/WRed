@@ -9,7 +9,7 @@ from django import forms
 from django.core.exceptions import ObjectDoesNotExist
 
 from WRed.display.models import *
-from WRed.display.fileToJson import displayfile
+from WRed.file_parsing.file_to_json import displayfile
 
 import numpy as N
 from WRed.utilities.mpfit import mpfit
