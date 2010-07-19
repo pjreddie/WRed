@@ -77,7 +77,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
 )
 
-CACHE_BACKEND = 'db://ubdatatable'
+#CACHE_BACKEND = 'db://ubdatatable'
 
 #Warning cache data may be evicted if server is restarted or cache fills up
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
