@@ -1,11 +1,11 @@
 #ChartStatusContainer {
   margin:         10px;
-  display:        none;
 }
 #ChartStatusContainer p {
   padding:        5px;
+  height:         1em;/*
   border:         1px solid  #bb6;
-  background:     #f3f3bc;
+  background:     #f3f3bc;*/
   font:           14px/1.2 'Arial', 'Tahoma', 'Verdana', 'Helvetica', sans-serif;
 }
 
@@ -59,24 +59,33 @@
 
 
 
-#LegendContainer {
+#ChartInfoContainer {
   margin:         10px;
 }
-#LegendContainer li {
-  font:           12px/1 'Arial', 'Tahoma', 'Verdana', 'Helvetica', sans-serif;
+#ChartInfoContainer h2 {
+  font:           bold 15px/1.2 'Arial', 'Tahoma', 'Verdana', 'Helvetica', sans-serif;
+  margin-top:     16px;
+  margin-bottom:  8px;
+  border-bottom:  1px solid #888;
+}
+.legendSeries li {
+  font:           12px/1.2 'Arial', 'Tahoma', 'Verdana', 'Helvetica', sans-serif;
   margin-bottom:  6px;
 }
-#LegendContainer input {
+.legendSeries li p {
+  margin-bottom:  4p;
+}
+.legendSeries input {
   vertical-align: top;
 }
-#LegendContainer label span {
+.legendSeries label span {
   border:         1px solid white;
   padding:        0 7px;
   margin:         0 4px;
   -moz-box-shadow: 0 0 0 2px;
   -webkit-box-shadow:     0 0 0 2px;
 }
-#LegendContainer li div {
+.legendSeries li div {
   margin-left:    50px;
 }
 

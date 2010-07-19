@@ -1,5 +1,7 @@
 #Author: Joe Redmon
 #settings.py
+#7/15/10 - Alex Yee added in a CAHCE_BACKEND and SESSION_ENGINE to store his UB matrix
+
 
 # Django settings for WRed project.
 import os
@@ -74,6 +76,11 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
 )
+
+CACHE_BACKEND = 'db://ubdatatable'
+
+#Warning cache data may be evicted if server is restarted or cache fills up
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 
 ROOT_URLCONF = 'WRed.urls'
 
