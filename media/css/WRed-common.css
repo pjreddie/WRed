@@ -86,7 +86,13 @@
   -webkit-box-shadow:     0 0 0 2px;
 }
 .legendSeries li div {
-  margin-left:    50px;
+  margin-left:    48px;
+}
+.legendSeries li div dt strong {
+  font-weight:    bold;
+}
+.legendSeries li div dd {
+  margin-left:    2em;
 }
 
 

@@ -208,7 +208,7 @@ function onReadyFunction () {
     var xyCornerContainer = new Ext.Container({
         id:             'xyCornerContainer',
         
-        html:           '<p style="line-height: .8; font-size: .8em;">Mouse: (<span id="MIC-mx"></span>, <span id="MIC-my"></span>)<br/>' +
+        html:           '<p style="line-height: .85; font-size: .7em;">Mouse: (<span id="MIC-mx"></span>, <span id="MIC-my"></span>)<br/>' +
                         'Page: (<span id="MIC-px"></span>, <span id="MIC-py"></span>)<br />' +
                         '<span id="MIC-d" style="display: none;">Point: (<span id="MIC-dx"></span>, <span id="MIC-dy"></span> &plusmn; <span id="MIC-de"></span>)</p>',
     });
@@ -257,16 +257,29 @@ function onReadyFunction () {
                 '<input type="checkbox" name="legendFunctionSeriesCheck{#}" id="legendFunctionSeriesCheck{#}" />',
                 '<label for="legendFunctionSeriesCheck{#}"><span style="-moz-box-shadow: 0 0 0 1px {color}; -webkit-box-shadow: 0 0 0 1px {color}; background-color: {color};"></span>{label}</label>',
                 '<div>',
-                '<tpl if="curF = globalFunctionSeries.plot[xindex - 1].functionInfos"></tpl>',
-                '<tpl if="curF.length &gt; 1">',/*
-                    '<tpl for="this">',
-                        '<tpl if="console.log(88,values)"></tpl>',/*
-                        '<tpl if="curF.functionInfo">',
-                            '<p>&chi;&#178; = {[curF[xindex].functionInfo.chisq]}</p>',
-                            '<tpl for="curF.fitFunctionParamsArray">',
+                '<tpl if="console.log(88, curF = globalFunctionSeries.plot[xindex - 1])"></tpl>',
+                // If there is at least one function
+                '<tpl if="(typeof curF.functionInfos != \'undefined\' && curF.functionInfos.length &gt;= 1)">',
+                    // If fitting was completed
+                    '<tpl if="typeof curF.fitInfo != \'undefined\'">',
+                        '<p>&chi;&#178; = {[curF.fitInfo.chisq]}</p>',
+                    '</tpl>',
+                    // Loop through each of them
+                    '<tpl for="curF.functionInfos">',
+                        '<tpl if="console.log(89,values)"></tpl>',
+                        '<dl>',
+                        '<dt>{#}. <strong>{functionName}</strong></dt>',
+                        '<dd>',
+                        // If fitting was completed
+                        '<tpl if="typeof values.fitFunctionParams != \'undefined\'">',
+                            '<tpl if="console.log(90,fitFunctionParams)"></tpl>',
+                            '<tpl if="console.log(90,values)"></tpl>',
+                            '<tpl for="values.fitFunctionParamsArray">',
                                 '<p>{name} = {value} &plusmn; {err}</p>',
                             '</tpl>',
-                        '</tpl>',*/
+                        '</tpl>',
+                        '</dd>',
+                        '</dl>',
                     '</tpl>',
                 '</tpl>',
                 '</div>',
@@ -611,6 +624,8 @@ function onReadyFunction () {
             
             functionInfos: responseJSON.functionInfos,
         };
+        if (responseJSON.hasOwnProperty('fitInfo'))
+             newPlotData.fitInfo = responseJSON.fitInfo;
 
         var plotHoverFunctionSeries = globalFunctionSeries.plot;
 
