@@ -8,11 +8,38 @@ PADDING = 4;
 var addImg = new Image();
 addImg.src = 'http://famfamfam.com/lab/icons/silk/icons/add.png';
 var subImg = new Image();
-subImg.src = 'http://famfamfam.com/lab/icons/silk/icons/delete.png'
+subImg.src = 'http://famfamfam.com/lab/icons/silk/icons/delete.png';
 
 //*******EXT Stuff***********
 Ext.onReady(init);
+
 function init() {
+    function clone_boxes(){
+        var bclone = [];
+        for(var i = 0; i < boxes.length; ++i){
+            var box = {};
+            for(s in boxes[i]){
+                if(boxes[i][s]){
+                    if(s == 'connected_boxes' || s == 'outputs'){
+                        var temp = [];
+                        for (var j = 0; j < boxes[i][s].length; ++j){
+                            for (var k = 0; k < boxes.length; ++k){
+                                if (boxes[i][s][j] == boxes[k]){
+                                    temp.push(k);
+                                    break;
+                                }
+                            }
+                        }
+                        box[s] = temp;
+                    }else{
+                        box[s] = boxes[i][s];
+                    }
+                }
+            }
+            bclone.push(box);
+        }
+        return bclone;
+    }
     var myCanvas = new Ext.Element(document.createElement('canvas'));
     a=myCanvas;
     myCanvas.set({
@@ -319,11 +346,12 @@ requests later, so we add them to the Store differently*/
             buttons: [{
                 text:'Save',
                 handler: function(){
+                    console.log(clone_boxes());
                     conn.request({
                         url: '../forms/save_pipeline/',
                         method: 'POST',
                         params: {
-                            'pipeline': Ext.encode(boxes),
+                            'pipeline': Ext.encode(clone_boxes()),
                             'name': form.getForm().getFieldValues().name,
                         },
                         success: function (responseObject) {
@@ -558,28 +586,65 @@ requests later, so we add them to the Store differently*/
         var temp;
         switch(b.type){
             case 'PlusBox':
-                temp = new PlusBox(b.x, b.y, b.width, b.height);
+                temp = new PlusBox();
                 break;
             case 'MinusBox':
+                temp = new MinusBox();
                 break;
             case 'TextBox':
+                temp = new TextBox();
                 break;
             case 'FileBox':
+                temp = new FileBox();
                 break;
             case 'InputBox':
+                temp = new InputBox();
                 break;
             case 'OutputBox':
+                temp = new OutputBox();
                 break;
             case 'FilterBox':
+                temp = new FilterBox();
                 break;
         }
+        
+        for(var a in temp){
+            if(temp[a]&& typeof(temp[a] == 'function') && a != 'files' && a != 'id' && a != 'connected_boxes' && a != 'type' && a != 'file' && a != 'outputs'){
+
+                b[a] = temp[a];
+            }
+        }
+    }
+    function correct_pipelines(){
+        for (var s = 0; s < pipelines.length; ++s){
+            var tp = pipelines[s];
+            for(var i = 0; i < tp.length; ++i){
+                recreate_box(tp[i]);
+            }
+            for(var i = 0; i < tp.length; ++i){
+                if (tp[i].connected_boxes){
+                    for (var j = 0; j < tp[i].connected_boxes.length; ++j){
+                        tp[i].connected_boxes[j] = tp[tp[i].connected_boxes[j]]
+                    }
+                }
+                if (tp[i].outputs){
+                    for (var j = 0; j < tp[i].outputs.length; ++j){
+                        tp[i].outputs[j] = tp[tp[i].outputs[j]];
+                    }
+                }
+                if (tp[i].files){
+                    for (var j = 0; j < tp[i].files.length; ++j){
+                        recreate_box(tp[i].files[j]);
+                    }
+                }
+            }
+
+        }
+
     }
     function load_pipeline(b, e){
-        boxes = [];
-        var tp = pipelines[b.id];
-        for(var i = 0; i < tp.length; ++i){
-            
-        }
+        boxes = pipelines[b.id];
+        redraw(e);
     }
     
 /*Retrieve data in json format via a GET request to the server. This is used
@@ -603,8 +668,8 @@ anytime there is new data, and initially to populate the table.*/
                         handler: load_pipeline,
                         icon: 'http://famfamfam.com/lab/icons/silk/icons/table.png',});
                     pipelines.push(Ext.decode(json_response[i].pipeline));
-                    
                 }
+                correct_pipelines();
                 toolbar.get('load_pipeline').menu.items.get('my_pipelines').menu = menu;
                 toolbar.doLayout();
             },

@@ -150,7 +150,7 @@ function TextBox(file) {
         this.selected = false;
     };
     this.file = file;
-    this.text = file['File Name'];
+    if(this.file){ this.text = this.file['File Name'];}
     this.width = 0;
     this.height = TEXTHEIGHT;
     this.chart = function () {
@@ -293,7 +293,7 @@ function InputBox(input, parent) {
     };
     this.color_connections = false;
     this.moveable = false;
-    this.parent = parent;
+    //this.parent = parent;
     this.deselect = function () {
         this.selected = false;
     };
@@ -321,7 +321,7 @@ function InputBox(input, parent) {
         this.y = y;
     };
     this.draw = function (ctx) {
-        this.parent.update(ctx)
+        //this.parent.update(ctx)
         clear_box(ctx, this.x, this.y, this.width, this.height);
         draw_box(ctx, this.x, this.y, this.width, this.height, 'rgb(255,0,255)');
         if (this.selected) this.highlight(ctx);
@@ -357,8 +357,8 @@ function OutputBox(input, parent) {
     this.dataset = true;
     this.operator = false;
     this.moveable = false;
-    this.parent = parent
-    var ib = new InputBox(input, this.parent);
+    //this.parent = parent
+    var ib = new InputBox(input, parent);
     this.operator = function () {
         return false;
     };
@@ -398,7 +398,7 @@ function OutputBox(input, parent) {
         this.y = y;
     };
     this.draw = function (ctx) {
-        this.parent.update(ctx)
+        //this.parent.update(ctx)
         clear_box(ctx, this.x, this.y, this.width, this.height);
         draw_box(ctx, this.x, this.y, this.width, this.height, 'rgb(255,0,255)');
         draw_arrow(ctx, this.connected_boxes[0].x + 3*PADDING + TEXTHEIGHT/2, this.connected_boxes[0].y, this.x - 3*PADDING - TEXTHEIGHT/2, this.y);
