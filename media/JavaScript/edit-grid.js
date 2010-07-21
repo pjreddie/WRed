@@ -1,12 +1,12 @@
 /*
- * Author: Alex Yee
- *
- * Edit History:
- * 7/12/2010: Created and completed. Created layout, columns, and data sending/receiving/updating. 
- *             Not entirely beautified yet.
- * 7/13/2010: Restructured to give each numberfield (of input) a separate variable so I could
- *             send their given values to the backend for calculations.
- */
+* Author: Alex Yee
+*
+* Edit History:
+* 7/12/2010: Created and completed. Created layout, columns, and data sending/receiving/updating.
+* Not entirely beautified yet.
+* 7/13/2010: Restructured to give each numberfield (of input) a separate variable so I could
+* send their given values to the backend for calculations.
+*/
 
 Ext.onReady(function () {
     var conn = new Ext.data.Connection();
@@ -21,7 +21,7 @@ Ext.onReady(function () {
             editor: new Ext.form.NumberField({
                 allowBlank: false,
                 allowDecimals: true,
-                decimalPrecision: 7, 
+                decimalPrecision: 7,
             })
         },
         columns: [
@@ -118,8 +118,7 @@ Ext.onReady(function () {
 
     // create the Data Store
     var store = new Ext.data.ArrayStore({
-        // destroy the store if the grid is destroyed
-        autoDestroy: true,
+        autoDestroy: false,
         fields: [
         {
             name: 'h',
@@ -148,7 +147,6 @@ Ext.onReady(function () {
     store.loadData(baseData);
 
     var idealDataStore = new Ext.data.ArrayStore({
-        // destroy the store if the grid is destroyed
         autoDestroy: false,
         fields: [
         {
@@ -181,7 +179,7 @@ Ext.onReady(function () {
     });
     idealDataStore.loadData(baseIdealData);
     
-    // ********* START - Defining and assigning variables for the numberfield inputs  *********
+    // ********* START - Defining and assigning variables for the numberfield inputs *********
     var aField = new Ext.form.NumberField({
         fieldLabel: 'a',
         allowBlank: false,
@@ -263,41 +261,8 @@ Ext.onReady(function () {
         anchor: '-10',
     });
     
-    // ********* END - Defining and assigning variables for the numberfield inputs  *********  
+    // ********* END - Defining and assigning variables for the numberfield inputs *********
  
-    /*var form1 = new Ext.FormPanel({
-        items: [
-            aField,
-            bField,
-            cField,
-            alphaField,
-            betaField,
-            gammaField,
-            ],
-        defaultType: 'numberfield',
-        autoWidth: true,
-        autoHeight: true,
-        title: 'Lattice Constants',
-        labelWidth: 30,
-        bodyStyle: 'padding: 10px;', //padding the edges for aesthetics
-    });
-    
-    
-    var form2 = new Ext.FormPanel({
-        items: [
-            hField,
-            kField,
-            lField,
-            ],
-        defaultType: 'numberfield',
-        autoWidth: true,
-        autoHeight: true,
-        title: 'Desired Orientation',
-        labelWidth: 30,
-        height: 130,
-        bodyStyle: 'padding: 10px;',
-    });*/
-        
     // create the editor grids
     var grid = new Ext.grid.EditorGridPanel({
         store: store,
@@ -331,8 +296,8 @@ Ext.onReady(function () {
         }]
     });
 
-    // ****************** START - Defining grid button functions ****************** 
-    function submitData(button, event) { 
+    // ****************** START - Defining grid button functions ******************
+    function submitData(button, event) {
         //Calculates and stores the B and UB matricies when the button 'Submit' is pressed
         params = {'data': [] };
 
@@ -378,12 +343,12 @@ Ext.onReady(function () {
             params['data'].push({
                 'wavelength' : wavelengthField.getValue(),
                 'numrows' : idealDataStore.getCount(), //gives how many rows
-            }); 
+            });
             for (var j = 0; j < numrows; j++){
                 //gets all the data from the Ideal Data table
                 var record = idealDataStore.getAt(j)
                 params['data'].push(record.data);
-            }  
+            }
                 
              conn.request({
                 url: '/WRed/files/omegaZero/',
@@ -395,35 +360,18 @@ Ext.onReady(function () {
                 }
             });
         }
-            /*for (var i = 0; i < numrows; i++){    
-                //gets all the data from one row at a time
-                //TODO only get the (h, k, l)
-                  
-                var record = idealDataStore.getAt(i)
-                params['data'].push(record.data);
-                
-                conn.request({
-                    url: '/WRed/files/omegaZero/',
-                    method: 'POST',
-                    params: Ext.encode(params),
-                    success: successFunction(responseObject, i),
-                    failure: function () {
-                        Ext.Msg.alert('Error: Failed request');
-                    }
-                });
-            }*/
  
         //ELSE IF the combobox is in the scattering plane mode AND isUBcalculated == true
         else if (isUBcalculated && myCombo.getValue() == 'Scattering Plane'){
             params['data'].push({
-                'h1'        : h1Field.getValue(),
-                'k1'        : k1Field.getValue(),
-                'l1'        : l1Field.getValue(),
+                'h1' : h1Field.getValue(),
+                'k1' : k1Field.getValue(),
+                'l1' : l1Field.getValue(),
                 'wavelength': wavelengthField.getValue(), //wavelength put on this line to make h/k/l#s easier to read
-                'h2'        : h2Field.getValue(),
-                'k2'        : k2Field.getValue(),
-                'l2'        : l2Field.getValue(),
-                'numrows'   : numrows, //gives how many rows
+                'h2' : h2Field.getValue(),
+                'k2' : k2Field.getValue(),
+                'l2' : l2Field.getValue(),
+                'numrows' : numrows, //gives how many rows
             });
             for (var j = 0; j < numrows; j++){
                 //gets all the data from the Ideal Data table
@@ -452,7 +400,7 @@ Ext.onReady(function () {
         
         changes = ['twotheta', 'theta', 'omega', 'chi', 'phi'];
         for (var i = 0; i < idealDataStore.getCount(); i++){
-            record = idealDataStore.getAt(i); 
+            record = idealDataStore.getAt(i);
             for (var c in changes) {
                 fieldName = changes[c];
                 record.set(fieldName, idealdata[i][fieldName]);
@@ -472,34 +420,34 @@ Ext.onReady(function () {
             chi: 0.0,
             phi: 0.0,
         });
-        grid2.stopEditing(); 
+        grid2.stopEditing();
         idealDataStore.insert(0, r); //adds new row to the top of the table (ie the first row)
         grid2.startEditing(0, 0); //starts editing for first cell of new row
     }
     
-    // ****************** END - Defining grid button functions ****************** 
+    // ****************** END - Defining grid button functions ******************
    
    
     //Setting up the ComboBox
     var myComboStore = new Ext.data.ArrayStore({
         data: [[1, 'Omega = 0'], [2, 'Scattering Plane']],
         fields: ['id', 'mode'],
-        idIndex: 0, 
+        idIndex: 0,
     });
     
     var myCombo = new Ext.form.ComboBox ({
-        fieldLabel  : 'Select a Mode',
-        store       : myComboStore,
+        fieldLabel : 'Select a Mode',
+        store : myComboStore,
         
         displayField: 'mode',
-        typeAhead   : true,
-        mode        : 'local',
+        typeAhead : true,
+        mode : 'local',
         
-        triggerAction:  'all', //Lets you see all drop down options when arrow is clicked
-        selectOnFocus:  true,
-        value        : 'Omega = 0',
+        triggerAction: 'all', //Lets you see all drop down options when arrow is clicked
+        selectOnFocus: true,
+        value : 'Omega = 0',
         
-        listeners: {
+        /*listeners: {
             afterquery: function(){
                 //TODO if not on 'Scattering Plane' mode, hide the scattering plane vector input section
                 if (myCombo.getValue() == 'Scattering Plane'){
@@ -509,213 +457,213 @@ Ext.onReady(function () {
                     bottomFielset.show();
                 }
             }
-        }
+        }*/
 
     });
 
-    // ********* START - Setting up lattice constants GUI  ********* 
+    // ********* START - Setting up lattice constants GUI *********
     var topFieldset = {
-        xtype       : 'fieldset',
-        //title       : 'Lattice Constants',
-        border      : false,
+        xtype : 'fieldset',
+        //title : 'Lattice Constants',
+        border : false,
         defaultType : 'numberfield',
-        defaults    : {
+        defaults : {
             allowBlank : false,
             decimalPrecision: 10,
         },
         items: [
             {
-                xtype       : 'container',
-                border      : false,
-                layout      : 'column',
-                anchor      : '115%',
-                items       : [
+                xtype : 'container',
+                border : false,
+                layout : 'column',
+                anchor : '115%',
+                items : [
                     {
-                        xtype       : 'container',
-                        layout      : 'form',
-                        width       : 100,
-                        labelWidth  : 10,
-                        items   : [
+                        xtype : 'container',
+                        layout : 'form',
+                        width : 100,
+                        labelWidth : 10,
+                        items : [
                             aField
                         ]
                     },
                     {
-                        xtype       : 'container',
-                        layout      : 'form',
-                        width       : 100,
-                        labelWidth  : 10,
-                        items       : [
-                            bField                               
+                        xtype : 'container',
+                        layout : 'form',
+                        width : 100,
+                        labelWidth : 10,
+                        items : [
+                            bField
                         ]
                     },
                     {
-                        xtype       : 'container',
-                        layout      : 'form',
-                        width       : 100,
-                        labelWidth  : 10,
-                        items       : [
-                            cField                               
+                        xtype : 'container',
+                        layout : 'form',
+                        width : 100,
+                        labelWidth : 10,
+                        items : [
+                            cField
                         ]
                     }, {
                         //Buffer blank space to even out the c inputbox
-                        xtype       : 'container',
-                        layout      : 'form',
+                        xtype : 'container',
+                        layout : 'form',
                         columnWidth : 1,
-                        labelWidth  : 1,
+                        labelWidth : 1,
                     }
                 ]
             },
             {
-                xtype       : 'container',
-                border      : false,
-                layout      : 'column',
-                anchor      : '100%',
-                items       : [
+                xtype : 'container',
+                border : false,
+                layout : 'column',
+                anchor : '100%',
+                items : [
                     {
-                        xtype       : 'container',
-                        layout      : 'form',
-                        width       : 100,
-                        labelWidth  : 10,
-                        items   : [
+                        xtype : 'container',
+                        layout : 'form',
+                        width : 100,
+                        labelWidth : 10,
+                        items : [
                             alphaField
                         ]
                     },
                     {
-                        xtype       : 'container',
-                        layout      : 'form',
-                        width       : 100,
-                        labelWidth  : 10,
-                        items       : [
-                            betaField                               
+                        xtype : 'container',
+                        layout : 'form',
+                        width : 100,
+                        labelWidth : 10,
+                        items : [
+                            betaField
                         ]
                     },
                     {
-                        xtype       : 'container',
-                        layout      : 'form',
-                        width       : 100,
-                        labelWidth  : 10,
-                        items       : [
-                            gammaField                               
+                        xtype : 'container',
+                        layout : 'form',
+                        width : 100,
+                        labelWidth : 10,
+                        items : [
+                            gammaField
                         ]
                     }, {
                         //Buffer blank space to even out the gamma inputbox
-                        xtype       : 'container',
-                        layout      : 'form',
+                        xtype : 'container',
+                        layout : 'form',
                         columnWidth : 1,
-                        labelWidth  : 1,
+                        labelWidth : 1,
                     }
                 ]
             },
             wavelengthField,
         ]
     };
-    // ********* END - Setting up lattice constants GUI  ********* 
+    // ********* END - Setting up lattice constants GUI *********
     
-    // ********* STAR - Setting up scattering plane h/k/l GUI  ********* 
+    // ********* STAR - Setting up scattering plane h/k/l GUI *********
     var bottomFieldset = {
-        xtype       : 'fieldset',
-        title       : 'Scattering Plane Vectors',
-        border      : false,
+        xtype : 'fieldset',
+        title : 'Scattering Plane Vectors',
+        border : false,
         defaultType : 'numberfield',
         //collapsible : true,
-        //collapsed   : true,
-        defaults    : {
+        //collapsed : true,
+        defaults : {
             allowBlank : false,
             decimalPrecision: 10,
         },
         items: [
             {
-                xtype       : 'container',
-                border      : false,
-                layout      : 'column',
-                anchor      : '100%',
-                items       : [
+                xtype : 'container',
+                border : false,
+                layout : 'column',
+                anchor : '100%',
+                items : [
                     {
-                        xtype       : 'container',
-                        layout      : 'form',
-                        width       : 75,
-                        labelWidth  : 15,
-                        items   : [
+                        xtype : 'container',
+                        layout : 'form',
+                        width : 75,
+                        labelWidth : 15,
+                        items : [
                             h1Field
                         ]
                     },
                     {
-                        xtype       : 'container',
-                        layout      : 'form',
-                        width       : 75,
-                        labelWidth  : 15,
-                        items       : [
-                            k1Field                               
+                        xtype : 'container',
+                        layout : 'form',
+                        width : 75,
+                        labelWidth : 15,
+                        items : [
+                            k1Field
                         ]
                     },
                     {
-                        xtype       : 'container',
-                        layout      : 'form',
-                        width       : 75,
-                        labelWidth  : 15,
-                        items       : [
-                            l1Field                               
+                        xtype : 'container',
+                        layout : 'form',
+                        width : 75,
+                        labelWidth : 15,
+                        items : [
+                            l1Field
                         ]
                     }, {
                         //Buffer blank space to even out the l1 inputbox
-                        xtype       : 'container',
-                        layout      : 'form',
+                        xtype : 'container',
+                        layout : 'form',
                         columnWidth : 1,
-                        labelWidth  : 1,
+                        labelWidth : 1,
                     }
                 ]
             },
             {
-                xtype       : 'container',
-                border      : false,
-                layout      : 'column',
-                anchor      : '100%',
-                items       : [
+                xtype : 'container',
+                border : false,
+                layout : 'column',
+                anchor : '100%',
+                items : [
                     {
-                        xtype       : 'container',
-                        layout      : 'form',
-                        width       : 75,
-                        labelWidth  : 15,
-                        items   : [
+                        xtype : 'container',
+                        layout : 'form',
+                        width : 75,
+                        labelWidth : 15,
+                        items : [
                             h2Field
                         ]
                     },
                     {
-                        xtype       : 'container',
-                        layout      : 'form',
-                        width       : 75,
-                        labelWidth  : 15,
-                        items       : [
-                            k2Field                               
+                        xtype : 'container',
+                        layout : 'form',
+                        width : 75,
+                        labelWidth : 15,
+                        items : [
+                            k2Field
                         ]
                     },
                     {
-                        xtype       : 'container',
-                        layout      : 'form',
-                        width       : 75,
-                        labelWidth  : 15,
-                        items       : [
-                            l2Field                               
+                        xtype : 'container',
+                        layout : 'form',
+                        width : 75,
+                        labelWidth : 15,
+                        items : [
+                            l2Field
                         ]
                     }, {
                         //Buffer blank space to even out the l2 inputbox
-                        xtype       : 'container',
-                        layout      : 'form',
+                        xtype : 'container',
+                        layout : 'form',
                         columnWidth : 1,
-                        labelWidth  : 1,
+                        labelWidth : 1,
                     }
                 ]
             },
             {
                 //empty container to allow horizontal inputboxes for h,k,l
-                xtype       : 'container',
-                border      : false,
-                width       : 230,
-            } 
+                xtype : 'container',
+                border : false,
+                width : 230,
+            }
         ]
     };
     
-    // ********* STAR - Setting up scattering plane h/k/l GUI  ********* 
+    // ********* STAR - Setting up scattering plane h/k/l GUI *********
 
     var innerRightTopPanel = new Ext.Panel({
         layout: 'border',
@@ -734,7 +682,7 @@ Ext.onReady(function () {
             margins: '0 5 0 5',
             items: [myCombo],
         }]
-    });   
+    });
     
     //Tells whether UB matrix has been calculated
     var isUBcalculated = false;
@@ -752,7 +700,7 @@ Ext.onReady(function () {
         items: [{
             region: 'center',
             items: [grid],
-        }, 
+        },
             southPanel,
         ]
     });
@@ -778,14 +726,7 @@ Ext.onReady(function () {
         items: [bottomFieldset, grid2]
     });
 
-    TopPanel.render('editor-grid');
+    TopPanel.render('data-grid');
     BottomPanel.render('result-grid');
     
-    /* Testing...
-    a1 = {'a': 3, 'b': 4};
-    b1 = {'c': 5, 'd': 6};
-    arr = [];
-    arr.push(a1);
-    arr.push(b1);
-    */
 });
