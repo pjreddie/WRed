@@ -138,7 +138,8 @@ def fitting_request_action(request, idNum):
                 return HttpResponse(simplejson.dumps(response))
             
         elif actionID == '3':
-            dataData = simplejson.loads(request.POST['dataData'])
+            allData = simplejson.loads(request.POST['allData'])
+            dataData = allData[0]
             xData = dataData['x']
             yData = dataData['y']
             yErrData = dataData['yerr']
@@ -146,17 +147,18 @@ def fitting_request_action(request, idNum):
             
             #functionData = simplejson.loads(request.POST['functionData']) # Not used at all
             
-            functionInfos = simplejson.loads(request.POST['functionInfos'])
+            allFunctionInfos = simplejson.loads(request.POST['allFunctionInfos'])
             functionGroup = FunctionGroup()
             functionGroup.data = dataData
             
-            for functionInfo in functionInfos:
-                print functionInfo
-                functionID = int(functionInfo['functionID'])
-                functionParams = functionInfo['functionParams']
-                function = getFunctionClass(functionID)()
-                function.setFunctionParamsFromDict(functionParams)
-                functionGroup.functions.append(function)
+            for functionInfos in allFunctionInfos:
+                for functionInfo in functionInfos:
+                    print functionInfo
+                    functionID = int(functionInfo['functionID'])
+                    functionParams = functionInfo['functionParams']
+                    function = getFunctionClass(functionID)()
+                    function.setFunctionParamsFromDict(functionParams)
+                    functionGroup.functions.append(function)
             
             (params, slices) = functionGroup.getFunctionsParamsAsArray()
             

@@ -25,7 +25,7 @@ function onReadyFunction () {
     var storeFields = [];
     var metadataObj = {};
     var dataArray = [];
-    var iv = 'A4'
+    var iv = 'A4';
     
     // Initialize grid for data view
     var GridPanel = new Ext.grid.GridPanel({
@@ -142,12 +142,12 @@ function onReadyFunction () {
     }
 
 
-/*
+
     var FittingModal = new Ext.Window({
-        width: 
+        width: 450,
     
     });
-*/
+
 
 
 
@@ -522,19 +522,25 @@ function onReadyFunction () {
     function fitSeries (button, event) {
         var checkedIndices = getCheckedIndices();
 
-        var dataSeries     = globalDataSeries.plot[checkedIndices.dataSeries[0]];
-        var functionSeries = globalFunctionSeries.plot[checkedIndices.functionSeries[0]];
+        var allData = [];
+        var allFunctionInfos = [];
+        for (var checkedDataIndex = 0; checkedDataIndex < checkedIndices.dataSeries.length; checkedDataIndex ++) {
+            var checkedDataSeries = globalDataSeries.plot[checkedIndices.dataSeries[checkedDataIndex]];
+            var checkedDataSeriesData = dataPointsToCols(checkedDataSeries.data);
+            allData.push(checkedDataSeriesData);
+        }
+        for (var checkedFunctionIndex = 0; checkedFunctionIndex < checkedIndices.functionSeries.length; checkedFunctionIndex ++) {
+            var checkedFunctionSeries = globalFunctionSeries.plot[checkedIndices.functionSeries[checkedFunctionIndex]];
+            var checkedFunctionSeriesInfos = checkedFunctionSeries.functionInfos;
+            allFunctionInfos.push(checkedFunctionSeriesInfos);
+        }
+        console.log(allData, allFunctionInfos);
         
-        if (typeof dataSeries == 'undefined' || typeof functionSeries == 'undefined')
+        if (allData.length < 1 || allFunctionInfos.length < 1)
             Ext.Msg.alert('Form incomplete', 'Please select at least one data series and at least one function.');
         else {
-            var dataData = dataPointsToCols(dataSeries.data);
-            var functionData = dataPointsToCols(functionSeries.data);
-
-            data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
             makeFittingRequest({ 'actionID': 3, 'actionName': 'sendData', 'replaceIndices': JSON.stringify(checkedIndices.functionSeries),
-                                 'functionInfos': JSON.stringify(functionSeries.functionInfos),
-                                 'dataData': JSON.stringify(dataData), 'functionData': JSON.stringify(functionData) }, doFitInstruction);
+                                 'allData': JSON.stringify(allData), 'allFunctionInfos': JSON.stringify(allFunctionInfos) }, doFitInstruction);
             updateLegend();
         }
     }
@@ -595,7 +601,7 @@ function onReadyFunction () {
                              'xPos': pos.x, 'yPos': pos.y, 'xID': responseJSON['xIDstart'], 'yID': responseJSON['yIDstart'] },
                              function() {});
         makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPoint', 'dataType': 'askDrag', 'dragMode': 'start2',
-                             'xPos': pos.x, 'yPos': pos.y + 0.00001, 'xID': responseJSON['xIDend'], 'yID': responseJSON['yIDend'] },
+                             'xPos': pos.x + 0.00001, 'yPos': pos.y + 0.00001, 'xID': responseJSON['xIDend'], 'yID': responseJSON['yIDend'] },
                              function() {}); // To prevent undefined on backend
         $('#PlotContainer').bind('plothover', { 'responseJSON': responseJSON }, onDrag);
     }
@@ -639,7 +645,7 @@ function onReadyFunction () {
         fitpoints = responseJSON.fit;
         
         newPlotData = {
-            label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': ' + FunctionName,
+            label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Function ' + (globalFunctionSeries.plot.length + 1),
             data:     fitpoints,
             points:   { show: false },
             lines:    { show: true },
@@ -656,7 +662,7 @@ function onReadyFunction () {
         residpoints = responseJSON.resid;
         
         newResidPlotData = {
-            label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Resid 1',
+            label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Resid ' + (globalFunctionSeries.residplot.length + 1),
             data:     residpoints,
             points:   { show: true },
             lines:    { show: true },
@@ -666,15 +672,11 @@ function onReadyFunction () {
 
 
         if (functionSeriesReplaceIndices) {
-            //console.log(54, functionSeriesReplaceIndices);
-            for (var index = 0; index < functionSeriesReplaceIndices.length - 1; index ++) {
-                functionSeriesReplaceIndex = functionSeriesReplaceIndices[index];
-                //console.log(55, index, functionSeriesReplaceIndex);
-                globalFunctionSeries.plot[functionSeriesReplaceIndex].splice(functionSeriesReplaceIndex, 1);
-                globalFunctionSeries.residplot[functionSeriesReplaceIndex].splice(functionSeriesReplaceIndex, 1);
-            }
-            globalFunctionSeries.plot[functionSeriesReplaceIndices[functionSeriesReplaceIndices.length - 1]] = newPlotData;
-            globalFunctionSeries.residplot[functionSeriesReplaceIndices[functionSeriesReplaceIndices.length - 1]] = newResidPlotData;
+            globalFunctionSeries.plot = removeMultiple(globalFunctionSeries.plot, functionSeriesReplaceIndices);
+            globalFunctionSeries.residplot = removeMultiple(globalFunctionSeries.residplot, functionSeriesReplaceIndices);
+            
+            globalFunctionSeries.plot.splice(functionSeriesReplaceIndices[functionSeriesReplaceIndices.length - 1], 0, newPlotData);
+            globalFunctionSeries.residplot.splice(functionSeriesReplaceIndices[functionSeriesReplaceIndices.length - 1], 0, newResidPlotData);
         }
         else {
             globalFunctionSeries.plot.push(newPlotData);
@@ -1049,11 +1051,12 @@ function onReadyFunction () {
         else {
             FitThisSeriesButton.disable();
             if (checkedIndices.functionSeries.length >= 1) {
-                if (checkedIndices.functionSeries.length > 1)
-                    AddFunctionToSelectedCurveButton.disable();
-                else
-                
+                if (checkedIndices.functionSeries.length > 1) {
+                    //AddFunctionToSelectedCurveButton.disable();
+                }
+                else {                
                     AddFunctionToSelectedCurveButton.enable();
+                }
                 ClearThisCurveButton.enable();
             }
             else {
@@ -1181,7 +1184,7 @@ function onReadyFunction () {
             yerr: { show: true, upperCap: '-', lowerCap: '-' },
         };
         var plotDataSeries = {
-            label:    xChoice + ' vs. ' + yChoice + ': Series 1',
+            label:    xChoice + ' vs. ' + yChoice + ': Series ' + (globalDataSeries.plot.length + 1),
             data:     plotSeriesData,
             points:   plotSeriesPointsOptions,
             lines:    { show: false },
@@ -1259,7 +1262,6 @@ function onReadyFunction () {
         globalDataSeries = newDataSeries;
         globalFunctionSeries = newFunctionSeries;
     }
-    a=updateGlobals;
     
     /* Initialize Flot generation, draw the chart with error bars */
     function drawChart(store, xChoice, yChoice, chart) {
@@ -1314,6 +1316,15 @@ function onReadyFunction () {
     function randomColor () {
         var rint = Math.round(0xffffff * Math.random());
         return 'rgb(' + (rint >> 16) + ', ' + (rint >> 8 & 255) + ', ' + (rint & 255) + ')';
+    }
+    
+    function removeMultiple (array, removeIndices) {
+        var newArray = [];
+        for (var index = 0; index < array.length; index ++) {
+            if (jQuery.inArray(index, removeIndices) == -1)
+                newArray.push(array[index]);
+        }
+        return newArray;
     }
     
 }
