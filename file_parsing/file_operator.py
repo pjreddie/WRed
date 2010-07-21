@@ -64,12 +64,12 @@ class Data:
                     self.data[i-1][t[0][j]] = [float(t[i][j])]
                 except ValueError:
                     self.data[i-1][t[0][j]] = [t[i][j]]
-        self.detectors = ['Detector','_Detector']
+        self.detectors = set(['Detector','_Detector'])
         for s in self.standards:
             if s[:8] == 'Analyzer' and s[-5:] == 'Group':
-                self.detectors.extend(self.data[0][s])
+                self.detectors = self.detectors | set(self.data[0][s])
                 for d in self.data[0][s]:
-                    self.detectors.append('_' + d)
+                    self.detectors.add('_' + d)
         for d in self.detectors:
             if d in self.standards and d[0] is not '_':
                 if '_' + d not in self.standards:
@@ -150,7 +150,7 @@ class Data:
             if p[iv][0] <= maxv and p[iv][0] >= minv:
                 data_in_range.append(p)
         out.data = data_in_range
-                
+        bkg.monitor_normalization(out.data[0]['Monitor'][0])
         interps = bkg.interpolate_data(iv)
         for p in out.data:
             for s in self.detectors:
@@ -177,6 +177,18 @@ class Data:
                     p[s][0] = p[s][0] * m0 / p['Monitor'][0]
                 except:
                     pass
+    def scalar_mult(self, scalar):
+        out = copy.deepcopy(self)
+        for p in out.data:
+            for s in out.detectors:
+                try:
+                    if s[0] == '_':
+                        p[s][0] = p[s][0] * scalar * scalar
+                    else:
+                        p[s][0] = p[s][0] * scalar
+                except KeyError:
+                    pass
+        return out
     def detailed_balance(self):
         out = copy.deepcopy(self)
         beta_times_temp = 11.6
@@ -220,7 +232,45 @@ class Data:
                 out.data.remove(out.data[i+1])
                 i -= 1
         return out
-    
+    def add(self, *args):
+        def combine(p1, p2):
+            pass
+        def same_point(p1, p2):
+            return False
+        out = copy.deepcopy(self)
+        out.standards = copy.deepcopy(self.standards)
+        for d in args:
+            for s in d.standards:
+                if not s in out.standards:
+                    out.standards[s] = (d.standards[s])
+                    out.standards[s]['metadata'] = False
+        for s in out.standards:
+            if out.standards[s]['metadata']:
+                for d in args:
+                    try:
+                        if not d.standards[s]['metadata']:
+                            out.standards[s]['metadata'] = False
+                        elif out.data[0][s][0] != d.data[0][s][0]:
+                            out.standards[s]['metadata'] = False
+                    except:
+                        out.standards[s]['metadata'] = False
+        for d in args:
+            out.data += d.data
+        for p in out.data:
+            for s in out.standards:
+                if s not in p:
+                    p[s] = [None]
+        out.monitor_normalization(out.data[0]['Monitor'][0])
+        try:
+            out.data.sort(cmp = lambda x,y: cmp(x[out.data[0]['Scan'][0]],y[out.data[0]['Scan'][0]]))
+        except:
+            pass
+        for i in range(len(out.data)-1):
+            if same_point(out.data[i], out.data[i+1]):
+                combine(out.data[i], out.data[i+1])
+                out.data.remove(out.data[i+1])
+                i -= 1
+        return out
     
 if __name__=="__main__":
     a = Data('../db/117eb3afc127e22e0d3fc74eb8efa3ea.file')

@@ -51,10 +51,13 @@ function PlusBox(x, y, width, height) {
     this.get_equation = function () {
         var eq = '( '
         if (this.connected_boxes.length > 0) {
-            eq += this.connected_boxes[0].get_equation();
+            eq += this.connected_boxes[0].get_equation() + ' .add( ';
             for (var i = 1; i < this.connected_boxes.length; ++i) {
-                eq += ' + ' + this.connected_boxes[i].get_equation();
+                if (i > 1){
+                    eq += ' , ';}
+                eq += this.connected_boxes[i].get_equation();
             }
+            eq += ' ) ';
         }
         eq += ' )';
         return eq;
@@ -203,11 +206,14 @@ function FileBox(x, y) {
     this.x = x;
     this.y = y;
     this.get_equation = function () {
-        var eq = '( ' + this.files[0].file['id'];
+        var eq = '( ' + this.files[0].file['id'] + ' .add( ';
         for (var i = 1; i < this.files.length; ++i) {
-            eq += ' + ' + this.files[i].file['id'];
+            if (i > 1){
+                eq += ' , ';
+            }
+            eq +=  this.files[i].file['id'];
         }
-        eq += ' )'
+        eq += ' ) )'
         return eq;
     };
     this.chart = function () {
@@ -293,7 +299,6 @@ function InputBox(input, parent) {
     };
     this.color_connections = false;
     this.moveable = false;
-    //this.parent = parent;
     this.deselect = function () {
         this.selected = false;
     };
@@ -357,7 +362,7 @@ function OutputBox(input, parent) {
     this.dataset = true;
     this.operator = false;
     this.moveable = false;
-    //this.parent = parent
+    this.parent = [parent];
     var ib = new InputBox(input, parent);
     this.operator = function () {
         return false;
@@ -384,8 +389,17 @@ function OutputBox(input, parent) {
     this.deselect = function () {
         this.selected = false;
     };
+
+
     this.get_equation = function () {
-        return ' ( ' + this.connected_boxes[0].get_equation() + ' ) .detailed_balance() ';
+        switch(this.parent[0].text){
+            case 'Detailed Balance':
+                return ' ( ' + this.connected_boxes[0].get_equation() + ' ) .detailed_balance() ';
+                break;
+            case 'Scalar Multiplication':
+                return ' ( ' + this.connected_boxes[0].get_equation() + ' ) .scalar_mult('+ this.parent[0].scalar +') ';
+                break;
+        }
     }
     this.connected_boxes = [ib];
     this.width = TEXTHEIGHT + 2 * PADDING;
@@ -410,6 +424,7 @@ function OutputBox(input, parent) {
 }
 
 function FilterBox(x, y, text) {
+    this.scalar = 1;
     this.type = 'FilterBox';
     this.id = Math.random();
     this.remove = function(b){

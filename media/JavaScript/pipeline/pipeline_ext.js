@@ -20,7 +20,7 @@ function init() {
             var box = {};
             for(s in boxes[i]){
                 if(boxes[i][s]){
-                    if(s == 'connected_boxes' || s == 'outputs'){
+                    if(s == 'connected_boxes' || s == 'outputs' || s == 'parent'){
                         var temp = [];
                         for (var j = 0; j < boxes[i][s].length; ++j){
                             for (var k = 0; k < boxes.length; ++k){
@@ -212,18 +212,6 @@ function init() {
         });
     }
     function download() {
-
-        /*conn.request({
-            url: '../forms/download/',
-            method: 'GET',
-            params: {
-                'id': store.getAt(rowRightClicked).get('id')
-            },
-            success: function (responseObject) {
-                window.open(responseObject);
-            },
-            failure: function () {}
-        });*/
         window.open('../forms/download/?id=' + store.getAt(rowRightClicked).get('id'));
     }
     grid.on('rowcontextmenu', function (grid, rowIndex, e) {
@@ -609,8 +597,7 @@ requests later, so we add them to the Store differently*/
         }
         
         for(var a in temp){
-            if(temp[a]&& typeof(temp[a] == 'function') && a != 'files' && a != 'id' && a != 'connected_boxes' && a != 'type' && a != 'file' && a != 'outputs'){
-
+            if(temp[a]&& typeof(temp[a] == 'function') && a != 'files' && a != 'id' && a != 'connected_boxes' && a != 'type' && a != 'file' && a != 'outputs' && a != 'parent'){
                 b[a] = temp[a];
             }
         }
@@ -631,6 +618,9 @@ requests later, so we add them to the Store differently*/
                     for (var j = 0; j < tp[i].outputs.length; ++j){
                         tp[i].outputs[j] = tp[tp[i].outputs[j]];
                     }
+                }
+                if (tp[i].parent){
+                        tp[i].parent[0] = tp[tp[i].parent[0]];
                 }
                 if (tp[i].files){
                     for (var j = 0; j < tp[i].files.length; ++j){
@@ -730,8 +720,34 @@ whenever any message comes through (whenever files are added, removed, or change
             handler: disconnector,
             id: 'disconnect',
             icon: 'http://famfamfam.com/lab/icons/silk/icons/disconnect.png',
-        },
-        {
+        },'-',{
+            text: 'Filter Options',
+            menu:[
+                {
+                    text:'Set Scalar Value',
+                    handler: set_scalar,
+                    icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+                }
+            ],
+            id: 'filter_options',
+            icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+        },{
+            text: 'Filter Type',
+            menu:[
+                {
+                    text:'Detailed Balance',
+                    handler: filter_type,
+                    icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+                },
+                {
+                    text:'Scalar Multiplication',
+                    handler: filter_type,
+                    icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+                }
+            ],
+            id: 'filter_type',
+            icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+        },'-',{
             text: 'Save To Database',
             handler: save,
             id: 'save',
@@ -739,6 +755,65 @@ whenever any message comes through (whenever files are added, removed, or change
         },
         ],
     });
+
+    function set_scalar(b, e){
+        var form = new Ext.form.FormPanel({
+            baseCls: 'x-plain',
+            layout:'absolute',
+            defaultType: 'textfield',
+
+            items: [{
+                x: 0,
+                y: 5,
+                xtype:'label',
+                text: 'Scalar Value:'
+            },{
+                x: 80,
+                y: 0,
+                name: 'scalar',
+                anchor:'100%'  // anchor width by percentage
+            }]
+        });
+        var win = new Ext.Window({
+            title : 'Set Scalar...',
+            width : 200,
+            height : 100,
+            layout:'fit',
+            closeAction:'hide',
+            plain: true,
+            items: form,
+            buttons: [{
+                text:'Confirm',
+                handler: function(){
+                    for (var i = 0; i < boxes.length; ++i){
+                        if (boxes[i].selected && boxes[i].outputs){
+                            boxes[i].scalar = parseFloat(form.getForm().getFieldValues().scalar)
+                        }
+                    }
+                    win.hide();
+                    redraw(e);
+                }
+            },{
+                text: 'Cancel',
+                handler: function(){
+                    win.hide();
+                    redraw(e);
+                }
+            }]
+        });
+        win.show();
+
+    }
+
+    function filter_type(b, e){
+        var new_text = b.text;
+        for (var i = 0; i < boxes.length; ++i){
+            if (boxes[i].selected && boxes[i].outputs){
+                boxes[i].text = new_text;
+            }
+        }
+        redraw(e);
+    }
 
     function connected() {
         var count = 0;
@@ -979,6 +1054,15 @@ whenever any message comes through (whenever files are added, removed, or change
             }
             if (savable(e)) plMenu.items.get('save').enable();
             else plMenu.items.get('save').disable();
+            plMenu.items.get('filter_type').disable();
+            plMenu.items.get('filter_options').disable();
+            for (var i = 0; i < boxes.length; ++i) {
+                if (boxes[i].selected && boxes[i].outputs){
+                    plMenu.items.get('filter_type').enable();
+                    plMenu.items.get('filter_options').enable();
+                    break;
+                }
+            }
             plMenu.showAt(e.getXY());
             e.stopEvent();
         }
