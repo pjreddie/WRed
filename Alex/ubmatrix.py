@@ -254,12 +254,7 @@ def UBtestrun():
    UB["7"] = 1.106088263216144
    UB["8"] = -0.03224481098900243
    '''
-   '''
-       [-0.84947915,  0.8645548 , -1.0556593 ],
-       [-0.74648013,  0.7464804 ,  1.21203169],
-       [ 1.14220793,  1.13083969,  0.00700136]
-       
-   '''
+
    astar,bstar,cstar,alphastar,betastar,gammastar = star(a, b, c, alpha, beta, gamma)
    Bmatrix = calcB(astar, bstar, cstar, alphastar, betastar, gammastar, c, alpha)
    UB=calcUB(h1, k1, l1, h2, k2, l2, omega1, chi1, phi1, omega2, chi2, phi2, Bmatrix)

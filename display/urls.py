@@ -39,4 +39,5 @@ urlpatterns = patterns('',
     (r'^files/calcUBmatrix/', calculateUB),
 	(r'^files/omegaZero/', runcalc1),
     (r'^files/scatteringPlane/', runcalc2),
+    (r'^files/savingData/', makeSaveFile),
 )
