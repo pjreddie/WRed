@@ -3,35 +3,39 @@
 /* This mainly deals with animating the pipeline and is not close to being finished,
 since I think you're more interested in the other aspects, I'm going to leave out comments
 until it is further along...*/
-TEXTHEIGHT = 8;
-PADDING = 4;
+
+// Constants for pipeline canvas elements
+var TEXTHEIGHT = 8;
+var PADDING = 4;
 var addImg = new Image();
 addImg.src = 'http://famfamfam.com/lab/icons/silk/icons/add.png';
 var subImg = new Image();
 subImg.src = 'http://famfamfam.com/lab/icons/silk/icons/delete.png';
 
 //*******EXT Stuff***********
-Ext.onReady(init);
+Ext.onReady(onReadyFunction);
 
-function init() {
-    function clone_boxes(){
+function onReadyFunction() {
+
+    // Returns simplified versions of boxes without pointers to other boxes (JSON-serialized)
+    function clone_boxes() {
         var bclone = [];
-        for(var i = 0; i < boxes.length; ++i){
+        for (var i = 0; i < boxes.length; ++i) {
             var box = {};
-            for(s in boxes[i]){
-                if(boxes[i][s]){
-                    if(s == 'connected_boxes' || s == 'outputs' || s == 'parent'){
+            for (s in boxes[i]) {
+                if (boxes[i][s]) {
+                    if (s == 'connected_boxes' || s == 'outputs' || s == 'parent') {
                         var temp = [];
-                        for (var j = 0; j < boxes[i][s].length; ++j){
-                            for (var k = 0; k < boxes.length; ++k){
-                                if (boxes[i][s][j] == boxes[k]){
+                        for (var j = 0; j < boxes[i][s].length; ++j) {
+                            for (var k = 0; k < boxes.length; ++k) {
+                                if (boxes[i][s][j] == boxes[k]) {
                                     temp.push(k);
                                     break;
                                 }
                             }
                         }
                         box[s] = temp;
-                    }else{
+                    } else {
                         box[s] = boxes[i][s];
                     }
                 }
@@ -41,7 +45,6 @@ function init() {
         return bclone;
     }
     var myCanvas = new Ext.Element(document.createElement('canvas'));
-    a=myCanvas;
     myCanvas.set({
         width: 1000,
         height: 1000,
@@ -50,7 +53,7 @@ function init() {
     });
     myCanvas.appendTo(document.body);
 
-    loadMask = new Ext.LoadMask(Ext.getBody(), {
+    var loadMask = new Ext.LoadMask(Ext.getBody(), {
         msg: 'Please wait a moment while the page loads...'
     });
     loadMask.show();
@@ -59,6 +62,7 @@ function init() {
     var maxvals = [];
     var minvals = []; /*Handles rendering of ArrayGrid to show range of parameters in data files*/
 
+    // Generates the "range graphic" in the cells of the file gridpanel
     function vrange(val, meta, record, rI, cI, store) {
         var range = maxvals[cI] - minvals[cI];
         var spl = val.split(',');
@@ -75,17 +79,7 @@ function init() {
     }
     var dataArray = [];
     var store = new Ext.data.ArrayStore();
-    gridColumns = [];
-    var msg = function (title, msg) {
-        Ext.Msg.show({
-            title: title,
-            msg: msg,
-            minWidth: 200,
-            modal: true,
-            icon: Ext.Msg.INFO,
-            buttons: Ext.Msg.OK
-        });
-    };
+    var gridColumns = [];
 
     /*FormPanel to enable file uploads. Sends POST request to server w/ file information*/
 
@@ -109,7 +103,7 @@ function init() {
             fieldLabel: 'File',
             name: 'file',
             buttonText: 'Browse...',
-        }],
+            }],
         buttons: [{
             text: 'Upload',
             icon: 'http://famfamfam.com/lab/icons/silk/icons/page_white_add.png',
@@ -121,15 +115,13 @@ function init() {
                         success: function (fp, o) {}
                     });
                 }
-            }
-        }, '-',
+            }}, '-',
         {
             text: 'Cancel',
             icon: 'http://famfamfam.com/lab/icons/silk/icons/cancel.png',
             handler: function () {
                 fp.getForm().reset();
-            }
-        }]
+            }}]
     });
 
     var rowRightClicked = 0; //variable to store index of row that is right clicked
@@ -159,48 +151,35 @@ function init() {
         })*/
 
     });
-    
-    var canvas_dd_target = myCanvas;
-    var formPanelDropTarget = new Ext.dd.DropTarget(canvas_dd_target, {
-		ddGroup     : 'dd_files',
-		notifyEnter : function(ddSource, e, data) {
-		    selected = 'file';
-			selectedFiles = ddSource.dragData.selections;
-			//Add some flare to invite drop.
 
-			myCanvas.highlight();
-		},
-		notifyOut  : function(ddS, e, data){
-		    selected = 'pointer';
-		    redraw(e);
-		},
-		notifyDrop  : function(ddSource, e, data){
-
-			// Reference the record (single selection) for readability
+    // Enables dragging/dropping from the file panel to the canvas
+    var formPanelDropTarget = new Ext.dd.DropTarget(myCanvas, {
+        ddGroup: 'dd_files',
+        notifyEnter: function (ddSource, e, data) {
+            selected = 'file';
+            selectedFiles = ddSource.dragData.selections;
+            //Add some flare to invite drop.
+            myCanvas.highlight();
+        },
+        notifyOut: function (ddS, e, data) {
             selected = 'pointer';
-			return(true);
-		}
-	});
-    
+            redraw(e);
+        },
+        notifyDrop: function (ddSource, e, data) {
+
+            // Reference the record (single selection) for readability
+            selected = 'pointer';
+            return (true);
+        }
+    });
+
+    // When you double click on a row in the file panel, navigate to view_file.php
     grid.on('rowdblclick', function (grid, rowIndex, e) {
         window.location = '../' + (store.getAt(rowIndex).get('id'));
     });
 
-    /*Menu that shows up on right click to delete a file from the database*/
-    var rowMenu = new Ext.menu.Menu({
-        id: 'rowMenu',
-        items: [{
-            text: 'Delete',
-            handler: deleteRow,
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
-        },{
-            text: 'Download',
-            handler: download,
-            icon:'http://famfamfam.com/lab/icons/silk/icons/disk.png',
-        }],
-    }); /*Sends a POST request to server to delete a file*/
+    /* Sends a POST request to server to delete a file */
     function deleteRow() {
-
         conn.request({
             url: '../forms/delete/',
             method: 'POST',
@@ -211,29 +190,47 @@ function init() {
             failure: function () {}
         });
     }
+
+    // Opens a new window to download a file from the file panel
     function download() {
         window.open('../forms/download/?id=' + store.getAt(rowRightClicked).get('id'));
     }
+
+
+
+    /* Right click menu for file panel */
+    var rowMenu = new Ext.menu.Menu({
+        id: 'rowMenu',
+        items: [{
+            text: 'Delete',
+            handler: deleteRow,
+            icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
+            },
+        {
+            text: 'Download',
+            handler: download,
+            icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png',
+            }],
+    });
     grid.on('rowcontextmenu', function (grid, rowIndex, e) {
         rowRightClicked = rowIndex;
         rowMenu.showAt(e.getXY());
         e.stopEvent();
     });
 
-
-/*After data is retrieved from server, we have to reinitiallize the Store reconfigure the ArrayGrid
-so that the new data is displayed on the page*/
-
+    /*After data is retrieved from server, we have to reinitiallize the Store reconfigure the ArrayGrid
+    so that the new data is displayed on the page*/
     function reload_data() {
         var fieldData = dataArray[0]; //First row is the parameters of the data file (e.g. ['X', 'Y', 'Z', 'Temp'])
         maxvals = dataArray[1]; //Second row is the max values of the parameters over all files (used for rendering ranges)
         minvals = dataArray[2]; //Third row is min values of parameters
         dataArray.splice(0, 3); //The rest is the actual data
         var gridColumns = [];
-        storeFields = [];
-/*The first three parameters (File Name, database ID, and md5 sum) aren't renedered using the
-standard renderer and the ID and md5 sum aren't displayed at all, they are only used for server
-requests later, so we add them to the Store differently*/
+        var storeFields = [];
+        
+        /*The first three parameters (File Name, database ID, and md5 sum) aren't renedered using the
+        standard renderer and the ID and md5 sum aren't displayed at all, they are only used for server
+        requests later, so we add them to the Store differently*/
         gridColumns.push({
             header: fieldData[0],
             width: 150,
@@ -302,38 +299,39 @@ requests later, so we add them to the Store differently*/
         grid.reconfigure(store, colModel);
 
     }
-        var toolbar = new Ext.Toolbar({
+    var toolbar = new Ext.Toolbar();
 
-    });
+    // Save a pipeline to the database
     function save_pipeline() {
         var form = new Ext.form.FormPanel({
             baseCls: 'x-plain',
-            layout:'absolute',
+            layout: 'absolute',
             defaultType: 'textfield',
 
             items: [{
                 x: 0,
                 y: 5,
-                xtype:'label',
+                xtype: 'label',
                 text: 'Pipeline Name:'
-            },{
+            },
+            {
                 x: 60,
                 y: 0,
                 name: 'name',
-                anchor:'100%'  // anchor width by percentage
+                anchor: '100%' // anchor width by percentage
             }]
         });
         var win = new Ext.Window({
-            title : 'Save Pipeline...',
-            width : 300,
-            height : 100,
-            layout:'fit',
-            closeAction:'hide',
+            title: 'Save Pipeline...',
+            width: 300,
+            height: 100,
+            layout: 'fit',
+            closeAction: 'hide',
             plain: true,
             items: form,
             buttons: [{
-                text:'Save',
-                handler: function(){
+                text: 'Save',
+                handler: function () {
                     console.log(clone_boxes());
                     conn.request({
                         url: '../forms/save_pipeline/',
@@ -349,45 +347,47 @@ requests later, so we add them to the Store differently*/
                             win.hide();
                         }
                     });
-                }
-            },{
+                }},
+            {
                 text: 'Cancel',
-                handler: function(){
+                handler: function () {
                     win.hide();
                 }
             }]
         });
         win.show();
     }
+
+    // Save the output of an operation to the database
     function save() {
         var form = new Ext.form.FormPanel({
             baseCls: 'x-plain',
-            layout:'absolute',
+            layout: 'absolute',
             defaultType: 'textfield',
 
             items: [{
                 x: 0,
                 y: 5,
-                xtype:'label',
-                text: 'File Name:'
-            },{
+                xtype: 'label',
+                text: 'File Name:'},
+            {
                 x: 60,
                 y: 0,
                 name: 'name',
-                anchor:'100%'  // anchor width by percentage
-            }]
+                anchor: '100%' // anchor width by percentage
+                }]
         });
         var win = new Ext.Window({
-            title : 'Save To Database...',
-            width : 300,
-            height : 100,
-            layout:'fit',
-            closeAction:'hide',
+            title: 'Save To Database...',
+            width: 300,
+            height: 100,
+            layout: 'fit',
+            closeAction: 'hide',
             plain: true,
             items: form,
             buttons: [{
-                text:'Save',
-                handler: function(){
+                text: 'Save',
+                handler: function () {
                     console.log(form.getForm().getFieldValues());
                     conn.request({
                         url: '../json/evaluate/save/',
@@ -403,43 +403,42 @@ requests later, so we add them to the Store differently*/
                             win.hide();
                         }
                     });
-                }
-            },{
+                }},
+            {
                 text: 'Cancel',
-                handler: function(){
+                handler: function () {
                     win.hide();
-                }
-            }]
+                }}]
         });
         win.show();
     }
-    var initDragZone = function(v) {
-		v.dragZone = new Ext.dd.DragZone(Ext.getBody(), {
-			getDragData: function(e) {
-				// .button-draggable == class of the button you want to drag around
-				if(sourceEl = e.getTarget('.button-draggable')) {
-					d = sourceEl.cloneNode(true);
-					d.id = Ext.id();
-					return v.dragData = {
-						sourceEl: sourceEl,
-						repairXY: Ext.fly(sourceEl).getXY(),
-						ddel: d
-					}
-				}
-			},
+    var initDragZone = function (v) {
+        v.dragZone = new Ext.dd.DragZone(Ext.getBody(), {
+            getDragData: function (e) {
+                // .button-draggable == class of the button you want to drag around
+                if (sourceEl = e.getTarget('.button-draggable')) {
+                    d = sourceEl.cloneNode(true);
+                    d.id = Ext.id();
+                    return v.dragData = {
+                        sourceEl: sourceEl,
+                        repairXY: Ext.fly(sourceEl).getXY(),
+                        ddel: d
+                    }
+                }
+            },
 
-			onDrag: function(e) {
-				// !Important: manually fix the default position of Ext-generated proxy element
-				// Uncomment these line to see the Ext issue
-				var proxy = Ext.DomQuery.select('*', this.getDragEl());
-				proxy[2].style.position = '';
-			},
+            onDrag: function (e) {
+                // !Important: manually fix the default position of Ext-generated proxy element
+                // Uncomment these line to see the Ext issue
+                var proxy = Ext.DomQuery.select('*', this.getDragEl());
+                proxy[2].style.position = '';
+            },
 
-			getRepairXY: function() {
-				return this.dragData.repairXY;
-			}
-		});
-	};
+            getRepairXY: function () {
+                return this.dragData.repairXY;
+            }
+        });
+    };
     var my_pipeline_menu = [];
     toolbar.add({
         text: 'Add',
@@ -447,8 +446,8 @@ requests later, so we add them to the Store differently*/
         icon: 'http://famfamfam.com/lab/icons/silk/icons/add.png',
         cls: 'button-draggable',
         listeners: {
-			render: initDragZone
-		}
+            render: initDragZone
+        }
         //enableToggle: true,
         //toggleGroup: 'toggle',
         //toggleHandler: onItemToggle,
@@ -459,13 +458,14 @@ requests later, so we add them to the Store differently*/
         icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
         cls: 'button-draggable',
         listeners: {
-			render: initDragZone
-		}
+            render: initDragZone
+        }
         //enableToggle: true,
         //toggleGroup: 'toggle',
         //toggleHandler: onItemToggle,
         //pressed: false,
-    }, /*{
+    },
+/*{
         text: 'File',
         id: 'file',
         icon: 'http://famfamfam.com/lab/icons/silk/icons/page.png',
@@ -473,36 +473,40 @@ requests later, so we add them to the Store differently*/
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
         pressed: false,
-    }, */{
+    }, */
+    {
         text: 'Filter',
         id: 'filter',
         icon: 'http://famfamfam.com/lab/icons/silk/icons/calculator.png',
         cls: 'button-draggable',
         listeners: {
-			render: initDragZone
-		}
+            render: initDragZone
+        }
         //enableToggle: true,
         //toggleGroup: 'toggle',
         //toggleHandler: onItemToggle,
         //pressed: false,
-    },'->',{
+    },
+    '->',
+    {
         text: 'Save Current Pipeline',
         id: 'save_pipeline',
         icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png',
         handler: save_pipeline,
 
-    },{
+    },
+    {
         text: 'Load Pipeline',
         id: 'load_pipeline',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/folder_heart.png',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/folder_table.png',
         menu: [
             {
                 text: 'Templates',
                 id: 'templates',
                 icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
-                menu: ['-'
-                ],
-            },{
+                menu: ['-'],
+            },
+            {
                 text: 'My Pipelines',
                 id: 'my_pipelines',
                 icon: 'http://famfamfam.com/lab/icons/silk/icons/table.png',
@@ -510,12 +514,19 @@ requests later, so we add them to the Store differently*/
             }
         ],
 
-
         //enableToggle: true,
         //toggleGroup: 'toggle',
         //toggleHandler: onItemToggle,
         //pressed: false,
-    } /*{
+    },{
+        text: 'Clear Pipeline',
+        id: 'clear_pipeline',
+        icon: 'http://famfamfam.com/lab/icons/silk/icons/bomb.png',
+        handler: function(b,e){boxes = []; redraw(e);},
+
+    }
+    
+/*{
         text: 'Pointer',
         id: 'pointer',
         icon: 'http://famfamfam.com/lab/icons/silk/icons/cursor.png',
@@ -523,33 +534,34 @@ requests later, so we add them to the Store differently*/
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
         pressed: true,
-    }*/);
-        // Make the panel droppable to the button
-	var initDropZone = function(g) {
-		g.dropZone = new Ext.dd.DropZone(g.body, {
+    }*/
+    );
+    // Make the panel droppable to the button
+    var initDropZone = function (g) {
+        g.dropZone = new Ext.dd.DropZone(g.body, {
 
-			getTargetFromEvent: function(e) {
-				return e.getTarget('#myCanvas');
-			},
+            getTargetFromEvent: function (e) {
+                return e.getTarget('#myCanvas');
+            },
 
-			onNodeOver : function(target, dd, e, data){
-			    selected = data.sourceEl.id;
-				return Ext.dd.DropZone.prototype.dropAllowed;
-			},
-            onNodeOut: function(target, dd, e, data){
-			    selected = 'pointer';
-			    redraw(e);
-			},
-			onNodeDrop : function(target, dd, e, data) {
-				// !Important: We assign the dragged element to be set to new drop position
+            onNodeOver: function (target, dd, e, data) {
+                selected = data.sourceEl.id;
+                return Ext.dd.DropZone.prototype.dropAllowed;
+            },
+            onNodeOut: function (target, dd, e, data) {
                 selected = 'pointer';
-				return true;
-			}	
+                redraw(e);
+            },
+            onNodeDrop: function (target, dd, e, data) {
+                // !Important: We assign the dragged element to be set to new drop position
+                selected = 'pointer';
+                return true;
+            }
 
-		});
-	};
+        });
+    };
 
-    
+
     var canvasContainer = new Ext.BoxComponent({
         el: 'myCanvas',
         id: 'canvasContainer',
@@ -565,65 +577,55 @@ requests later, so we add them to the Store differently*/
         //	layout: 'fit',
         items: [canvasContainer],
         listeners: {
-			render: initDropZone
-		},
+            render: initDropZone
+        },
 
     });
     pipelines = [];
-    function recreate_box(b){
+
+    function recreate_box(b) {
         var temp;
-        switch(b.type){
-            case 'PlusBox':
-                temp = new PlusBox();
-                break;
-            case 'MinusBox':
-                temp = new MinusBox();
-                break;
-            case 'TextBox':
-                temp = new TextBox();
-                break;
-            case 'FileBox':
-                temp = new FileBox();
-                break;
-            case 'InputBox':
-                temp = new InputBox();
-                break;
-            case 'OutputBox':
-                temp = new OutputBox();
-                break;
-            case 'FilterBox':
-                temp = new FilterBox();
-                break;
-        }
         
-        for(var a in temp){
-            if(temp[a]&& typeof(temp[a] == 'function') && a != 'files' && a != 'id' && a != 'connected_boxes' && a != 'type' && a != 'file' && a != 'outputs' && a != 'parent'){
+        var switcher = {
+            'PlusBox': PlusBox,
+            'MinusBox': MinusBox,
+            'TextBox': TextBox,
+            'FileBox': FileBox,
+            'InputBox': InputBox,
+            'OutputBox': OutputBox,
+            'FilterBox': FilterBox,
+        };
+        temp = new switcher[b.type]();
+
+        for (var a in temp) {
+            if (temp[a] && typeof(temp[a] == 'function') && a != 'files' && a != 'id' && a != 'connected_boxes' && a != 'type' && a != 'file' && a != 'outputs' && a != 'parent') {
                 b[a] = temp[a];
             }
         }
     }
-    function correct_pipelines(){
-        for (var s = 0; s < pipelines.length; ++s){
+
+    function correct_pipelines() {
+        for (var s = 0; s < pipelines.length; ++s) {
             var tp = pipelines[s];
-            for(var i = 0; i < tp.length; ++i){
+            for (var i = 0; i < tp.length; ++i) {
                 recreate_box(tp[i]);
             }
-            for(var i = 0; i < tp.length; ++i){
-                if (tp[i].connected_boxes){
-                    for (var j = 0; j < tp[i].connected_boxes.length; ++j){
+            for (var i = 0; i < tp.length; ++i) {
+                if (tp[i].connected_boxes) {
+                    for (var j = 0; j < tp[i].connected_boxes.length; ++j) {
                         tp[i].connected_boxes[j] = tp[tp[i].connected_boxes[j]]
                     }
                 }
-                if (tp[i].outputs){
-                    for (var j = 0; j < tp[i].outputs.length; ++j){
+                if (tp[i].outputs) {
+                    for (var j = 0; j < tp[i].outputs.length; ++j) {
                         tp[i].outputs[j] = tp[tp[i].outputs[j]];
                     }
                 }
-                if (tp[i].parent){
-                        tp[i].parent[0] = tp[tp[i].parent[0]];
+                if (tp[i].parent) {
+                    tp[i].parent[0] = tp[tp[i].parent[0]];
                 }
-                if (tp[i].files){
-                    for (var j = 0; j < tp[i].files.length; ++j){
+                if (tp[i].files) {
+                    for (var j = 0; j < tp[i].files.length; ++j) {
                         recreate_box(tp[i].files[j]);
                     }
                 }
@@ -632,11 +634,12 @@ requests later, so we add them to the Store differently*/
         }
 
     }
-    function load_pipeline(b, e){
+
+    function load_pipeline(b, e) {
         boxes = pipelines[b.id];
         redraw(e);
     }
-    
+
 /*Retrieve data in json format via a GET request to the server. This is used
 anytime there is new data, and initially to populate the table.*/
 
@@ -644,19 +647,22 @@ anytime there is new data, and initially to populate the table.*/
         conn.request({
             url: '../all/json_pipelines/',
             method: 'GET',
-            params: {
-            },
+            params: {},
             success: function (responseObject) {
                 var json_response = Ext.decode(responseObject.responseText);
                 my_pipeline_menu = [];
                 pipelines = [];
-                var menu = new Ext.menu.Menu({id: 'pipeline_menu', items:[]});
-                for(var i = 0; i < json_response.length; ++i){
+                var menu = new Ext.menu.Menu({
+                    id: 'pipeline_menu',
+                    items: []
+                });
+                for (var i = 0; i < json_response.length; ++i) {
                     menu.add({
                         text: json_response[i].name,
-                        id: ''+i,
+                        id: '' + i,
                         handler: load_pipeline,
-                        icon: 'http://famfamfam.com/lab/icons/silk/icons/table.png',});
+                        icon: 'http://famfamfam.com/lab/icons/silk/icons/table.png',
+                    });
                     pipelines.push(Ext.decode(json_response[i].pipeline));
                 }
                 correct_pipelines();
@@ -714,101 +720,103 @@ whenever any message comes through (whenever files are added, removed, or change
             handler: connector,
             id: 'connect',
             icon: 'http://famfamfam.com/lab/icons/silk/icons/connect.png',
-        },
+            },
         {
             text: 'Disconnect',
             handler: disconnector,
             id: 'disconnect',
             icon: 'http://famfamfam.com/lab/icons/silk/icons/disconnect.png',
-        },'-',{
+            }, '-',
+        {
             text: 'Filter Options',
-            menu:[
+            menu: [
                 {
-                    text:'Set Scalar Value',
-                    handler: set_scalar,
-                    icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+                text: 'Set Scalar Value',
+                handler: set_scalar,
+                icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
                 }
             ],
             id: 'filter_options',
             icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
-        },{
+            },
+        {
             text: 'Filter Type',
-            menu:[
+            menu: [
                 {
-                    text:'Detailed Balance',
-                    handler: filter_type,
-                    icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+                text: 'Detailed Balance',
+                handler: filter_type,
+                icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
                 },
-                {
-                    text:'Scalar Multiplication',
-                    handler: filter_type,
-                    icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+            {
+                text: 'Scalar Multiplication',
+                handler: filter_type,
+                icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
                 }
             ],
             id: 'filter_type',
             icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
-        },'-',{
+            }, '-',
+        {
             text: 'Save To Database',
             handler: save,
             id: 'save',
             icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png',
-        },
-        ],
+            },
+                    ],
     });
 
-    function set_scalar(b, e){
+    function set_scalar(b, e) {
         var form = new Ext.form.FormPanel({
             baseCls: 'x-plain',
-            layout:'absolute',
+            layout: 'absolute',
             defaultType: 'textfield',
 
             items: [{
                 x: 0,
                 y: 5,
-                xtype:'label',
-                text: 'Scalar Value:'
-            },{
+                xtype: 'label',
+                text: 'Scalar Value:'},
+            {
                 x: 80,
                 y: 0,
                 name: 'scalar',
-                anchor:'100%'  // anchor width by percentage
-            }]
+                anchor: '100%' // anchor width by percentage
+                }]
         });
         var win = new Ext.Window({
-            title : 'Set Scalar...',
-            width : 200,
-            height : 100,
-            layout:'fit',
-            closeAction:'hide',
+            title: 'Set Scalar...',
+            width: 200,
+            height: 100,
+            layout: 'fit',
+            closeAction: 'hide',
             plain: true,
             items: form,
             buttons: [{
-                text:'Confirm',
-                handler: function(){
-                    for (var i = 0; i < boxes.length; ++i){
-                        if (boxes[i].selected && boxes[i].outputs){
+                text: 'Confirm',
+                handler: function () {
+                    for (var i = 0; i < boxes.length; ++i) {
+                        if (boxes[i].selected && boxes[i].outputs) {
                             boxes[i].scalar = parseFloat(form.getForm().getFieldValues().scalar)
                         }
                     }
                     win.hide();
                     redraw(e);
-                }
-            },{
+                }},
+            {
                 text: 'Cancel',
-                handler: function(){
+                handler: function () {
                     win.hide();
                     redraw(e);
-                }
-            }]
+                }}]
         });
         win.show();
 
     }
 
-    function filter_type(b, e){
+    function filter_type(b, e) {
         var new_text = b.text;
-        for (var i = 0; i < boxes.length; ++i){
-            if (boxes[i].selected && boxes[i].outputs){
+        for (var i = 0; i < boxes.length; ++i) {
+            if (boxes[i].selected && boxes[i].outputs) {
                 boxes[i].text = new_text;
             }
         }
@@ -853,7 +861,9 @@ whenever any message comes through (whenever files are added, removed, or change
                 else return false;
             }
         }
-        if (a===null) {return false;}
+        if (a === null) {
+            return false;
+        }
         if (a.operator() && a.can_add() && b !== null && b.dataset()) {
             from = a;
             to = b
@@ -928,13 +938,13 @@ whenever any message comes through (whenever files are added, removed, or change
         ctx.clearRect(0, 0, 1000, 1000);
 
         for (var i = 0; i < boxes.length; ++i) {
-            if (boxes[i].color_connections){
+            if (boxes[i].color_connections) {
                 for (var j = 0; j < boxes[i].connected_boxes.length; ++j) {
                     if (j == 0) connect(ctx, boxes[i], boxes[i].connected_boxes[j], 'rgb(0,0,255)');
-                    else if(j == 1) connect(ctx, boxes[i], boxes[i].connected_boxes[j], 'rgb(255,0,0)');
+                    else if (j == 1) connect(ctx, boxes[i], boxes[i].connected_boxes[j], 'rgb(255,0,0)');
                     else connect(ctx, boxes[i], boxes[i].connected_boxes[j], 'rgb(0,0,255)');
                 }
-            }else{
+            } else {
                 for (var j = 0; j < boxes[i].connected_boxes.length; ++j) {
                     connect(ctx, boxes[i], boxes[i].connected_boxes[j], 'rgb(0,0,0)');
                 }
@@ -947,7 +957,10 @@ whenever any message comes through (whenever files are added, removed, or change
         case 'file':
             var fb = new FileBox(coords[0], coords[1]);
             for (var i = 0; i < selectedFiles.length; ++i) {
-                fb.files.push(new TextBox({'File Name': selectedFiles[i].data['File Name'], 'id':selectedFiles[i].data['id']}));
+                fb.files.push(new TextBox({
+                    'File Name': selectedFiles[i].data['File Name'],
+                    'id': selectedFiles[i].data['id']
+                }));
             }
             fb.draw(ctx);
 
@@ -988,12 +1001,13 @@ whenever any message comes through (whenever files are added, removed, or change
         return toReturn;
     }
     var from, to, toSave;
-    function savable(e){
+
+    function savable(e) {
         var coords = imgCoords(e);
         toSave = null;
         for (var i = 0; i < boxes.length; ++i) {
             if (boxes[i].x - boxes[i].width / 2 <= coords[0] && boxes[i].x + boxes[i].width / 2 >= coords[0] && boxes[i].y - boxes[i].height / 2 <= coords[1] && boxes[i].y + boxes[i].height / 2 >= coords[1]) {
-                if (boxes[i].dataset()){
+                if (boxes[i].dataset()) {
                     toSave = boxes[i];
                     return true;
                 }
@@ -1001,6 +1015,7 @@ whenever any message comes through (whenever files are added, removed, or change
         }
         return false;
     }
+
     function mouseUp(e) {
         canvas.un('mousemove', moveSelected);
         if (true) {
@@ -1015,7 +1030,10 @@ whenever any message comes through (whenever files are added, removed, or change
             case 'file':
                 var fb = new FileBox(coords[0], coords[1]);
                 for (var i = 0; i < selectedFiles.length; ++i) {
-                    fb.files.push(new TextBox({'File Name': selectedFiles[i].data['File Name'], 'id':selectedFiles[i].data['id']}));
+                    fb.files.push(new TextBox({
+                        'File Name': selectedFiles[i].data['File Name'],
+                        'id': selectedFiles[i].data['id']
+                    }));
                 }
                 boxes.push(fb);
                 break;
@@ -1057,7 +1075,7 @@ whenever any message comes through (whenever files are added, removed, or change
             plMenu.items.get('filter_type').disable();
             plMenu.items.get('filter_options').disable();
             for (var i = 0; i < boxes.length; ++i) {
-                if (boxes[i].selected && boxes[i].outputs){
+                if (boxes[i].selected && boxes[i].outputs) {
                     plMenu.items.get('filter_type').enable();
                     plMenu.items.get('filter_options').enable();
                     break;
