@@ -48,12 +48,14 @@ def fitting_request_action(request, idNum):
         if actionID == '1':
             data = simplejson.loads(request.POST['data'])
             prevFunctions = simplejson.loads(request.POST['prevFunctions'])
+            replaceIndices = simplejson.loads(request.POST['replaceIndices'])
             
             xData = simplejson.loads(request.POST['data'])['x']
             yData = simplejson.loads(request.POST['data'])['y']
             functionID = int(request.POST['functionID'])
             function = getFunctionClass(functionID)()
             
+            request.session['replaceIndices'] = replaceIndices
             request.session['xData'] = xData
             request.session['yData'] = yData
             request.session['functionID'] = functionID
@@ -82,7 +84,7 @@ def fitting_request_action(request, idNum):
             nextFitInstruction = function.fitInstructions.popleft()
             
             response = fitInstructionResponse(nextFitInstruction, addlParams)
-            return HttpResponse(response)
+            return HttpResponse(simplejson.dumps(response))
             
             
         elif actionID == '2':
@@ -104,7 +106,7 @@ def fitting_request_action(request, idNum):
                 functionGroup.functions[-1] = function
                 
                 dragFit = functionGroup.createFunction(xData, yData)
-                dragFit.update({ 'dataType': 'doingDrag' })
+                dragFit.update({ 'dataType': 'doingDrag', 'replaceIndices': request.session['replaceIndices'], 'dragMode': request.POST['dragMode'] })
                 return HttpResponse(simplejson.dumps(dragFit))
             
             
@@ -117,19 +119,27 @@ def fitting_request_action(request, idNum):
                 finishedFunction = functionGroup.createFunction(xData, yData)
                 print finishedFunction
                 print '############'
-                return HttpResponse(simplejson.dumps(finishedFunction))
+                
+                response = finishedFunction
+                response.update({ 'replaceIndices': request.session['replaceIndices'] })
+                
+                return HttpResponse(simplejson.dumps(response))
             else:
                 #guess width
                 #guessWidth = guess_width(xData, yData, peakX, peakY, backgroundY)
                 #guessWidth2 = guess_width2(xData, yData, peakX, peakY, backgroundY)
                 
                 nextFitInstruction = function.fitInstructions.popleft()
+                if nextFitInstruction['dataType'] == 'askDrag':
+                    nextFitInstruction.update({ 'dragMode': 'before' })
                 
                 response = fitInstructionResponse(nextFitInstruction, request.session['addlParams'])
-                return HttpResponse(response)
+                response.update({ 'replaceIndices': request.session['replaceIndices'] })
+                return HttpResponse(simplejson.dumps(response))
             
         elif actionID == '3':
-            dataData = simplejson.loads(request.POST['dataData'])
+            allData = simplejson.loads(request.POST['allData'])
+            dataData = allData[0]
             xData = dataData['x']
             yData = dataData['y']
             yErrData = dataData['yerr']
@@ -137,17 +147,18 @@ def fitting_request_action(request, idNum):
             
             #functionData = simplejson.loads(request.POST['functionData']) # Not used at all
             
-            functionInfos = simplejson.loads(request.POST['functionInfos'])
+            allFunctionInfos = simplejson.loads(request.POST['allFunctionInfos'])
             functionGroup = FunctionGroup()
             functionGroup.data = dataData
             
-            for functionInfo in functionInfos:
-                print functionInfo
-                functionID = int(functionInfo['functionID'])
-                functionParams = functionInfo['functionParams']
-                function = getFunctionClass(functionID)()
-                function.setFunctionParamsFromDict(functionParams)
-                functionGroup.functions.append(function)
+            for functionInfos in allFunctionInfos:
+                for functionInfo in functionInfos:
+                    print functionInfo
+                    functionID = int(functionInfo['functionID'])
+                    functionParams = functionInfo['functionParams']
+                    function = getFunctionClass(functionID)()
+                    function.setFunctionParamsFromDict(functionParams)
+                    functionGroup.functions.append(function)
             
             (params, slices) = functionGroup.getFunctionsParamsAsArray()
             
@@ -186,7 +197,7 @@ def fitting_request_action(request, idNum):
 
             response = finishedFit
             response.update({ 'functionInfos': fitFunctionInfos, 'fitInfo': { 'chisq': chiSquared },
-                              'legendIndex': int(request.POST['legendIndex']), 'dataType': 'doFit' })
+                              'replaceIndices': simplejson.loads(request.POST['replaceIndices']), 'dataType': 'doFit' })
             return HttpResponse(simplejson.dumps(response))
             
         else:
@@ -237,7 +248,7 @@ def fitInstructionResponse(fitInstruction, addlParams):
     returnResponse = fitInstruction
     returnResponse.update(addlParams)
     
-    return simplejson.dumps(returnResponse)
+    return returnResponse
 
 def objectToArrayPairs(d):
     return [dict(name=key, value=value) for key, value in d.iteritems()]

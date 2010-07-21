@@ -71,6 +71,10 @@
 .legendSeries li {
   font:           12px/1.2 'Arial', 'Tahoma', 'Verdana', 'Helvetica', sans-serif;
   margin-bottom:  6px;
+  padding:        3px 6px;
+}
+.legendSeries li:hover {
+  background:     #ffc;
 }
 .legendSeries li p {
   margin-bottom:  4p;
@@ -78,7 +82,7 @@
 .legendSeries input {
   vertical-align: top;
 }
-.legendSeries label span {
+.legendSeries .seriesName span {
   border:         1px solid white;
   padding:        0 7px;
   margin:         0 4px;

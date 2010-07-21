@@ -60,6 +60,8 @@ class FunctionGroup(object):
         functionDomain    = N.arange(min(xData), max(xData), abs(max(xData) - min(xData)) / 200.)
         functionDataRange = N.arange(min(yData), max(yData), abs(max(yData) - min(yData)) / 200.)
 
+        print self
+
         functionRanges = []
         functionYs = []
         functionInfos = []
