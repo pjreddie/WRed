@@ -1,0 +1,39 @@
+﻿Sup?
+
+If you are reading this, you probably want to try our the website, see what it looks like at this point (If you're not reading this you probably should be). Let's figure out how to do that.
+1)Make sure you have orbited, twisted, and stompservice installed. (You can get all of them with easy_install)
+2)You need to make yourself a database. From the WRed directory:
+    1)mkdir db
+    2)touch db/file.db
+    3)python manage.py syncdb
+        1)You should make a superuser because you will need to login to access the website. You can manually make other users later if you want to test it out. The authentication system is by no means complete right now...
+3)Cool now we gotta start up all the servers. From WRed directory again...:
+    1)python manage.py runserver
+    2)orbited –config orbited.cfg
+    3)python relay.py
+4)Now go to http://localhost:8000/WRed/files/all/
+5)Start uploading some test data from the test_datafiles directory
+6)Try uploading live data via a post request (you'll need urllib2 and urllib2_file for this):
+    1)python manage.py shell
+        1)import urllib2, urllib2_file
+        2)data  = {'filename':'PUT_FILENAME_HERE', 'file': open('PUT_PATH_HERE'), 'proposalid':'SOME_NUMBER'}
+        3)urllib2.urlopen("http://localhost:8000/WRed/files/forms/upload/", data)
+
+Yup. Thats how you do it. So this is what's going on:
+
+Client requests files/all/
+JS in files_all sends GET request to server to retrieve file data
+Stomp client subscribes to updates/files/all
+If a new file is added, server sends out message to subscribers
+Browser receives message, tells page to resend GET request and update the grid
+Uploads handled via POST request to files/upload with form data containing the file. The proposal id is determined based on the username of the user that uploaded the file
+Deletes handled via POST request to files/delete with form information containing the md5 sum of the file to be deleted. This will be changed eventually to be database id instead of md5 sum.
+Client double clicks on a file:
+Redirect to files/{id number}
+JS in view_file sends GET request to server to retrieve json of that data file
+Stomp subscribes to updates/files/{id number}
+If a new file is added, server sends out message to subscribers
+Browser receives message, tells page to resend GET request and update the grid and chart
+
+
+If you have any questions or problems, feel free to email me at pjreddie@gmail.com

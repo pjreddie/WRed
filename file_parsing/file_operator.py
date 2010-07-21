@@ -171,7 +171,12 @@ class Data:
                     pass
         return out
     def monitor_normalization(self, m0):
-        pass
+        for p in self.detectors:
+            for s in self.detectors:
+                try:
+                    p[s][0] = p[s][0] * m0 / p['Monitor'][0]
+                except:
+                    pass
     def detailed_balance(self):
         out = copy.deepcopy(self)
         beta_times_temp = 11.6
