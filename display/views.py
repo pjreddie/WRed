@@ -1,5 +1,6 @@
 #Author: Joe Redmon
 #views.py
+#7/22/10 - Alex Yee added in new downloadangles method.
 
 import os
 from django.db.models.signals import post_save, post_delete

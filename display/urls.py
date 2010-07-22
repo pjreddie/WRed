@@ -40,4 +40,6 @@ urlpatterns = patterns('',
 	(r'^files/omegaZero/', runcalc1),
     (r'^files/scatteringPlane/', runcalc2),
     (r'^files/savingData/', makeSaveFile),
+    (r'^files/downloadData/', downloadFile),
+    (r'^files/uploadingData/', uploadFile),
 )

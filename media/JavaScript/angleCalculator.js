@@ -11,7 +11,7 @@
 Ext.onReady(function () {
     var conn = new Ext.data.Connection();
     var isUBcalculated = false;     //Tells whether UB matrix has been calculated
-    var myUBmatrix = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] //The variable that will hold the calculated UB matrix
+    myUBmatrix = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] //The variable that will hold the calculated UB matrix
 
     var baseData = [
             [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -221,11 +221,12 @@ Ext.onReady(function () {
     };
     
     function ubsuccess (responseObject) {
-        theUBmatrix = Ext.decode(responseObject.responseText);
-        //testUBmatrix 
-        //TODO go through loop, split at ', ', make 1D array = myUBmatrix
-        myUBmatrix = responseObject; //TODO not yet working properly - might need to play w/ runcalc.py
-        console.log(theUBmatrix);
+        stringUBmatrix = responseObject.responseText; //Receives UBmatrix as a String w/ elements separated by a ', '
+        console.log(stringUBmatrix);
+        myUBmatrix = stringUBmatrix.split(', '); //Makes a 1D array of the 9 UBmatrix values, each as a String
+        for (i = 0; i < 9 ; i++){
+            myUBmatrix[i] = parseFloat(myUBmatrix[i]); //Converts each String into a Float
+        }
         console.log(myUBmatrix);
         
         isUBcalculated = true;
@@ -432,18 +433,6 @@ Ext.onReady(function () {
         selectOnFocus:  true,
         value        : 'Omega = 0',
         
-        listeners: {
-            afterquery: function(){
-                //TODO if not on 'Scattering Plane' mode, hide the scattering plane vector input section
-                if (myCombo.getValue() == 'Scattering Plane'){
-                    bottomFieldset.hide();
-                }
-                else{
-                    bottomFielset.show();
-                }
-            }
-        }
-
     });
 
     // ********* START - Setting up lattice constants GUI  ********* 
@@ -668,17 +657,29 @@ Ext.onReady(function () {
             buttonText  : 'Browse...',
         }],
         buttons: [{
-            text: 'Save & Download Data',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png', //graphics that accompany the button
-            handler: saveFunction
+            text: 'Save & Download Data', //Save & Download Data button
+            icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png', //graphic that accompanies the button
+            handler: saveFunction,
         }, {
-            text: 'Load Data',
+            text: 'Load Data',  //Load Data button
             icon: 'http://famfamfam.com/lab/icons/silk/icons/add.png',
-            handler: loadFunction,
+            handler: function (responseObject){
+                if (uploadPanel.getForm().isValid()) {
+                    console.log('im here');
+                    uploadPanel.getForm().submit({
+                        url: '/WRed/files/uploadingData/',
+                        waitMsg: 'Uploading data...',
+                        success: uploadFunction,
+                        failure: function() {
+                            Ext.Msg.alert('Error: Could not upload data.');
+                        }
+                    })
+                }
+            },
         }]
     });
 
-    function saveFunction(responseObject) {
+    function saveFunction() {
         //Writes data to a textfile for user to download
         //ubmatrix = Ext.decode(responseObject.responseText);
         //console.log(ubmatrix);
@@ -704,7 +705,7 @@ Ext.onReady(function () {
             'numrows'   : numrows,
             'ub'        : myUBmatrix, 
         });
-        for (var i = 0; i < 2; i++) { //all the observation table's data (only 2 rows worth
+        for (var i = 0; i < 2; i++) { //all the observation table's data (only 2 rows' worth)
             var record1 = store.getAt(i)
             params['data'].push(record1.data); 
         }; 
@@ -715,17 +716,64 @@ Ext.onReady(function () {
             
         conn.request({
             url: '/WRed/files/savingData/',
-            method: 'POST', //TODO MAY HAVE TO CHANGE THIS
+            method: 'POST', 
             params: Ext.encode(params),
-            success: successFunction,
+            success: function (){
+            },//downloadFunction,  
             failure: function () {
                 Ext.Msg.alert('Error: Could not save');
             }
         });
         
     }
-    function loadFunction(responseObject) {
+    function downloadFunction (){
+        conn.request({
+            url: '/WRed/files/downloadData/',
+            method: 'GET',
+            failure: function (){
+                Ext.Msg.alert('Error: Could not download');
+            },
+        })
+    }
+    
+    function uploadFunction (responseObject) {
+        data = Ext.decode(responseObject.responseText);
+        console.log(data);
+        console.log('uploadFunction');
         
+        //uploading lattice constants data
+        aField.setValue(data[0]['a']);
+        bField.setValue(data[0]['b']);
+        cField.setValue(data[0]['c']);
+        alphaField.setValue(data[0]['alpha']);
+        betaField.setValue(data[0]['beta']);
+        gammaField.setValue(data[0]['gamma']);
+        wavelengthField.setValue(data[0]['wavelength']);
+        myCombo.setValue(data[0]['mode']);
+        
+        //uploading scattering plane vectors
+        h1Field.setValue(data[0]['h1']);
+        k1Field.setValue(data[0]['k1']);
+        l1Field.setValue(data[0]['l1']);
+        h2Field.setValue(data[0]['h2']);
+        k2Field.setValue(data[0]['k2']);
+        l2Field.setValue(data[0]['l2']);
+        
+        //uploading observation data
+        newData = [
+            [data[1]['h'], data[1]['k'], data[1]['l'], data[1]['twotheta'], data[1]['theta'], data[1]['chi'], data[1]['phi']],
+            [data[2]['h'], data[2]['k'], data[2]['l'], data[2]['twotheta'], data[2]['theta'], data[2]['chi'], data[2]['phi']],
+        ]
+        store.loadData(newData);
+        
+        newIdealData = [];
+        for (i = 3; i < data.length; i++){
+            tempIdealData = [data[i]['h'], data[i]['k'], data[i]['l'], data[i]['twotheta'], data[i]['theta'], data[i]['omega'], data[i]['chi'], data[i]['phi']];
+            newIdealData.push(tempIdealData);
+        }
+        idealDataStore.loadData(newIdealData);
+        
+        submitData(null, null); //CHECK - might produce errors
     }
 
 
