@@ -104,7 +104,10 @@ def calculateUB(request):
 def makeSaveFile (request):
     "Saves the current data in a text file named 'savedata.txt', overwriting the previous text file so there is minimal data storage. Then lets user download the file."
     
+    print ('before')
+    print ('keys: ', request.POST.keys()[0])
     requestObject = simplejson.loads(request.POST.keys()[0]) 
+    print ('after')
     data = requestObject['data']
     
     #today = datetime.datetime.now()
@@ -118,10 +121,10 @@ def makeSaveFile (request):
     dataWriter.writerow(['#Data input file for angleCalculator.'])
     #dataWriter.writerow(['#File downloaded from angleCalculator: '])
     #dataWriter.writerow([theDate])
-    dataWriter.writerow(['#WARNING: editing this file may result in a loss of data when loaded.'])
+    dataWriter.writerow(['#WARNING: editing this file may result in a loss of data when loaded or complete failure to load.'])
     dataWriter.writerow([' '])
     
-    dataWriter.writerow(['#mode'])
+    dataWriter.writerow(['#Mode'])
     dataWriter.writerow([data[0]['mode']])
     dataWriter.writerow([' '])
     
@@ -129,7 +132,7 @@ def makeSaveFile (request):
     dataWriter.writerow([data[0]['a'], data[0]['b'], data[0]['c'], data[0]['alpha'], data[0]['beta'], data[0]['gamma'], data[0]['wavelength']])
     dataWriter.writerow([' '])
     
-    dataWriter.writerow(['#observations h k l twotheta theta chi phi'])
+    dataWriter.writerow(['#Observations h k l twotheta theta chi phi'])
     dataWriter.writerow([data[1]['h'], data[1]['k'], data[1]['l'], data[1]['twotheta'], data[1]['theta'], data[1]['chi'], data[1]['phi']])
     dataWriter.writerow([data[2]['h'], data[2]['k'], data[2]['l'], data[2]['twotheta'], data[2]['theta'], data[2]['chi'], data[2]['phi']])
     dataWriter.writerow([' '])
@@ -143,7 +146,7 @@ def makeSaveFile (request):
     dataWriter.writerow([data[0]['h2'], data[0]['k2'], data[0]['l2']])
     dataWriter.writerow([' '])
     
-    dataWriter.writerow(['#desired h k l twotheta theta omega chi phi'])
+    dataWriter.writerow(['#Desired h k l twotheta theta omega chi phi'])
     for i in range(3, data[0]['numrows'] + 3):
         dataWriter.writerow([data[i]['h'], data[i]['k'], data[i]['l'], data[i]['twotheta'], data[i]['theta'], data[i]['omega'], data[i]['chi'], data[i]['phi']])
     dataWriter.writerow(['#End desired'])
@@ -158,12 +161,8 @@ def downloadFile (request):
     response = HttpResponse(data, mimetype='application/force-download')
     response['Content-Disposition'] = 'attachment; filename=' + rFile.name
     return HttpResponse(response)
-    
 
-def uploadFile (request):
-    #TODO PLAY W/ THIS
-    filename = 'savedata.txt'
-    #filename = request.FILES['file'] # not working properly yet - ERROR OCCURING HERE WHEN LOAD BUTTON PUSHED FOR THIS LINE
+def uploadInputFile (filename):
     response = []
 
     #open(filename, letter) --> letter defaults to 'r' (read only)
@@ -172,11 +171,11 @@ def uploadFile (request):
     for row in dataReader:
         data.append(', '.join(row)) #making an array of row Strings.
         
-    modenum = data.index('#mode')  
+    modenum = data.index('#Mode')  
     latticenum = data.index('#a b c alpha beta gamma wavelength')
-    observationsnum = data.index('#observations h k l twotheta theta chi phi')
+    observationsnum = data.index('#Observations h k l twotheta theta chi phi')
     scatteringnum = data.index('#Scattering Plane Vectors h k l')
-    desirednum = data.index('#desired h k l twotheta theta omega chi phi')
+    desirednum = data.index('#Desired h k l twotheta theta omega chi phi')
     enddesirednum = data.index('#End desired')
     
     if (modenum < 0 or latticenum < 0 or observationsnum < 0 or scatteringnum < 0 or desirednum < 0):
@@ -221,15 +220,15 @@ def uploadFile (request):
         response.append(response2)
         
         #getting the ideal data
-        theidealdata = [] #going to be re-filled for each new row of data
         for i in range(desirednum+1, enddesirednum):
             idealarr = data[i].split(',')
+            theidealdata = [] #going to be re-filled for each new row of data
             
             for x in idealarr:
                 theidealdata.append(float(x))
             
             desiredresponses = {'h': theidealdata[0], 'k': theidealdata[1], 'l': theidealdata[2], 'twotheta': theidealdata[3], 'theta': theidealdata[4], 'omega': theidealdata[5], 'chi': theidealdata[6], 'phi': theidealdata[7]}
             response.append(desiredresponses)
-            
-        return HttpResponse(simplejson.dumps(response))
+        
+        return response
 

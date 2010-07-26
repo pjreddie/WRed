@@ -41,5 +41,7 @@ urlpatterns = patterns('',
     (r'^files/scatteringPlane/', runcalc2),
     (r'^files/savingData/', makeSaveFile),
     (r'^files/downloadData/', downloadFile),
-    (r'^files/uploadingData/', uploadFile),
+    #(r'^files/uploadingData/', uploadInputFile),
+    (r'^files/uploadingData/', upload_file_angleCalc),
+    #(r'^files/getUpload/', getUploadData),
 )

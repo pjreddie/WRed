@@ -145,6 +145,31 @@ def save_pipeline(request):
             p.save()
             json['success'] = True
     return HttpResponse(simplejson.dumps(json))
+    
+#Handles POST requests to upload an input file for angleCalculator   
+def upload_file_angleCalc(request):
+    json = {
+        'errors': {},
+        'data': {},
+        'success': False,
+    }
+    if request.method == 'POST':
+        form = UploadFileForm(request.POST, request.FILES)
+        print form.is_valid()
+        if form.is_valid():
+            print request.FILES
+            filename = request.FILES['file'].name
+           
+            uploadarray = uploadInputFile (filename)
+            json['success'] = True
+            json['data'] = {'array': uploadarray}
+        else:
+            return HttpResponse('not valid. Form:', form)
+    else:
+        return HttpResponse('method != POST')
+    #returns a dictionary with 'data' = dictionary with 'array' = array of dictionaries created from uploadInputFile method.
+    return HttpResponse(simplejson.dumps(json))
+    
 #Handles POST requests to upload static files (cannot be update or changed later)
 @login_required
 def upload_file(request):

@@ -240,7 +240,7 @@ Ext.onReady(function () {
         numrows = idealDataStore.getCount();
         
         //IF it's in the omega mode AND isUBcalculated == true
-        if (isUBcalculated && myCombo.getValue() == 'Omega = 0'){
+        if (isUBcalculated && myCombo.getValue() == 'Bisecting Plane'){
 
             params['data'].push({
                 'wavelength' : wavelengthField.getValue(),
@@ -416,7 +416,7 @@ Ext.onReady(function () {
  
     //Setting up the ComboBox
     var myComboStore = new Ext.data.ArrayStore({
-        data: [[1, 'Omega = 0'], [2, 'Scattering Plane']],
+        data: [[1, 'Bisecting Plane'], [2, 'Scattering Plane']],
         fields: ['id', 'mode'],
         idIndex: 0, 
     });
@@ -431,7 +431,7 @@ Ext.onReady(function () {
         
         triggerAction:  'all', //Lets you see all drop down options when arrow is clicked
         selectOnFocus:  true,
-        value        : 'Omega = 0',
+        value        : 'Bisecting Plane',
         
     });
 
@@ -639,7 +639,15 @@ Ext.onReady(function () {
     // ********* END - Setting up scattering plane h/k/l GUI  ********* 
     
     // ********* START - Handling loading and saving data  ********* 
-
+    /*var inputField = new Ext.ux.FieldUploadField ({
+            anchor      : '100%',
+            id          : 'inputfile',
+            emptyText   : 'Select a file...',
+            fieldLabel  : 'File',
+            name        : 'file',
+            buttonText  : 'Browse...',
+    })*/
+    
     var uploadPanel = new Ext.FormPanel({
         fileUpload: true,
         frame: true,
@@ -663,22 +671,22 @@ Ext.onReady(function () {
         }, {
             text: 'Load Data',  //Load Data button
             icon: 'http://famfamfam.com/lab/icons/silk/icons/add.png',
-            handler: function (responseObject){
+            handler: function (){
                 if (uploadPanel.getForm().isValid()) {
-                    console.log('im here');
                     uploadPanel.getForm().submit({
                         url: '/WRed/files/uploadingData/',
                         waitMsg: 'Uploading data...',
+                        method: 'POST',
                         success: uploadFunction,
                         failure: function() {
                             Ext.Msg.alert('Error: Could not upload data.');
-                        }
+                        },
                     })
                 }
             },
         }]
     });
-
+    
     function saveFunction() {
         //Writes data to a textfile for user to download
         //ubmatrix = Ext.decode(responseObject.responseText);
@@ -725,7 +733,8 @@ Ext.onReady(function () {
             }
         });
         
-    }
+    };
+    
     function downloadFunction (){
         conn.request({
             url: '/WRed/files/downloadData/',
@@ -734,12 +743,14 @@ Ext.onReady(function () {
                 Ext.Msg.alert('Error: Could not download');
             },
         })
-    }
+    };
     
-    function uploadFunction (responseObject) {
-        data = Ext.decode(responseObject.responseText);
+    
+    function uploadFunction (formPanel, uploadObject) {
+        console.log(uploadObject.response); 
+        responseJSON = Ext.decode(uploadObject.response.responseText);
+        data = responseJSON['data']['array'];
         console.log(data);
-        console.log('uploadFunction');
         
         //uploading lattice constants data
         aField.setValue(data[0]['a']);
@@ -763,7 +774,7 @@ Ext.onReady(function () {
         newData = [
             [data[1]['h'], data[1]['k'], data[1]['l'], data[1]['twotheta'], data[1]['theta'], data[1]['chi'], data[1]['phi']],
             [data[2]['h'], data[2]['k'], data[2]['l'], data[2]['twotheta'], data[2]['theta'], data[2]['chi'], data[2]['phi']],
-        ]
+        ];
         store.loadData(newData);
         
         newIdealData = [];
@@ -772,9 +783,11 @@ Ext.onReady(function () {
             newIdealData.push(tempIdealData);
         }
         idealDataStore.loadData(newIdealData);
+        console.log(newData);
+        console.log(h1Field.getValue());
         
         submitData(null, null); //CHECK - might produce errors
-    }
+    };
 
 
     // ********* END - Handling loading and saving data  *********  

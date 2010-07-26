@@ -126,7 +126,7 @@ def calcIdealAngles(h, UBmatrix, Bmatrix, wavelength, stars):
    omega = 0
       
    #print 'chi',chi, 180-chi
-   #print 'phi',phi,180+phi
+   #print 'phi',phi, 180+phi
    return twotheta, theta, omega, chi, phi
       
 
