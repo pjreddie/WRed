@@ -143,15 +143,6 @@ function onReadyFunction () {
 
 
 
-    var FittingModal = new Ext.Window({
-        width: 450,
-    
-    });
-
-
-
-
-
 // [ CHART PANEL ]
 
     var ChartStatusContainer = new Ext.Container({
@@ -208,7 +199,7 @@ function onReadyFunction () {
     var xyCornerContainer = new Ext.Container({
         id:             'xyCornerContainer',
         
-        html:           '<p style="line-height: .85; font-size: .7em;">Mouse: (<span id="MIC-mx"></span>, <span id="MIC-my"></span>)<br/>' +
+        html:           '<p style="letter-spacing: -0.75px; line-height: .85; font-size: .7em;">Mouse: (<span id="MIC-mx"></span>, <span id="MIC-my"></span>)<br/>' +
                         'Page: (<span id="MIC-px"></span>, <span id="MIC-py"></span>)<br />' +
                         '<span id="MIC-d" style="display: none;">Point: (<span id="MIC-dx"></span>, <span id="MIC-dy"></span> &plusmn; <span id="MIC-de"></span>)</p>',
     });
@@ -502,7 +493,7 @@ function onReadyFunction () {
         id:           'ParamFunctionButton',
         text:         'Parameters',
         iconCls:      'icon-table-sum',
-        handler:      function() {},
+        handler:      showParamWindow,
         
         arrowAlign:   'right',
         iconAlign:    'left',
@@ -726,7 +717,8 @@ function onReadyFunction () {
         if (responseJSON.replaceIndices)
             var functionSeriesReplaceIndices = responseJSON.replaceIndices;
         
-        console.log(FunctionName, functionSeriesReplaceIndices);
+        console.log('Response: ', responseJSON);
+        console.log(FunctionName + ': ', functionSeriesReplaceIndices);
         console.log('Functions retrieved: ', responseJSON.functionInfos);
         
         
@@ -846,6 +838,60 @@ function onReadyFunction () {
                 Ext.Msg.alert('Error: Failed request');
             }
         });
+    }
+    
+    
+
+/*
+    var ParamGridColumnModel = Ext.grid.ColumnModel({
+        defaults: { sortable: true },
+        columns: [
+            {
+                id: 'paramName',
+                header: 'Name',
+                dataIndex: ''
+            }
+        ]
+    });*/
+    
+
+
+    var ParamForm = new Ext.form.FormPanel({
+        labelWidth:     30,
+        bodyStyle:      'padding: 10px;',
+        
+        layout: {
+            type: 'vbox',
+            align: 'stretch',
+        },
+        
+        id:             'ParamForm',
+        title:          'Edit parameters',
+        
+        items: [ { xtype:'textfield', } ]
+    
+    });
+    var ParamWindow = new Ext.Window({
+        width:          640,
+        height:         460,
+        minWidth:       380,
+        minHeight:      320,
+        
+        layout:         'fit',
+        collapsible:    true,
+        maximizable:    true,
+        closeAction:    'hide',
+        
+        
+        id:             'ParamWindow',
+        title:          'Function parameters',
+        
+        items:          [ ParamForm ],
+    });
+    pw = ParamWindow;
+
+    function showParamWindow (button, event) {
+        ParamWindow.show();
     }
 
 /*
