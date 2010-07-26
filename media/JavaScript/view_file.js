@@ -143,15 +143,6 @@ function onReadyFunction () {
 
 
 
-    var FittingModal = new Ext.Window({
-        width: 450,
-    
-    });
-
-
-
-
-
 // [ CHART PANEL ]
 
     var ChartStatusContainer = new Ext.Container({
@@ -208,7 +199,7 @@ function onReadyFunction () {
     var xyCornerContainer = new Ext.Container({
         id:             'xyCornerContainer',
         
-        html:           '<p style="line-height: .85; font-size: .7em;">Mouse: (<span id="MIC-mx"></span>, <span id="MIC-my"></span>)<br/>' +
+        html:           '<p style="letter-spacing: -0.75px; line-height: .85; font-size: .7em;">Mouse: (<span id="MIC-mx"></span>, <span id="MIC-my"></span>)<br/>' +
                         'Page: (<span id="MIC-px"></span>, <span id="MIC-py"></span>)<br />' +
                         '<span id="MIC-d" style="display: none;">Point: (<span id="MIC-dx"></span>, <span id="MIC-dy"></span> &plusmn; <span id="MIC-de"></span>)</p>',
     });
@@ -400,6 +391,10 @@ function onReadyFunction () {
 
 // [ TOOLS PANEL ]
 
+
+// TOOLBAR
+
+
      FunctionSelectStore = new Ext.data.ArrayStore({
         data:           [ [ 1, 'Linear' ], [ 2, 'Linear drag test' ],
                           [ 11, 'Gaussian' ], [ 12, 'Gaussian drag test' ],
@@ -423,10 +418,11 @@ function onReadyFunction () {
         mode:           'local',
         triggerAction:  'all',
         selectOnFocus:  true,
+        width:          145,
         
         id:             'FunctionSelect',
         itemCls:        'formSelect',
-    });
+    });/*
      CreateFunctionButton = new Ext.Button({
         text:           'Create function',
         type:           'submit',
@@ -434,7 +430,7 @@ function onReadyFunction () {
         
         id:             'CreateFunctionButton',
         cls:            'submitButton',
-    });
+     });
      AddFunctionToSelectedCurveButton = new Ext.Button({
         text:           'Add function to selected curve',
         type:           'submit',
@@ -458,7 +454,82 @@ function onReadyFunction () {
         
         id:             'ClearThisCurveButton',
         cls:            'resetButton',
+    });*/
+
+// TOOLBAR!
+
+
+    var AddFunctionToSelectedCurveItem = new Ext.menu.Item({
+        id:           'AddFunctionToSelectedCurveItem',
+        text:         'Add to selected curve',
+        handler:      fitFunction,
     });
+    var NewFunctionButton = new Ext.SplitButton({
+        id:           'CreateFunctionButton2',
+        text:         'New',
+        iconCls:      'icon-function',
+        handler:      fitFunction,
+        
+        arrowAlign:   'right',
+        iconAlign:    'left',
+        width:        '50',
+        
+        menu: [ AddFunctionToSelectedCurveItem ],
+    });
+    var ClearFunctionButton = new Ext.SplitButton({
+        id:           'ClearThisCurveButton2',
+        text:         'Clear',
+        iconCls:      'icon-cross-circle',
+        handler:      clearCurve,
+        
+        arrowAlign:   'right',
+        iconAlign:    'left',
+        width:        '50',
+        menu: [
+            { text: 'Clear selected curve' },
+        ],
+    });
+    var ParamFunctionButton = new Ext.SplitButton({
+        id:           'ParamFunctionButton',
+        text:         'Parameters',
+        iconCls:      'icon-table-sum',
+        handler:      showParamWindow,
+        
+        arrowAlign:   'right',
+        iconAlign:    'left',
+        width:        '50',
+        menu: [
+            { text: 'Edit parameters' },
+        ],
+    });
+    var FunctionsButtonGroup = new Ext.ButtonGroup({
+        title:  'Functions',
+        items: [ FunctionSelect, NewFunctionButton, ClearFunctionButton, ParamFunctionButton ]
+    });
+    
+    var FitSeriesButton = new Ext.SplitButton({
+        id:           'FitSeriesButton2',
+        text:         'Fit series',
+        iconCls:      'icon-layer-vector',
+        handler:      fitSeries,
+        
+        cls:          'strongButton',
+        arrowAlign:   'right',
+        iconAlign:    'left',
+        width:        '50',
+        menu: [
+            { text: 'Add to selected curve' },
+        ],
+    });
+    var FitButtonGroup = new Ext.ButtonGroup({
+        title:  'Fitting',
+        items: [ FitSeriesButton ]
+    });
+    var ChartBar = {
+        items: [ FunctionsButtonGroup, FitButtonGroup ]
+    };
+    
+
 
     function fitFunction (button, event) {
         fittingFunction = FunctionSelect.getValue();
@@ -470,14 +541,14 @@ function onReadyFunction () {
         else {
             var checkedIndices = getCheckedIndices();
             
-            if (button.id === 'AddFunctionToSelectedCurveButton' && !checkedIndices.functionSeries.length) {
+            if (button.id.indexOf('AddFunctionToSelectedCurve') === 0 && !checkedIndices.functionSeries.length) {
                 Ext.Msg.alert('Form incomplete', 'Please select at least one curve to which you would like to add the function.');
             }
             else {
                 var data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
                 
                 var prevFunctions = [];
-                if (button.id === 'AddFunctionToSelectedCurveButton') {
+                if (button.id.indexOf('AddFunctionToSelectedCurve') === 0) {
                     for (var checkedFunctionIndex = 0; checkedFunctionIndex < checkedIndices.functionSeries.length; checkedFunctionIndex ++) {
                         //console.log('==', selectedFunctionIndex);
                         var selectedFunctionIndex = checkedIndices.functionSeries[checkedFunctionIndex];
@@ -517,6 +588,14 @@ function onReadyFunction () {
         
         var checkedIndices = { dataSeries: checkedDataSeriesIndices, functionSeries: checkedFunctionSeriesIndices };
         return checkedIndices;
+    }
+    function setCheckedIndices(checkedIndices) {
+        $('#legendDataSeries input[type=checkbox]').each(function() {
+            $(this).attr('checked', jQuery.inArray($('#legendDataSeries li input').index(this), checkedIndices.dataSeries) !== -1);
+        });
+        $('#legendFunctionSeries input[type=checkbox]').each(function() {
+            $(this).attr('checked', jQuery.inArray($('#legendFunctionSeries li input').index(this), checkedIndices.functionSeries) !== -1);
+        });
     }
     
     function fitSeries (button, event) {
@@ -638,14 +717,15 @@ function onReadyFunction () {
         if (responseJSON.replaceIndices)
             var functionSeriesReplaceIndices = responseJSON.replaceIndices;
         
-        console.log(FunctionName, functionSeriesReplaceIndices);
+        console.log('Response: ', responseJSON);
+        console.log(FunctionName + ': ', functionSeriesReplaceIndices);
         console.log('Functions retrieved: ', responseJSON.functionInfos);
         
         
         fitpoints = responseJSON.fit;
         
         newPlotData = {
-            label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Function ' + (globalFunctionSeries.plot.length + 1),
+            label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Function',
             data:     fitpoints,
             points:   { show: false },
             lines:    { show: true },
@@ -662,7 +742,7 @@ function onReadyFunction () {
         residpoints = responseJSON.resid;
         
         newResidPlotData = {
-            label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Resid ' + (globalFunctionSeries.residplot.length + 1),
+            label:    xChoice.getValue() + ' vs. ' + yChoice.getValue() + ': Resid',
             data:     residpoints,
             points:   { show: true },
             lines:    { show: true },
@@ -759,8 +839,62 @@ function onReadyFunction () {
             }
         });
     }
+    
+    
+
+/*
+    var ParamGridColumnModel = Ext.grid.ColumnModel({
+        defaults: { sortable: true },
+        columns: [
+            {
+                id: 'paramName',
+                header: 'Name',
+                dataIndex: ''
+            }
+        ]
+    });*/
+    
 
 
+    var ParamForm = new Ext.form.FormPanel({
+        labelWidth:     30,
+        bodyStyle:      'padding: 10px;',
+        
+        layout: {
+            type: 'vbox',
+            align: 'stretch',
+        },
+        
+        id:             'ParamForm',
+        title:          'Edit parameters',
+        
+        items: [ { xtype:'textfield', } ]
+    
+    });
+    var ParamWindow = new Ext.Window({
+        width:          640,
+        height:         460,
+        minWidth:       380,
+        minHeight:      320,
+        
+        layout:         'fit',
+        collapsible:    true,
+        maximizable:    true,
+        closeAction:    'hide',
+        
+        
+        id:             'ParamWindow',
+        title:          'Function parameters',
+        
+        items:          [ ParamForm ],
+    });
+    pw = ParamWindow;
+
+    function showParamWindow (button, event) {
+        ParamWindow.show();
+    }
+
+/*
     var FittingPanel = new Ext.FormPanel({
         title:          'Fitting tools',
         
@@ -778,13 +912,13 @@ function onReadyFunction () {
         items:          [ FunctionSelect, CreateFunctionButton, AddFunctionToSelectedCurveButton, FitThisSeriesButton, ClearThisCurveButton ],
         tools:          [ { id: 'gear' }, { id: 'help' } ],
     });
-    
+    */
     
     
     
     
 // [ TAB PANELS ]
-
+/*
     var ToolsPanel = new Ext.Panel({
         title:          'Tools',
         region:         'east',
@@ -796,7 +930,7 @@ function onReadyFunction () {
         
         id:             'ToolsPanel',
         items:          [ FittingPanel ],
-    });
+    });*/
     
     /* Holds the chart and the two combo boxes */
     var ChartPanel = new Ext.Panel({
@@ -826,11 +960,13 @@ function onReadyFunction () {
 //      autoWidth:      true,
         height:         848, //588, // why not auto!?
         
+        tbar:           ChartBar,
+        
         layout:         'border',
         defaults:       { split: true },
         
         id:             'ChartTabPanel',
-        items:          [ ChartPanel, ToolsPanel ],
+        items:          [ ChartPanel ], //ToolsPanel
     });
     
     
@@ -845,12 +981,14 @@ function onReadyFunction () {
     tabs.add({
         id:             'DataTab',
         title:          'Data',
+        iconCls:        'data_table',
         items:          [ DataTabPanel ],
     }).show();
     tabs.add({
         listeners:      { activate: function() { activateChart(); } },
         id:             'ChartTab',
         title:          'Chart',
+        iconCls:        'chart_curve',
         items:          [ ChartTabPanel ],
     }).show();
     
@@ -1022,15 +1160,17 @@ function onReadyFunction () {
 
 
     function updateLegend() {
-        // get data with flot's added properties
-        if (typeof plot !== 'undefined')
-            globalPlots.plot = plot.getData();
+        var checkedIndices = getCheckedIndices();
+    
+        // Get data with flot's added properties
+        //if (typeof plot !== 'undefined')
+        //    globalPlots.plot = plot.getData();
             
         LegendDataSeriesStore.loadData(globalDataSeries.plot);
         LegendFunctionSeriesStore.loadData(globalFunctionSeries.plot);
         
+        setCheckedIndices(checkedIndices);
         legendSeriesClick();
-        // we should remember inputs that are already checked?
         $('.legendSeries input:checkbox').bind('click', legendSeriesClick); // jQuery's .live() should be good
     }
 
@@ -1038,34 +1178,29 @@ function onReadyFunction () {
         checkedIndices = getCheckedIndices();
         
         if (checkedIndices.dataSeries.length) {
-            AddFunctionToSelectedCurveButton.disable();
-            ClearThisCurveButton.disable();
+            AddFunctionToSelectedCurveItem.disable();
+            ClearFunctionButton.disable();
             console.log(checkedIndices);
             if (checkedIndices.functionSeries.length) {
-                FitThisSeriesButton.enable();
+                FitSeriesButton.enable();
             }
             else {
-                FitThisSeriesButton.disable();
+                FitSeriesButton.disable();
             }
         }
         else {
-            FitThisSeriesButton.disable();
-            if (checkedIndices.functionSeries.length >= 1) {
-                if (checkedIndices.functionSeries.length > 1) {
-                    //AddFunctionToSelectedCurveButton.disable();
-                }
-                else {                
-                    AddFunctionToSelectedCurveButton.enable();
-                }
-                ClearThisCurveButton.enable();
+            FitSeriesButton.disable();
+            if (checkedIndices.functionSeries.length >= 1) {               
+                AddFunctionToSelectedCurveItem.enable();
+                ClearFunctionButton.enable();
             }
             else {
-                ClearThisCurveButton.disable();
-                AddFunctionToSelectedCurveButton.disable();
+                ClearFunctionButton.disable();
+                AddFunctionToSelectedCurveItem.disable();
             }
         }
-        FitThisSeriesButton.setText('Fit ' + ((checkedIndices.functionSeries.length > 1) ? 'these ' + checkedIndices.functionSeries.length + ' series' : 'this series'));
-        ClearThisCurveButton.setText('Clear ' + ((checkedIndices.functionSeries.length > 1) ? 'these ' + checkedIndices.functionSeries.length + ' curves' : 'this curve'));
+        //FitSeriesButton.setText('Fit ' + ((checkedIndices.functionSeries.length > 1) ? 'these ' + checkedIndices.functionSeries.length + ' series' : 'this series'));
+        //ClearFunctionButton.setText('Clear ' + ((checkedIndices.functionSeries.length > 1) ? 'these ' + checkedIndices.functionSeries.length + ' curves' : 'this curve'));
     }
     
     function initializePlots(chart) {
@@ -1184,7 +1319,7 @@ function onReadyFunction () {
             yerr: { show: true, upperCap: '-', lowerCap: '-' },
         };
         var plotDataSeries = {
-            label:    xChoice + ' vs. ' + yChoice + ': Series ' + (globalDataSeries.plot.length + 1),
+            label:    xChoice + ' vs. ' + yChoice + ': Series',
             data:     plotSeriesData,
             points:   plotSeriesPointsOptions,
             lines:    { show: false },
