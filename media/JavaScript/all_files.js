@@ -5,7 +5,7 @@
 Ext.onReady(function() {
     var maxvals = [];
     var minvals = [];
-/*Handles rendering of ArrayGrid to show range of parameters in data files*/
+    // Generates the "range graphic" in the cells of the file gridpanel
     function vrange(val, meta, record, rI, cI, store) {
         var range = maxvals[cI] - minvals[cI];
         var spl = val.split(',');
@@ -14,11 +14,12 @@ Ext.onReady(function() {
         var roffset = 0;
         var loffset = 0;
         if (range != 0) {
-          loffset = ((low - minvals[cI])  / range) * 100 - 1;
-          roffset = ((maxvals[cI] - high) / range) * 100 - 1;
+            loffset = ((low - minvals[cI]) / range) * 100 - 1;
+            roffset = ((maxvals[cI] - high) / range) * 100 - 1;
         }
         var ret = high + low;
-        return '<div style="border: 1px red solid;"><div style="border:1px black solid;background-color:black;height:1.5ex;margin-right:' + roffset + '%; margin-left:' + loffset + '%;"></div></div>';
+        if (range != 0 && low != NaN && high != NaN) {return '<div style="border: 1px blue solid;"><div style = "border:1px black solid;background-color:black;height:1.5ex;margin-right:' + roffset + '%; margin-left:' + loffset + '%;"></div></div>';}
+        else {return '<div style="border: 1px blue solid;height:2ex;"></div>';}
     }
     var storeFields = [];
     var dataArray = [];

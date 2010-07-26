@@ -75,7 +75,8 @@ function onReadyFunction() {
             roffset = ((maxvals[cI] - high) / range) * 100 - 1;
         }
         var ret = high + low;
-        return '<div style="border: 1px red solid;"><div style = "border:1px black solid;background-color:black;height:1.5ex;margin-right:' + roffset + '%; margin-left:' + loffset + '%;"></div></div>';
+        if (range != 0 && low != NaN && high != NaN) {return '<div style="border: 1px blue solid;"><div style = "border:1px black solid;background-color:black;height:1.5ex;margin-right:' + roffset + '%; margin-left:' + loffset + '%;"></div></div>';}
+        else {return '<div style="border: 1px blue solid;height:2ex;"></div>';}
     }
     var dataArray = [];
     var store = new Ext.data.ArrayStore();
@@ -733,11 +734,11 @@ whenever any message comes through (whenever files are added, removed, or change
                 {
                 text: 'Set Scalar Value',
                 handler: set_scalar,
-                icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+                icon: 'http://famfamfam.com/lab/icons/silk/icons/pencil.png',
                 }
             ],
             id: 'filter_options',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+            icon: 'http://famfamfam.com/lab/icons/silk/icons/table_edit.png',
             },
         {
             text: 'Filter Type',
@@ -745,12 +746,15 @@ whenever any message comes through (whenever files are added, removed, or change
                 {
                 text: 'Detailed Balance',
                 handler: filter_type,
-                icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
-                },
-            {
+                icon: 'http://p.yusukekamiyamane.com/icons/search/fugue/icons/balance.png',
+                },{
                 text: 'Scalar Multiplication',
                 handler: filter_type,
-                icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+                icon: 'http://p.yusukekamiyamane.com/icons/search/fugue/icons/cross.png',
+                },{
+                text: 'Scalar Addition',
+                handler: filter_type,
+                icon: 'http://p.yusukekamiyamane.com/icons/search/fugue/icons/plus.png',
                 }
             ],
             id: 'filter_type',

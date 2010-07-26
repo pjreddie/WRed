@@ -177,6 +177,18 @@ class Data:
                     p[s][0] = p[s][0] * m0 / p['Monitor'][0]
                 except:
                     pass
+    def scalar_add(self, scalar):
+        out = copy.deepcopy(self)
+        for p in out.data:
+            for s in out.detectors:
+                try:
+                    if s[0] == '_':
+                        pass
+                    else:
+                        p[s][0] = p[s][0] + scalar
+                except KeyError:
+                    pass
+        return out
     def scalar_mult(self, scalar):
         out = copy.deepcopy(self)
         for p in out.data:
