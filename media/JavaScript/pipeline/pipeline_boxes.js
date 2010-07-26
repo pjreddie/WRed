@@ -399,6 +399,9 @@ function OutputBox(input, parent) {
             case 'Scalar Multiplication':
                 return ' ( ' + this.connected_boxes[0].get_equation() + ' ) .scalar_mult('+ this.parent[0].scalar +') ';
                 break;
+            case 'Scalar Addition':
+                return ' ( ' + this.connected_boxes[0].get_equation() + ' ) .scalar_add(' + this.parent[0].scalar + ') ';
+                break;
         }
     }
     this.connected_boxes = [ib];
