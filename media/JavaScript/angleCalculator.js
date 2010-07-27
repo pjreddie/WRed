@@ -683,6 +683,9 @@ Ext.onReady(function () {
                         },
                     })
                 }
+                else {
+                    Ext.Msg.alerg('Error: Could not upload data.');
+                }
             },
         }]
     });
@@ -727,7 +730,8 @@ Ext.onReady(function () {
             method: 'POST', 
             params: Ext.encode(params),
             success: function (){
-            },//downloadFunction,  
+                window.open('/WRed/files/downloadingData/'); //opens dialogue box window
+            },
             failure: function () {
                 Ext.Msg.alert('Error: Could not save');
             }
@@ -735,15 +739,6 @@ Ext.onReady(function () {
         
     };
     
-    function downloadFunction (){
-        conn.request({
-            url: '/WRed/files/downloadData/',
-            method: 'GET',
-            failure: function (){
-                Ext.Msg.alert('Error: Could not download');
-            },
-        })
-    };
     
     
     function uploadFunction (formPanel, uploadObject) {
@@ -825,13 +820,13 @@ Ext.onReady(function () {
         items: [{
             title: 'Lattice Constants',
             region: 'center',
-            margins: '0 5 0 5', //small margins to the east and west of box
+            margins: '0 5 0 0', //small margins to the east of box
             items: [topFieldset],
         }, {
             title: 'Choose the Mode:',
             region: 'north',
             height: 50,
-            margins: '0 5 0 5',
+            margins: '0 5 0 0',
             items: [myCombo],
         },
             southPanel,

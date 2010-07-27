@@ -104,19 +104,19 @@ def calculateUB(request):
 def makeSaveFile (request):
     "Saves the current data in a text file named 'savedata.txt', overwriting the previous text file so there is minimal data storage. Then lets user download the file."
     
-    print ('before')
-    print ('keys: ', request.POST.keys()[0])
     requestObject = simplejson.loads(request.POST.keys()[0]) 
-    print ('after')
     data = requestObject['data']
     
-    #today = datetime.datetime.now()
+    #today =  datetime.datetime.now().date()
+    #theYear = today.year
+    #theMonth = today.month
+    #theDay = today.day
     #datafile = 'savedata' +today.month + today.day + today.year + '.txt'
     
     #http://docs.python.org/tutorial/inputoutput.html - section 7.2 has information on opening files;
     # open ('filename', 'letter') where letter = 'w' (overwrite), 'r' (read), 'r+' (read and write), 'a' (append, not overwrite)
     #dataWriter = csv.writer(open(datafile, 'w'), delimiter= ',', escapechar ='', quoting=csv.QUOTE_NONE)
-    dataWriter = csv.writer(open('savedata.txt', 'w'), delimiter= ',', escapechar ='', quoting=csv.QUOTE_NONE)
+    dataWriter = csv.writer(open('angleCalculatorData.txt', 'w'), delimiter= ',', escapechar ='', quoting=csv.QUOTE_NONE)
     
     dataWriter.writerow(['#Data input file for angleCalculator.'])
     #dataWriter.writerow(['#File downloaded from angleCalculator: '])
@@ -154,13 +154,14 @@ def makeSaveFile (request):
     return HttpResponse('saved.')
     
     
-    
+'''    
 def downloadFile (request):
     
     data = file('savedata.txt')
     response = HttpResponse(data, mimetype='application/force-download')
     response['Content-Disposition'] = 'attachment; filename=' + rFile.name
     return HttpResponse(response)
+'''
 
 def uploadInputFile (filename):
     response = []
@@ -181,7 +182,8 @@ def uploadInputFile (filename):
     if (modenum < 0 or latticenum < 0 or observationsnum < 0 or scatteringnum < 0 or desirednum < 0):
         #if any of the data titles aren't found, input fails
         #TODO make sure it fails here; bellow line counts as success, I think
-        return HttpResponse('failed')
+        #return HttpResponse('failed')
+        print 'failed'
     else:
         #getting the lattice data
         latticearr = data[latticenum+1].split(',')
