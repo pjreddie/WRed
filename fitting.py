@@ -84,6 +84,7 @@ def fitting_request_action(request, idNum):
             nextFitInstruction = function.fitInstructions.popleft()
             
             response = fitInstructionResponse(nextFitInstruction, addlParams)
+            response.update({ 'replaceIndices': replaceIndices })
             return HttpResponse(simplejson.dumps(response))
             
             
@@ -164,7 +165,7 @@ def fitting_request_action(request, idNum):
             (params, slices) = functionGroup.getFunctionsParamsAsArray()
             
             functkw = { 'xData': xData, 'yData': yData, 'yErr': yErrData, 'functionGroup': functionGroup, 'slices': slices }
-            mpfitResult = mpfit(mpfitFunction, params, functkw=functkw,ftol=1e-5)
+            mpfitResult = mpfit(mpfitFunction, params, functkw=functkw, ftol=1e-5)
             
             functionGroup.setFunctionsParamsFromArray(mpfitResult.params, slices)
 
@@ -179,8 +180,8 @@ def fitting_request_action(request, idNum):
                                            perror=mpfitResult.perror[pointer : pointer + slices[counter]])
                 
                 # Map sigfigs
-                fitFunctionParams = function.getFunctionParamsFromArray(map(sigfig, mpfitResult.params))
-                fitFunctionParamsErr = function.getFunctionParamsFromArray(map(sigfig, mpfitResult.perror))
+                fitFunctionParams = function.getFunctionParamsFromArray(map(sigfig, mpfitFunctionResult['params']))
+                fitFunctionParamsErr = function.getFunctionParamsFromArray(map(sigfig, mpfitFunctionResult['perror']))
                 fitFunctionParamsArray = paramsJoin(fitFunctionParams, fitFunctionParamsErr)       
                 
                 fitFunctionInfo = { 'fitFunctionParams': fitFunctionParams, 'fitFunctionParamsErr': fitFunctionParamsErr,

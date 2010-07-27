@@ -257,7 +257,7 @@ class Linear(Function):
             return slope * N.subtract(Domain, X1) + Y1
     
     def getFunctionParamsAsArray(self):
-        return [ self.functionParams['X1'], self.functionParams['X2'], self.functionParams['Y1'], self.functionParams['Y2'] ]
+        return [ self.functionParams.get('X1'), self.functionParams.get('X2'), self.functionParams.get('Y1'), self.functionParams.get('Y2') ]
     
     def getFunctionParamsFromArray(self, params):
         return { 'X1': params[0], 'X2': params[1], 'Y1': params[2], 'Y2': params[3] }
@@ -281,30 +281,30 @@ class Gaussian(Function):
         self.functionID = 11
         self.functionName = 'Gaussian'
         self.fitInstructions  = deque([
-                                #   { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
-                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
+                                #   { 'dataType': 'askPoint', 'xID': 'bkgdX', 'yID': 'bkgdY',
+                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the bkgd of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'peakX', 'yID': 'peakY',
                                       'messageTitle': 'Step 1', 'messageText': 'Please click on the peak of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'widthX', 'yID': 'widthY',
                                       'messageTitle': 'Step 2', 'messageText': 'Please click on the width of the data' }
                                 ])
-        self.functionParams = FunctionParamGroup([ 'peakX', 'peakY', 'backgroundY', 'FWHM' ])
+        self.functionParams = FunctionParamGroup([ 'peakX', 'peakY', 'bkgdY', 'FWHM' ])
 
     def function(self, Domain, Range):
-        (peakX, peakY, backgroundY, FWHM) = (self.functionParams.get('peakX'),       self.functionParams.get('peakY'), \
-                                             self.functionParams.get('backgroundY'), self.functionParams.get('FWHM'))
-        if peakX is None or backgroundY is None or FWHM is None:
+        (peakX, peakY, bkgdY, FWHM) = (self.functionParams.get('peakX'), self.functionParams.get('peakY'), \
+                                       self.functionParams.get('bkgdY'), self.functionParams.get('FWHM'))
+        if peakX is None or bkgdY is None or FWHM is None:
             pass
         else:
             stdDev = FWHM / 2 / N.sqrt(2 * N.log(2))
-            return backgroundY + (peakY - backgroundY) * N.exp(- N.power(N.subtract(Domain, peakX), 2) / 2 / N.power(stdDev, 2))
+            return bkgdY + (peakY - bkgdY) * N.exp(- N.power(N.subtract(Domain, peakX), 2) / 2 / N.power(stdDev, 2))
     
     def getFunctionParamsAsArray(self):
         return [ self.functionParams.get('peakX'), self.functionParams.get('peakY'),
-                 self.functionParams.get('backgroundY'), self.functionParams.get('FWHM') ]
+                 self.functionParams.get('bkgdY'), self.functionParams.get('FWHM') ]
         
     def getFunctionParamsFromArray(self, params):
-        return { 'peakX': params[0], 'peakY': params[1], 'backgroundY': params[2], 'FWHM': params[3] }
+        return { 'peakX': params[0], 'peakY': params[1], 'bkgdY': params[2], 'FWHM': params[3] }
     
     def setFunctionParamsFromRequest(self, request):
         super(Gaussian, self).setFunctionParamsFromRequest(request)
@@ -319,8 +319,8 @@ class GaussianDrag(Gaussian):
         self.functionID = 12
         self.functionName = 'Gaussian drag'
         self.fitInstructions  = deque([
-                                #   { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
-                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
+                                #   { 'dataType': 'askPoint', 'xID': 'bkgdX', 'yID': 'bkgdY',
+                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the bkgd of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'peakX', 'yID': 'peakY',
                                       'messageTitle': 'Step 1', 'messageText': 'Please click on the peak of the data' },
                                     { 'dataType': 'askDrag', 'xIDstart': 'widthYst', 'yIDstart': 'widthYst', 'xIDend': 'widthX', 'yIDend': 'widthY',
@@ -336,30 +336,30 @@ class Lorentzian(Function):
         self.functionID = 21
         self.functionName = 'Lorentzian'
         self.fitInstructions  = deque([
-                                #   { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
-                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
+                                #   { 'dataType': 'askPoint', 'xID': 'bkgdX', 'yID': 'bkgdY',
+                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the bkgd of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'peakX', 'yID': 'peakY',
                                       'messageTitle': 'Step 1', 'messageText': 'Please click on the peak of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'widthX', 'yID': 'widthY',
                                       'messageTitle': 'Step 2', 'messageText': 'Please click on the width of the data' }
                                 ])
-        self.functionParams = FunctionParamGroup([ 'peakX', 'peakY', 'backgroundY', 'FWHM' ])
+        self.functionParams = FunctionParamGroup([ 'peakX', 'peakY', 'bkgdY', 'FWHM' ])
 
     def function(self, Domain, Range):
-        (peakX, peakY, backgroundY, FWHM) = (self.functionParams.get('peakX'),       self.functionParams.get('peakY'), \
-                                             self.functionParams.get('backgroundY'), self.functionParams.get('FWHM'))
-        if peakX is None or backgroundY is None or FWHM is None:
+        (peakX, peakY, bkgdY, FWHM) = (self.functionParams.get('peakX'), self.functionParams.get('peakY'), \
+                                       self.functionParams.get('bkgdY'), self.functionParams.get('FWHM'))
+        if peakX is None or bkgdY is None or FWHM is None:
             pass
         else:
             gamma = FWHM
-            return backgroundY + (peakY - backgroundY) * N.divide(N.power(gamma, 2), N.power(N.subtract(Domain, peakX), 2) + N.power(gamma, 2))
+            return bkgdY + (peakY - bkgdY) * N.divide(N.power(gamma, 2), N.power(N.subtract(Domain, peakX), 2) + N.power(gamma, 2))
 
     def getFunctionParamsAsArray(self):
         return [ self.functionParams.get('peakX'), self.functionParams.get('peakY'),
-                 self.functionParams.get('backgroundY'), self.functionParams.get('FWHM') ]
+                 self.functionParams.get('bkgdY'), self.functionParams.get('FWHM') ]
         
     def getFunctionParamsFromArray(self, params):
-        return { 'peakX': params[0], 'peakY': params[1], 'backgroundY': params[2], 'FWHM': params[3] }
+        return { 'peakX': params[0], 'peakY': params[1], 'bkgdY': params[2], 'FWHM': params[3] }
         
     def setFunctionParamsFromRequest(self, request):
         super(Lorentzian, self).setFunctionParamsFromRequest(request)
@@ -374,8 +374,8 @@ class LorentzianDrag(Lorentzian):
         self.functionID = 22
         self.functionName = 'Lorentzian drag'
         self.fitInstructions  = deque([
-                                #   { 'dataType': 'askPoint', 'xID': 'backgroundX', 'yID': 'backgroundY',
-                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the background of the data' },
+                                #   { 'dataType': 'askPoint', 'xID': 'bkgdX', 'yID': 'bkgdY',
+                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the bkgd of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'peakX', 'yID': 'peakY',
                                       'messageTitle': 'Step 1', 'messageText': 'Please click on the peak of the data' },
                                     { 'dataType': 'askDrag', 'xIDstart': 'widthYst', 'yIDstart': 'widthYst', 'xIDend': 'widthX', 'yIDend': 'widthY',
@@ -396,21 +396,21 @@ def getFunctionParams(functionID, request):
         widthX = request.session['widthX']
         peakX = request.session['peakX']
         peakY = request.session['peakY']
-        backgroundY = request.session['backgroundY']
+        bkgdY = request.session['bkgdY']
         
         width = 2 * N.abs(widthX - peakX)
         stdDev = width / 2 / N.sqrt(2 * N.log(2))
         
-        functionParams = { 'peakX': peakX, 'peakY': peakY, 'backgroundY': backgroundY, 'stdDev': stdDev }
+        functionParams = { 'peakX': peakX, 'peakY': peakY, 'bkgdY': bkgdY, 'stdDev': stdDev }
     elif functionID == 21 or functionID == 22:
         widthX = request.session['widthX']
         peakX = request.session['peakX']
         peakY = request.session['peakY']
-        backgroundY = request.session['backgroundY']
+        bkgdY = request.session['bkgdY']
         
         gamma = N.abs(widthX - peakX)
         
-        functionParams = { 'peakX': peakX, 'peakY': peakY, 'backgroundY': backgroundY, 'gamma': gamma }
+        functionParams = { 'peakX': peakX, 'peakY': peakY, 'bkgdY': bkgdY, 'gamma': gamma }
         
     return functionParams
 

@@ -32,8 +32,15 @@ urlpatterns = patterns('',
     (r'^files/forms/delete/$', delete_file),
     (r'^files/pipeline/$', pipeline),
     (r'^files/fitting/(\w+)/$', fitting_request_action),
-    (r'^Alex/edit-grid/', direct_to_template, {'template': 'edit-grid.html'}),
+    
+    #Comment one of these to use the uncommented one: edit-grid is working but no file saving/loading
+    #(r'^Alex/edit-grid/', direct_to_template, {'template': 'edit-grid.html'}),
+    (r'^Alex/angleCalculator/', direct_to_template, {'template': 'angleCalculator.html'}),
+    
     (r'^files/calcUBmatrix/', calculateUB),
 	(r'^files/omegaZero/', runcalc1),
     (r'^files/scatteringPlane/', runcalc2),
+    (r'^files/savingData/', makeSaveFile),
+    (r'^files/downloadingData/', download_file_angleCalc),
+    (r'^files/uploadingData/', upload_file_angleCalc),
 )

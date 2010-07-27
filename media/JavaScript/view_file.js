@@ -841,20 +841,29 @@ function onReadyFunction () {
     }
     
     
-
 /*
-    var ParamGridColumnModel = Ext.grid.ColumnModel({
-        defaults: { sortable: true },
-        columns: [
+
+    var ParamStore = new Ext.data.JsonStore({
+        data:           globalFunctionSeries.plot,
+        fields:         ['functionID', 'functionName', 'functionParams'],
+        idProperty:     'functionID',
+        root:           'functionInfos'
+    });/*
+    var ParamGridPanel = new Ext.grid.GridPanel({
+        store:          ParamStore,
+        columns:        [
             {
                 id: 'paramName',
                 header: 'Name',
                 dataIndex: ''
             }
-        ]
-    });*/
+        ],
+        title: 'asdf',
     
-
+    
+    });
+    
+*/
 
     var ParamForm = new Ext.form.FormPanel({
         labelWidth:     30,

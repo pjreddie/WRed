@@ -1,5 +1,6 @@
 #Author: Joe Redmon
 #views.py
+#7/22/10 - Alex Yee added in new downloadangles method.
 
 import os
 from django.db.models.signals import post_save, post_delete
@@ -17,6 +18,8 @@ from WRed.display.models import *
 from WRed.runcalc import *
 from django import forms
 import zipfile
+
+import datetime
 
 '''def concat_data(*args):
     print 'concating...'
@@ -147,6 +150,43 @@ def save_pipeline(request):
             p.save()
             json['success'] = True
     return HttpResponse(simplejson.dumps(json))
+    
+#Handles POST requests to upload an input file for angleCalculator.js   
+def upload_file_angleCalc(request):
+    json = {
+        'errors': {},
+        'data': {},
+        'success': False,
+    }
+    if request.method == 'POST':
+        form = UploadFileForm(request.POST, request.FILES)
+        #print form.is_valid()
+        if form.is_valid():
+            #print request.FILES
+            filename = request.FILES['file'].name
+           
+            uploadarray = uploadInputFile (filename)
+            json['success'] = True
+            json['data'] = {'array': uploadarray}
+        else:
+            return HttpResponse('not valid. Form:', form)
+    else:
+        return HttpResponse('method != POST')
+    #returns a dictionary with 'data' = dictionary with 'array' = array of dictionaries created from uploadInputFile method.
+    return HttpResponse(simplejson.dumps(json))
+    
+#Handles GET requests to download a save file for angleCalculator.js
+def download_file_angleCalc(request):
+    if request.method == 'GET':
+        
+        data = file('angleCalculatorData.txt')
+        response = HttpResponse(data, mimetype='application/force-download')
+        response['Content-Disposition'] = 'attachment; filename= angleCalculatorData.txt'
+        return response
+    else:
+        return HttpResponse('method != GET')
+    
+    
 #Handles POST requests to upload static files (cannot be update or changed later)
 @login_required
 def upload_file(request):
@@ -169,6 +209,7 @@ def upload_file(request):
 
         return HttpResponse('Get Outta Here!')
     return HttpResponse(simplejson.dumps(json))
+    
 #Handles POST requests to upload live files (files that may be updated or changed later)
 def upload_file_live(request):
     print "Live Data Request"
