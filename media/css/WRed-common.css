@@ -71,6 +71,10 @@
 .legendSeries li {
   font:           12px/1.2 'Arial', 'Tahoma', 'Verdana', 'Helvetica', sans-serif;
   margin-bottom:  6px;
+  padding:        3px 6px;
+}
+.legendSeries li:hover {
+  background:     #ffc;
 }
 .legendSeries li p {
   margin-bottom:  4p;
@@ -78,7 +82,7 @@
 .legendSeries input {
   vertical-align: top;
 }
-.legendSeries label span {
+.legendSeries .seriesName span {
   border:         1px solid white;
   padding:        0 7px;
   margin:         0 4px;
@@ -86,7 +90,13 @@
   -webkit-box-shadow:     0 0 0 2px;
 }
 .legendSeries li div {
-  margin-left:    50px;
+  margin-left:    48px;
+}
+.legendSeries li div dt strong {
+  font-weight:    bold;
+}
+.legendSeries li div dd {
+  margin-left:    2em;
 }
 
 
@@ -116,4 +126,23 @@
 }
 .icon-radio-checked {
   background-image: url(http://telem.fr/pub/System/FamFamFamSilkCompanion2Icons/radio-checked.png) !important;
+}
+.data_table {
+  background-image: url(http://famfamfam.com/lab/icons/silk/icons/table.png) !important;
+}
+.chart_curve {
+  background-image: url(http://famfamfam.com/lab/icons/silk/icons/chart_curve.png) !important;
+}
+.icon-function {
+  background-image: url(http://p.yusukekamiyamane.com/icons/search/fugue/icons/function.png) !important;
+}
+.icon-cross-circle {
+  background-image: url(http://p.yusukekamiyamane.com/icons/search/fugue/icons/cross-circle.png) !important;
+}
+.icon-layer-vector {
+  background-image: url(http://p.yusukekamiyamane.com/icons/search/fugue/icons/layer-vector.png) !important;
+}
+
+.icon-table-sum {
+  background-image: url(http://p.yusukekamiyamane.com/icons/search/fugue/icons/table-sum.png) !important;
 }
