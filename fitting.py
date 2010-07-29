@@ -18,6 +18,7 @@ from fitting_functions import *
 
 
 def print_timing(func):
+  """timing function written by the internet"""
   def wrapper(*arg):
     t1 = time.time()
     res = func(*arg)
@@ -31,6 +32,7 @@ def print_timing(func):
 @print_timing
 @login_required
 def fitting_request_action(request, idNum):
+    """handles all server requests having to do with fitting"""
     print 'USERNAME: ', request.user.username
     print 'Authenticated: ', request.user.is_authenticated()
     #print 'Request: ', request.POST
@@ -46,6 +48,7 @@ def fitting_request_action(request, idNum):
         
         
         if actionID == '1':
+            """ID 1: Creating a new function or adding it to a previous function"""
             data = simplejson.loads(request.POST['data'])
             prevFunctions = simplejson.loads(request.POST['prevFunctions'])
             replaceIndices = simplejson.loads(request.POST['replaceIndices'])
@@ -61,7 +64,7 @@ def fitting_request_action(request, idNum):
             request.session['functionID'] = functionID
             request.session['function'] = function
             
-            
+            """Populates a new function group with all previous functions"""
             functionGroup = FunctionGroup()
             functionGroup.data = data
             
@@ -80,7 +83,7 @@ def fitting_request_action(request, idNum):
             addlParams = { 'functionID': functionID, 'actionID': 2 }  # 'xData': xData, 'yData': yData, 
             request.session['addlParams'] = addlParams
             
-
+            """Sends the first fitting instruction to the client"""
             nextFitInstruction = function.fitInstructions.popleft()
             
             response = fitInstructionResponse(nextFitInstruction, addlParams)
@@ -89,6 +92,7 @@ def fitting_request_action(request, idNum):
             
             
         elif actionID == '2':
+            """ID 2: Handles responses to fitting instructions after the first one is sent by ID 1"""
             xData = request.session['xData']
             yData = request.session['yData']
             function = request.session['function']
@@ -99,6 +103,7 @@ def fitting_request_action(request, idNum):
             if request.POST['dataType'] == 'askPoint':
                 request = defPoint(request, functionGroup)
             elif request.POST['dataType'] == 'askDrag':
+                """If you are in the middle of doing a drag send the updated function"""
                 request = defPoint(request, functionGroup)
 
                 function.setFunctionParamsFromRequest(request)
@@ -113,6 +118,7 @@ def fitting_request_action(request, idNum):
             
             
             if not request.session['function'].fitInstructions:
+                """If there are no more instructions then you calculate the final function"""
                 function.setFunctionParamsFromRequest(request)
                 
                 # Update most recent function (maybe this is wrong)
@@ -127,6 +133,7 @@ def fitting_request_action(request, idNum):
                 
                 return HttpResponse(str(response))
             else:
+                """Otherwise you send the next instruction"""
                 #guess width
                 #guessWidth = guess_width(xData, yData, peakX, peakY, backgroundY)
                 #guessWidth2 = guess_width2(xData, yData, peakX, peakY, backgroundY)
@@ -140,6 +147,7 @@ def fitting_request_action(request, idNum):
                 return HttpResponse(str(response))
             
         elif actionID == '3':
+            """This is when the fitting occurs"""
             allData = simplejson.loads(request.POST['allData'])
             dataData = allData[0]
             xData = dataData['x']
@@ -149,6 +157,7 @@ def fitting_request_action(request, idNum):
             
             #functionData = simplejson.loads(request.POST['functionData']) # Not used at all
             
+            """Gets all the previous functions here and populates the function group"""
             allFunctionInfos = simplejson.loads(request.POST['allFunctionInfos'])
             functionGroup = FunctionGroup()
             functionGroup.data = dataData
@@ -162,16 +171,20 @@ def fitting_request_action(request, idNum):
                     function.setFunctionParamsFromDict(functionParams)
                     functionGroup.functions.append(function)
             
+            """Converts the parameters from a set of dictionaries to a flat list"""
             (params, slices) = functionGroup.getFunctionsParamsAsArray()
             
             functkw = { 'xData': xData, 'yData': yData, 'yErr': yErrData, 'functionGroup': functionGroup, 'slices': slices }
+            """Uses mpfit to fit the function using the specified parameter list"""
             mpfitResult = mpfit(mpfitFunction, params, functkw=functkw, ftol=1e-5)
             
+            """Calculate the new function with the best fitted parameters and chi-squared"""
             functionGroup.setFunctionsParamsFromArray(mpfitResult.params, slices)
 
             finishedFit = functionGroup.createFunction(xData, yData)
             chiSquared = sigfig(functionGroup.chisq(xData, yData, yErrData))
             
+            """Formats the parameters and the parameter errors to send to the client"""
             fitFunctionInfos = []
             pointer = 0
             counter = 0
@@ -196,7 +209,8 @@ def fitting_request_action(request, idNum):
             print fitFunctionInfos
             print '*****'
             print
-
+            
+            """Sends the function and parameters to the client"""
             response = finishedFit
             response.update({ 'functionInfos': fitFunctionInfos, 'fitInfo': { 'chisq': chiSquared },
                               'replaceIndices': simplejson.loads(request.POST['replaceIndices']), 'dataType': 'doFit' })
@@ -213,6 +227,7 @@ def fitting_request_action(request, idNum):
 # --
 
 def defPoint(request, functionGroup):
+    """Saves the point that the user clicks on to the session"""
     xPos = float(request.POST['xPos'])
     yPos = float(request.POST['yPos'])
     
@@ -225,6 +240,7 @@ def defPoint(request, functionGroup):
     return request
 
 def defDrag(request):
+    """Unused"""
     request.session[request.POST['xIDstart']] = float(request.POST['xPosstart'])
     request.session[request.POST['yIDstart']] = float(request.POST['yPosstart'])
     request.session[request.POST['xIDend']]   = float(request.POST['xPosend'])
@@ -234,6 +250,7 @@ def defDrag(request):
 
 
 def getFunctionClass(functionID):
+    """Maps function ids from the selection box in the client to actual functions classes"""
     d = { 1:  Linear,
           2:  LinearDrag,
           11: Gaussian,
@@ -253,9 +270,11 @@ def fitInstructionResponse(fitInstruction, addlParams):
     return returnResponse
 
 def objectToArrayPairs(d):
+    """Unused"""
     return [dict(name=key, value=value) for key, value in d.iteritems()]
 
 def paramsJoin(d1, d2):
+    """Joins each parameter with its error and name as a dict"""
     n = []
     for (key, value) in d1.items():
         n.append({ 'name': key, 'value': value, 'err': d2[key] })
@@ -269,6 +288,7 @@ def paramsJoin(d1, d2):
 
 
 def mpfitFunction(params, parinfo=None, fjac=None, xData=None, yData=None, yErr=None, functionGroup=None, slices=None):
+    """Loops mpfit to refine the parameters until something is within the tolerance level (not sure what)"""
     # Parameter values are passed in "params"
     # If fjac==None then partial derivatives should not be
     # computed.  It will always be None if MPFIT is called with default flag.

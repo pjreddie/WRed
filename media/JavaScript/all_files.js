@@ -18,8 +18,8 @@ Ext.onReady(function() {
             roffset = ((maxvals[cI] - high) / range) * 100 - 1;
         }
         var ret = high + low;
-        if (range != 0 && low != NaN && high != NaN) {return '<div style="border: 1px blue solid;"><div style = "border:1px black solid;background-color:black;height:1.5ex;margin-right:' + roffset + '%; margin-left:' + loffset + '%;"></div></div>';}
-        else {return '<div style="border: 1px blue solid;height:2ex;"></div>';}
+        if (range != 0 && low != NaN && high != NaN) {return '<div class="woot"><div style="margin-right:' + roffset + '%; margin-left:' + loffset + '%;"></div></div>';}
+        else {return '<div class="woot empty"></div>';}
     }
     var storeFields = [];
     var dataArray = [];

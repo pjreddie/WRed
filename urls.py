@@ -4,6 +4,7 @@
 from django.conf.urls.defaults import *
 from django.views.generic.simple import direct_to_template
 from WRed.display.views import *
+from django.http import HttpResponse
 # Uncomment the next two lines to enable the admin:
 
 from django.contrib import admin
@@ -26,7 +27,7 @@ urlpatterns = patterns('',
 
     # Uncomment the next line to enable the admin:
     (r'^admin/', include(admin.site.urls)),
-
+    (r'^robots\.txt$', lambda r: HttpResponse("User-agent: *\nDisallow: /*", mimetype="text/plain")),
     # Remove below when moving to production server
     (r'^media/(?P<path>.*)$', 'django.views.static.serve', static_files_dict),
     (r'^accounts/login/$', login_view),

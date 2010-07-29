@@ -75,8 +75,8 @@ function onReadyFunction() {
             roffset = ((maxvals[cI] - high) / range) * 100 - 1;
         }
         var ret = high + low;
-        if (range != 0 && low != NaN && high != NaN) {return '<div style="border: 1px blue solid;"><div style = "border:1px black solid;background-color:black;height:1.5ex;margin-right:' + roffset + '%; margin-left:' + loffset + '%;"></div></div>';}
-        else {return '<div style="border: 1px blue solid;height:2ex;"></div>';}
+        if (range != 0 && low != NaN && high != NaN) {return '<div class="woot"><div style="margin-right:' + roffset + '%; margin-left:' + loffset + '%;"></div></div>';}
+        else {return '<div class="woot empty"></div>';}
     }
     var dataArray = [];
     var store = new Ext.data.ArrayStore();
@@ -886,8 +886,27 @@ whenever any message comes through (whenever files are added, removed, or change
             return false;
         }
         if (a.operator() && a.can_add() && b !== null && b.dataset()) {
-            from = a;
-            to = b
+            if (b !== null && a.dataset() && b.operator() && b.can_add()){
+                Ext.Msg.alert('Warning', 'Ambiguous Connection. Connection will be made with precedence from left to right, then top to bottom.');
+                if (a.x < b.x){
+                    from = a;
+                    to = b;
+                }else if(a.x == b.x){
+                    if (a.y < b.y){
+                        from = a;
+                        to = b;
+                    }else{
+                        from = b;
+                        to = a;
+                    }
+                }else{
+                    from = b;
+                    to = a;
+                }
+            }else{
+                from = a;
+                to = b;
+            }
         }
         else if (b !== null && a.dataset() && b.operator() && b.can_add()) {
             from = b;
