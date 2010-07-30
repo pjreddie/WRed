@@ -17,6 +17,7 @@ from WRed.file_parsing.file_to_json import *
 from WRed.display.models import *
 from WRed.runcalc import *
 from django import forms
+import zipfile
 
 import datetime
 
@@ -54,9 +55,11 @@ class UploadLiveFileForm(forms.Form):
     proposalid = forms.CharField(max_length = 100)
     filename = forms.CharField(max_length = 100)
 class DeleteFileForm(forms.Form):
-    md5 = forms.CharField(max_length = 32)
+    ids = forms.CharField(max_length = 10000)
 class DownloadFileForm(forms.Form):
     id = forms.IntegerField()
+class DownloadBatchForm(forms.Form):
+    ids = forms.CharField(max_length = 10000)
 class WaitForUpdateForm(forms.Form):
     pass
 class EvaluateEquationForm(forms.Form):
@@ -247,13 +250,17 @@ def delete_file(request):
     }
     if request.method == 'POST':
         form = DeleteFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            DataFile.objects.get(md5=request.POST['md5']).delete()
-            print os.path.join('db', request.POST['md5'])+ '.file'
-            os.remove(os.path.join('db', request.POST['md5'])+ '.file')
-            json['success'] = True
-        else:
-            print 'invalid'
+        ids = simplejson.loads(request.POST['ids'])
+        for i in ids:
+            rFile = DataFile.objects.get(id = i)
+            print form.is_valid() , request.user.is_authenticated() , request.user.username == str(rFile.proposal_id) , request.user.is_superuser
+            if form.is_valid() and request.user.is_authenticated() and (request.user.username == str(rFile.proposal_id) or request.user.is_superuser):
+                DataFile.objects.get(id=i).delete()
+                print os.path.join('db', rFile.md5 + '.file')
+                os.remove(os.path.join('db', rFile.md5 + '.file'))
+                json['success'] = True
+            else:
+                print 'invalid'
     else:
         return HttpResponse('Go Away!')
     return HttpResponse(simplejson.dumps(json))
@@ -329,7 +336,7 @@ def download(request):
         form = DownloadFileForm(request.GET, request.FILES)
         print request.GET['id']
         rFile = DataFile.objects.get(id = request.GET['id'])
-        if request.user.is_authenticated() and (request.user.username == str(rFile.proposal_id) or request.user.is_superuser):
+        if form.is_valid() and request.user.is_authenticated() and (request.user.username == str(rFile.proposal_id) or request.user.is_superuser):
             print 'Good To Go!'
             md5 = rFile.md5
             data = file('db/' + md5 + '.file')
@@ -339,6 +346,28 @@ def download(request):
         else:
             print 'Not authenticated!'
     return HttpResponse('Go Login!')
+
+@login_required
+def batch_download(request):
+    if request.method == 'GET':
+        form = DownloadBatchForm(request.GET)
+        file_ids = simplejson.loads(request.GET['ids'])
+        valid = form.is_valid()
+        for i in file_ids:
+            if request.user.is_authenticated() and (request.user.username == str(DataFile.objects.get(id = i).proposal_id) or request.user.is_superuser):
+                pass
+            else:
+                valid = False
+        if(valid):
+            z = zipfile.ZipFile('db/temp.zip', 'w')
+            for i in file_ids:
+                z.write('db/' + DataFile.objects.get(id = i).md5 + '.file', DataFile.objects.get(id = i).name)
+            z.close()
+            data = file('db/temp.zip')
+            response = HttpResponse(data, mimetype='application/force-download')
+            response['Content-Disposition'] = 'attachment; filename=temp.zip'
+            return response
+            
 
 def login_view(request):
     if request.method == 'POST':
