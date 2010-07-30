@@ -52,7 +52,7 @@ def calcB(astar,bstar,cstar,alphastar,betastar,gammastar,c, alpha):
    Bmatrix=N.array([[astar, bstar*N.cos(gammastar), cstar*N.cos(betastar)],
                     [0, bstar*N.sin(gammastar), -cstar*N.sin(betastar)*N.cos(alpha)],
                     [0, 0, cstar]],'Float64') #check the third element
-   #print(Bmatrix)
+   #"cstarN.sin(betastar)*N.sin(alpha)" for third element is equivalent
    return Bmatrix
 
 def calcUB(h1, k1, l1, h2, k2, l2, omega1, chi1, phi1, omega2, chi2, phi2, Bmatrix):
@@ -126,7 +126,7 @@ def calcIdealAngles(h, UBmatrix, Bmatrix, wavelength, stars):
    omega = 0
       
    #print 'chi',chi, 180-chi
-   #print 'phi',phi,180+phi
+   #print 'phi',phi, 180+phi
    return twotheta, theta, omega, chi, phi
       
 
@@ -254,18 +254,18 @@ def UBtestrun():
    UB["7"] = 1.106088263216144
    UB["8"] = -0.03224481098900243
    '''
-   
+
    astar,bstar,cstar,alphastar,betastar,gammastar = star(a, b, c, alpha, beta, gamma)
    Bmatrix = calcB(astar, bstar, cstar, alphastar, betastar, gammastar, c, alpha)
    UB=calcUB(h1, k1, l1, h2, k2, l2, omega1, chi1, phi1, omega2, chi2, phi2, Bmatrix)
    #calcIdealAngles(N.array([1,1,1],'Float64'),UB,0,Bmatrix)
    hv1=[1,0,0]
    hv2=[0,1,0]
-   result = calcIdealAngles2(hv1, hv2, UB, 2.35916)
+   #result = calcIdealAngles2(hv1, hv2, UB, 2.35916)
    print UB
-   print result
-   print 'chi',(180-result[0])%360
-   print 'phi',(result[1]+180)%360
+   #print result
+   #print 'chi',(180-result[0])%360
+   #print 'phi',(result[1]+180)%360
 # **************************************** END OF UB MATRIX TESTING CODE ****************************************  
 
 
@@ -277,3 +277,4 @@ if __name__=="__main__":
    print recip
    UBtestrun()
    print('done!')
+
