@@ -396,16 +396,16 @@ function onReadyFunction () {
 
 
      FunctionSelectStore = new Ext.data.ArrayStore({
-        data:           [ [ 1, 'Linear' ], [ 2, 'Linear drag test' ],
-                          [ 11, 'Gaussian' ], [ 12, 'Gaussian drag test' ],
-                          [ 21, 'Lorentzian' ], [ 22, 'Lorentzian drag test' ],
+        data:           [ [ 1, 'Linear' ], [ 2, 'Linear drag' ],
+                          [ 11, 'Gaussian' ], [ 12, 'Gaussian drag' ],
+                          [ 21, 'Lorentzian' ], [ 22, 'Lorentzian drag' ],
                           [ -1, '...' ] ],
         fields:         [ 'id', 'name' ],
         idIndex:        0, // Important: specifies the index of the ID column; used in getById()
     });
      FunctionSelect = new Ext.form.ComboBox({
         fieldLabel:     'Function',
-        emptyText:      'Select a fitting function...',
+        emptyText:      'Select a function...',
         hiddenName:     'function',
         
         allowBlank:     false,
@@ -418,7 +418,7 @@ function onReadyFunction () {
         mode:           'local',
         triggerAction:  'all',
         selectOnFocus:  true,
-        width:          145,
+        width:          125,
         
         id:             'FunctionSelect',
         itemCls:        'formSelect',
@@ -459,12 +459,8 @@ function onReadyFunction () {
 // TOOLBAR!
 
 
-    var AddFunctionToSelectedCurveItem = new Ext.menu.Item({
-        id:           'AddFunctionToSelectedCurveItem',
-        text:         'Add to selected curve',
-        handler:      fitFunction,
-    });
-    var NewFunctionButton = new Ext.SplitButton({
+
+    var NewFunctionButton = new Ext.Button({
         id:           'CreateFunctionButton2',
         text:         'New',
         iconCls:      'icon-function',
@@ -474,9 +470,15 @@ function onReadyFunction () {
         iconAlign:    'left',
         width:        '50',
         
-        menu: [ AddFunctionToSelectedCurveItem ],
+//        menu: [ AddFunctionToSelectedCurveButton ],
     });
-    var ClearFunctionButton = new Ext.SplitButton({
+    var AddFunctionToSelectedCurveButton = new Ext.Button({
+        id:           'AddFunctionToSelectedCurveButton',
+        text:         'Add to selected curve',
+        handler:      fitFunction,
+        iconCls:      'icon-sigma',
+    });
+    var ClearFunctionButton = new Ext.Button({
         id:           'ClearThisCurveButton2',
         text:         'Clear',
         iconCls:      'icon-cross-circle',
@@ -485,11 +487,8 @@ function onReadyFunction () {
         arrowAlign:   'right',
         iconAlign:    'left',
         width:        '50',
-        menu: [
-            { text: 'Clear selected curve' },
-        ],
     });
-    var ParamFunctionButton = new Ext.SplitButton({
+    var ParamFunctionButton = new Ext.Button({
         id:           'ParamFunctionButton',
         text:         'Parameters',
         iconCls:      'icon-table-sum',
@@ -498,16 +497,13 @@ function onReadyFunction () {
         arrowAlign:   'right',
         iconAlign:    'left',
         width:        '50',
-        menu: [
-            { text: 'Edit parameters' },
-        ],
     });
     var FunctionsButtonGroup = new Ext.ButtonGroup({
         title:  'Functions',
-        items: [ FunctionSelect, NewFunctionButton, ClearFunctionButton, ParamFunctionButton ]
+        items: [ FunctionSelect, NewFunctionButton, AddFunctionToSelectedCurveButton, ClearFunctionButton, ParamFunctionButton ]
     });
     
-    var FitSeriesButton = new Ext.SplitButton({
+    var FitSeriesButton = new Ext.Button({
         id:           'FitSeriesButton2',
         text:         'Fit series',
         iconCls:      'icon-layer-vector',
@@ -517,9 +513,6 @@ function onReadyFunction () {
         arrowAlign:   'right',
         iconAlign:    'left',
         width:        '50',
-        menu: [
-            { text: 'Add to selected curve' },
-        ],
     });
     var FitButtonGroup = new Ext.ButtonGroup({
         title:  'Fitting',
@@ -808,10 +801,13 @@ function onReadyFunction () {
             Ext.Msg.alert('Error in clearing curve', 'You can\'t clear the data itself, silly!');
         }
         else {
+            /*
             Ext.Msg.confirm('Confirm clearing of curves',
-                            'Are you sure you want to clear ' + ((checkedIndices.length > 1) ? 'these ' + checkedIndices.functionSeries.length + ' curves?' : 'this curve?'),
+                            'Are you sure you want to clear ' + ((checkedIndices.length > 1)
+                                                                  ? 'these ' + checkedIndices.functionSeries.length + ' curves?' : 'this curve?'),
                             function (confirm) {
                 if (confirm == 'yes') {
+            */
                     var newPlotFunctionSeries = [], newResidplotFunctionSeries = [];
                     
                     for (var index = 0; index < globalFunctionSeries.plot.length; index ++) {
@@ -823,8 +819,10 @@ function onReadyFunction () {
                     
                     globalFunctionSeries = { plot: newPlotFunctionSeries, residplot: newResidplotFunctionSeries };
                     updatePlots('PlotContainer', true);
+            /*
                 }
             });
+            */
         }
     }
 
@@ -839,6 +837,16 @@ function onReadyFunction () {
             }
         });
     }
+    
+    
+    
+    /*
+    Ext.data.Record.create([
+       {name: 'firstName', mapping: 'guestName.first'},
+       {name: 'secondName', mapping: 'guestName.second'},
+   	   {name: 'attendingReception', mapping: 'comingToReception'},
+       {name: 'attendingCeremony', mapping: 'comingToCeremony'}
+    ]);*/
     
     
 /*
@@ -967,7 +975,7 @@ function onReadyFunction () {
     var ChartTabPanel = new Ext.Panel({
 //      title:          'Chart tab',
 //      autoWidth:      true,
-        height:         848, //588, // why not auto!?
+        height:         908, //588, // why not auto!?
         
         tbar:           ChartBar,
         
@@ -1187,7 +1195,7 @@ function onReadyFunction () {
         checkedIndices = getCheckedIndices();
         
         if (checkedIndices.dataSeries.length) {
-            AddFunctionToSelectedCurveItem.disable();
+            AddFunctionToSelectedCurveButton.disable();
             ClearFunctionButton.disable();
             console.log(checkedIndices);
             if (checkedIndices.functionSeries.length) {
@@ -1200,12 +1208,12 @@ function onReadyFunction () {
         else {
             FitSeriesButton.disable();
             if (checkedIndices.functionSeries.length >= 1) {               
-                AddFunctionToSelectedCurveItem.enable();
+                AddFunctionToSelectedCurveButton.enable();
                 ClearFunctionButton.enable();
             }
             else {
                 ClearFunctionButton.disable();
-                AddFunctionToSelectedCurveItem.disable();
+                AddFunctionToSelectedCurveButton.disable();
             }
         }
         //FitSeriesButton.setText('Fit ' + ((checkedIndices.functionSeries.length > 1) ? 'these ' + checkedIndices.functionSeries.length + ' series' : 'this series'));
@@ -1305,13 +1313,13 @@ function onReadyFunction () {
             [],
             residplotOptions);
         
-        plotContainer.bind('plotzoom', function (event, plot, limits) {
+        plotContainer.bind('plotzoom', function (event, plot_, limits) {
             residplot.axis([ limits[0], limits[1], null, null ]);
         });
         plotContainer.bind('plotpan', function (event, plot, ranges) {
             residplot.pan(ranges);
         });
-        residplotContainer.bind('plotzoom', function (event, plot, limits) {
+        residplotContainer.bind('plotzoom', function (event, plot_, limits) {
             plot.axis([ limits[0], limits[1], null, null ]);
         });
         residplotContainer.bind('plotpan', function (event, plot, ranges) {
@@ -1319,7 +1327,7 @@ function onReadyFunction () {
         });
     }
 
-    function initializeData(store, xChoice, yChoice) {
+    function initializeData(store, xChoice, yChoice, replaceAll) {
         var plotSeriesData = getData(store, xChoice, yChoice);
         
         var plotSeriesPointsOptions = {
@@ -1335,7 +1343,6 @@ function onReadyFunction () {
             color:    'rgb(0, 0, 0)',
             seriesType: 'data',
         };
-        globalDataSeries.plot.push(plotDataSeries);
         
         var residplotSeriesPointsOptions = {
             show: true,
@@ -1347,13 +1354,21 @@ function onReadyFunction () {
             lines:    { show: true },
             color:    'rgb(255, 51, 51)',
         };
-        globalDataSeries.residplot.push(residplotDataSeries);
+        
+        if (replaceAll) {
+            globalDataSeries.plot = plotDataSeries;
+            globalDataSeries.residplot = residplotDataSeries;
+        }
+        else {
+            globalDataSeries.plot.push(plotDataSeries);
+            globalDataSeries.residplot.push(residplotDataSeries);
+        }
 
         console.log('initData', stage);
     }
     
     function updatePlots(chart, preventSetupGrid) {
-        console.log('updatePlots');
+        console.log('updatePlots', stage);
         
         var plotContainer      = $('#'      + chart);
         var residplotContainer = $('#Resid' + chart);
