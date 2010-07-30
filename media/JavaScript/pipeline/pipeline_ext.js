@@ -8,9 +8,9 @@ until it is further along...*/
 var TEXTHEIGHT = 8;
 var PADDING = 4;
 var addImg = new Image();
-addImg.src = 'http://famfamfam.com/lab/icons/silk/icons/add.png';
+addImg.src = '/media/icons/silk/add.png';
 var subImg = new Image();
-subImg.src = 'http://famfamfam.com/lab/icons/silk/icons/delete.png';
+subImg.src = '/media/icons/silk/delete.png';
 
 //*******EXT Stuff***********
 Ext.onReady(onReadyFunction);
@@ -107,7 +107,7 @@ function onReadyFunction() {
             }],
         buttons: [{
             text: 'Upload',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/page_white_add.png',
+            icon: '/media/icons/silk/page_white_add.png',
             handler: function () {
                 if (fp.getForm().isValid()) {
                     fp.getForm().submit({
@@ -119,7 +119,7 @@ function onReadyFunction() {
             }}, '-',
         {
             text: 'Cancel',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/cancel.png',
+            icon: '/media/icons/silk/cancel.png',
             handler: function () {
                 fp.getForm().reset();
             }}]
@@ -222,12 +222,12 @@ function onReadyFunction() {
         items: [{
             text: 'Delete',
             handler: deleteRow,
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
+            icon: '/media/icons/silk/delete.png',
             },
         {
             text: 'Download',
             handler: download,
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png',
+            icon: '/media/icons/silk/disk.png',
             }],
     });
     grid.on('rowcontextmenu', function (grid, rowIndex, e) {
@@ -461,7 +461,7 @@ function onReadyFunction() {
     toolbar.add({
         text: 'Add',
         id: 'plus',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/add.png',
+        icon: '/media/icons/silk/add.png',
         cls: 'button-draggable',
         listeners: {
             render: initDragZone
@@ -473,7 +473,7 @@ function onReadyFunction() {
     }, {
         text: 'Subtract',
         id: 'minus',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
+        icon: '/media/icons/silk/delete.png',
         cls: 'button-draggable',
         listeners: {
             render: initDragZone
@@ -486,7 +486,7 @@ function onReadyFunction() {
 /*{
         text: 'File',
         id: 'file',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/page.png',
+        icon: '/media/icons/silk/page.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
@@ -495,7 +495,7 @@ function onReadyFunction() {
     {
         text: 'Filter',
         id: 'filter',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/calculator.png',
+        icon: '/media/icons/silk/calculator.png',
         cls: 'button-draggable',
         listeners: {
             render: initDragZone
@@ -509,25 +509,25 @@ function onReadyFunction() {
     {
         text: 'Save Current Pipeline',
         id: 'save_pipeline',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png',
+        icon: '/media/icons/silk/disk.png',
         handler: save_pipeline,
 
     },
     {
         text: 'Load Pipeline',
         id: 'load_pipeline',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/folder_table.png',
+        icon: '/media/icons/silk/folder_table.png',
         menu: [
             {
                 text: 'Templates',
                 id: 'templates',
-                icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+                icon: '/media/icons/silk/table_gear.png',
                 menu: ['-'],
             },
             {
                 text: 'My Pipelines',
                 id: 'my_pipelines',
-                icon: 'http://famfamfam.com/lab/icons/silk/icons/table.png',
+                icon: '/media/icons/silk/table.png',
                 menu: ['-'],
             }
         ],
@@ -539,7 +539,7 @@ function onReadyFunction() {
     },{
         text: 'Clear Pipeline',
         id: 'clear_pipeline',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/bomb.png',
+        icon: '/media/icons/silk/bomb.png',
         handler: function(b,e){boxes = []; redraw(e);},
 
     }
@@ -547,7 +547,7 @@ function onReadyFunction() {
 /*{
         text: 'Pointer',
         id: 'pointer',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/cursor.png',
+        icon: '/media/icons/silk/cursor.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
@@ -679,7 +679,7 @@ anytime there is new data, and initially to populate the table.*/
                         text: json_response[i].name,
                         id: '' + i,
                         handler: load_pipeline,
-                        icon: 'http://famfamfam.com/lab/icons/silk/icons/table.png',
+                        icon: '/media/icons/silk/table.png',
                     });
                     pipelines.push(Ext.decode(json_response[i].pipeline));
                 }
@@ -737,13 +737,13 @@ whenever any message comes through (whenever files are added, removed, or change
             text: 'Connect',
             handler: connector,
             id: 'connect',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/connect.png',
+            icon: '/media/icons/silk/connect.png',
             },
         {
             text: 'Disconnect',
             handler: disconnector,
             id: 'disconnect',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/disconnect.png',
+            icon: '/media/icons/silk/disconnect.png',
             }, '-',
         {
             text: 'Filter Options',
@@ -751,11 +751,11 @@ whenever any message comes through (whenever files are added, removed, or change
                 {
                 text: 'Set Scalar Value',
                 handler: set_scalar,
-                icon: 'http://famfamfam.com/lab/icons/silk/icons/pencil.png',
+                icon: '/media/icons/silk/pencil.png',
                 }
             ],
             id: 'filter_options',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/table_edit.png',
+            icon: '/media/icons/silk/table_edit.png',
             },
         {
             text: 'Filter Type',
@@ -763,25 +763,25 @@ whenever any message comes through (whenever files are added, removed, or change
                 {
                 text: 'Detailed Balance',
                 handler: filter_type,
-                icon: 'http://p.yusukekamiyamane.com/icons/search/fugue/icons/balance.png',
+                icon: '/media/icons/fugue/balance.png',
                 },{
                 text: 'Scalar Multiplication',
                 handler: filter_type,
-                icon: 'http://p.yusukekamiyamane.com/icons/search/fugue/icons/cross.png',
+                icon: '/media/icons/fugue/cross.png',
                 },{
                 text: 'Scalar Addition',
                 handler: filter_type,
-                icon: 'http://p.yusukekamiyamane.com/icons/search/fugue/icons/plus.png',
+                icon: '/media/icons/fugue/plus.png',
                 }
             ],
             id: 'filter_type',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+            icon: '/media/icons/silk/table_gear.png',
             }, '-',
         {
             text: 'Save To Database',
             handler: save,
             id: 'save',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png',
+            icon: '/media/icons/silk/disk.png',
             },
                     ],
     });

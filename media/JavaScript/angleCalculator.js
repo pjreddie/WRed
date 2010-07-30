@@ -913,11 +913,11 @@ Ext.onReady(function () {
         }],
         buttons: [{
             text: 'Save & Download Data', //Save & Download Data button
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png', //graphic that accompanies the button
+            icon: '/media/icons/silk/disk.png', //graphic that accompanies the button
             handler: saveFunction
         }, {
             text: 'Load Data',  //Load Data button
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/add.png',
+            icon: '/media/icons/silk/add.png',
             handler: function (){
                 if (uploadPanel.getForm().isValid()) {
                     uploadPanel.getForm().submit({
