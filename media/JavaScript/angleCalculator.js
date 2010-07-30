@@ -34,7 +34,7 @@ Ext.onReady(function () {
     var store = new Ext.data.ArrayStore({
         autodestroy     : false,
         storeId         : 'UBInputStore',
-        fields          : UBInputFields,
+        fields          : UBInputFields
     });
     store.loadData(baseData);
     
@@ -52,7 +52,7 @@ Ext.onReady(function () {
     var idealDataStore = new Ext.data.ArrayStore({
         autoDestroy     : false,
         storeId         : 'desiredStore',
-        fields          : desiredFields,
+        fields          : desiredFields
     });
     idealDataStore.loadData(baseIdealData);
     
@@ -67,37 +67,37 @@ Ext.onReady(function () {
             editor: new Ext.form.NumberField({
                 allowBlank: false,
                 allowDecimals: true,
-                decimalPrecision: 7, 
+                decimalPrecision: 7 
             })
         },
         columns: [
             {
             header: 'h',
-            dataIndex: 'h',
+            dataIndex: 'h'
             },
         {
             header: 'k',
-            dataIndex: 'k',
+            dataIndex: 'k'
             },
         {
             header: 'l',
-            dataIndex: 'l',
+            dataIndex: 'l'
             },
         {
             header: '2θ',
-            dataIndex: 'twotheta',
+            dataIndex: 'twotheta'
             },
         {
             header: 'θ',
-            dataIndex: 'theta',
+            dataIndex: 'theta'
             },
         {
             header: 'χ',
-            dataIndex: 'chi',
+            dataIndex: 'chi'
             },
         {
             header: 'φ',
-            dataIndex: 'phi',
+            dataIndex: 'phi'
             },
         ]
     });
@@ -110,34 +110,34 @@ Ext.onReady(function () {
             editor: new Ext.form.NumberField({
                 allowBlank: false,
                 allowDecimals: true,
-                decimalPrecision: 7,
+                decimalPrecision: 7
             })
         },
         columns: [
         {
             header: 'h',
-            dataIndex: 'h',
+            dataIndex: 'h'
         }, {
             header: 'k',
-            dataIndex: 'k',
+            dataIndex: 'k'
         }, {
             header: 'l',
-            dataIndex: 'l',
+            dataIndex: 'l'
         }, {
             header: '2θ',
-            dataIndex: 'twotheta',
+            dataIndex: 'twotheta'
         }, {
             header: 'θ',
-            dataIndex: 'theta',
+            dataIndex: 'theta'
         }, {
             header: 'ω',
-            dataIndex: 'omega',
+            dataIndex: 'omega'
         }, {
             header: 'χ',
-            dataIndex: 'chi',
+            dataIndex: 'chi'
         }, {
             header: 'φ',
-            dataIndex: 'phi',
+            dataIndex: 'phi'
         },
         ]
     });
@@ -154,18 +154,19 @@ Ext.onReady(function () {
     var observationGrid = new Ext.grid.EditorGridPanel({
         store: store,
         cm: cm,
-        id: 'observationEditorGrid',
-        width: 440,
-        height: 145,
-        title: 'Observations',
-        frame: true,
-        clicksToEdit: 1,
+        id              : 'observationEditorGrid',
+        width           : 440,
+        height          : 157,
+        title           : 'Observations',
+        frame           : true,
+        clicksToEdit    : 1,
+        decimalPrecision: 6, //still showing 7 decimal places...
         viewConfig: { 
-            forceFit : true,
+            forceFit : true
         },
         bbar: [{
             text: 'Calculate UB Matrix',
-            handler: submitData,
+            handler: submitData
         }]
     });
     
@@ -176,15 +177,16 @@ Ext.onReady(function () {
         height: 200,
         title: 'Desired Results',
         frame: true,
-        clicksToEdit: 1,
+        clicksToEdit: 1,        
+        decimalPrecision: 6,
         tbar: [{
             text: 'Add New Row',
-            handler: addRow,
+            handler: addRow
         }, 
         '-',  //Shorthand for Ext.Tollbar.Separator (the " | " between buttons)
         {
             text: 'Calculate Results',
-            handler: calculateResults,
+            handler: calculateResults
         }]
     });
     
@@ -197,13 +199,14 @@ Ext.onReady(function () {
             var record = store.getAt(i)
             params['data'].push(record.data); //adding table's input to data to be sent to backend
         };
+        
         params['data'].push({
             'a': aField.getValue(),
             'b': bField.getValue(),
             'c': cField.getValue(),
             'alpha': alphaField.getValue(),
             'beta': betaField.getValue(),
-            'gamma': gammaField.getValue(),
+            'gamma': gammaField.getValue()
         });
 
         conn.request({
@@ -213,7 +216,7 @@ Ext.onReady(function () {
             success: ubsuccess,
             failure: function () {
                 isUBcalculated = false;
-                southPanel.setTitle('UB Calculated: ' + isUBcalculated);
+                //southPanel.setTitle('UB Calculated: ' + isUBcalculated);
                 Ext.Msg.alert('Error: Failed to calculate UB matrix');
             }
         });
@@ -229,25 +232,49 @@ Ext.onReady(function () {
         }
         console.log(myUBmatrix);
         
+        //displaying UB matrix values
+        UB11Field.setValue(myUBmatrix[0]);
+        UB12Field.setValue(myUBmatrix[1]);
+        UB13Field.setValue(myUBmatrix[2]);
+        UB21Field.setValue(myUBmatrix[3]);
+        UB22Field.setValue(myUBmatrix[4]);
+        UB23Field.setValue(myUBmatrix[5]);
+        UB31Field.setValue(myUBmatrix[6]);
+        UB32Field.setValue(myUBmatrix[7]);
+        UB33Field.setValue(myUBmatrix[8]);
+
         isUBcalculated = true;
-        // update the innerRightPanel's south panel's title
-        southPanel.setTitle('UB Calculated: ' + isUBcalculated);    
-    }
+        store.commitChanges();
+    };
     
     function calculateResults(button, event) {
         //Calculates the desired angles when the button 'Calculate Results' is pressed
         params = {'data': [] };
-        numrows = idealDataStore.getCount();
+        numrows = idealDataStore.getCount(); //number of rows in the Desired Data table
         
-        //IF it's in the omega mode AND isUBcalculated == true
-        if (isUBcalculated && myCombo.getValue() == 'Bisecting Plane'){
+        //IF the combobox is in the Bisecting Plane mode
+        if (myCombo.getValue() == 'Bisecting Plane'){
 
+            //sending back all necessary data to calculate UB and desired angles
             params['data'].push({
-                'wavelength' : wavelengthField.getValue(),
-                'numrows' : numrows, //gives how many rows
+                'a'         : aField.getValue(),
+                'b'         : bField.getValue(),
+                'c'         : cField.getValue(),
+                'alpha'     : alphaField.getValue(),
+                'beta'      : betaField.getValue(),
+                'gamma'     : gammaField.getValue(),
+                'wavelength': wavelengthField.getValue(),
+                'numrows'   : numrows 
             }); 
+            
+            for (var i = 0; i < store.getCount(); i++) {
+                //gets all the data from the Observation table
+                var record = store.getAt(i)
+                params['data'].push(record.data); 
+            };
+            
             for (var j = 0; j < numrows; j++){
-                //gets all the data from the Ideal Data table
+                //gets all the data from the Desired Data table
                 var record = idealDataStore.getAt(j)
                 params['data'].push(record.data);
             }  
@@ -263,20 +290,32 @@ Ext.onReady(function () {
             });
         }
  
-        //ELSE IF the combobox is in the scattering plane mode AND isUBcalculated == true
-        else if (isUBcalculated && myCombo.getValue() == 'Scattering Plane'){
+        //ELSE IF the combobox is in the Scattering Plane mode
+        else if (myCombo.getValue() == 'Scattering Plane'){
+            
+            //sending back all necessary data to calculate UB and desired angles
             params['data'].push({
+                'a'         : aField.getValue(),
+                'b'         : bField.getValue(),
+                'c'         : cField.getValue(),
+                'alpha'     : alphaField.getValue(),
+                'beta'      : betaField.getValue(),
+                'gamma'     : gammaField.getValue(),
                 'h1'        : h1Field.getValue(),
                 'k1'        : k1Field.getValue(),
                 'l1'        : l1Field.getValue(),
-                'wavelength': wavelengthField.getValue(), //wavelength put on this line to make h/k/l#s easier to read
+                'wavelength': wavelengthField.getValue(),
                 'h2'        : h2Field.getValue(),
                 'k2'        : k2Field.getValue(),
                 'l2'        : l2Field.getValue(),
-                'numrows'   : numrows, //gives how many rows
+                'numrows'   : numrows 
             });
+            
+            for (var i = 0; i < store.getCount(); i++) {
+                var record = store.getAt(i)
+                params['data'].push(record.data); 
+            };
             for (var j = 0; j < numrows; j++){
-                //gets all the data from the Ideal Data table
                 var record = idealDataStore.getAt(j)
                 params['data'].push(record.data);
             }
@@ -291,9 +330,8 @@ Ext.onReady(function () {
                 }
             });
         }
-        //ELSE isUBcalculated == false
         else {
-            Ext.Msg.alert('Error: First calculate the UB matrix');
+            Ext.Msg.alert('Error: Could not calculate desired angles');
         }
     };
     
@@ -301,14 +339,28 @@ Ext.onReady(function () {
         idealdata = Ext.decode(responseObject.responseText);
         console.log(idealdata);
         
+        //Updating UB matrix display
+        UB11Field.setValue(idealdata[0][0]);
+        UB12Field.setValue(idealdata[0][1]);
+        UB13Field.setValue(idealdata[0][2]);
+        UB21Field.setValue(idealdata[0][3]);
+        UB22Field.setValue(idealdata[0][4]);
+        UB23Field.setValue(idealdata[0][5]);
+        UB31Field.setValue(idealdata[0][6]);
+        UB32Field.setValue(idealdata[0][7]);
+        UB33Field.setValue(idealdata[0][8]);
+        
+        //Updating desired data table
         changes = ['twotheta', 'theta', 'omega', 'chi', 'phi'];
         for (var i = 0; i < idealDataStore.getCount(); i++){
             record = idealDataStore.getAt(i); 
             for (var c in changes) {
                 fieldName = changes[c];
-                record.set(fieldName, idealdata[i][fieldName]);
+                record.set(fieldName, idealdata[i+1][fieldName]);
             }
         }
+        store.commitChanges(); //removes red mark in corner of cell that indicates an uncommited edit
+        idealDataStore.commitChanges();
     }
 
     function addRow() {
@@ -321,12 +373,12 @@ Ext.onReady(function () {
             theta: 0.0,
             omega: 0.0,
             chi: 0.0,
-            phi: 0.0,
+            phi: 0.0
         });
         grid2.stopEditing(); 
         idealDataStore.insert(0, r); //adds new row to the top of the table (ie the first row)
         grid2.startEditing(0, 0); //starts editing for first cell of new row
-    }
+    };
     
     // ****************** END - Defining grid button functions ****************** 
    
@@ -335,82 +387,139 @@ Ext.onReady(function () {
         fieldLabel: 'a',
         allowBlank: false,
         decimalPrecision: 7,
-        anchor: '-10',
+        anchor: '-10'
     });
     var bField = new Ext.form.NumberField({
         fieldLabel: 'b',
         allowBlank: false,
         decimalPrecision: 7,
-        anchor: '-10',
+        anchor: '-10'
     });
     var cField = new Ext.form.NumberField({
         fieldLabel: 'c',
         allowBlank: false,
         decimalPrecision: 7,
-        anchor: '-10',
+        anchor: '-10'
     });
     var alphaField = new Ext.form.NumberField({
         fieldLabel: 'α',
         allowBlank: false,
         decimalPrecision: 7,
-        anchor: '-10',
+        anchor: '-10'
     });
     var betaField = new Ext.form.NumberField({
         fieldLabel: 'β',
         allowBlank: false,
         decimalPrecision: 7,
-        anchor: '-10',
+        anchor: '-10'
     });
     var gammaField = new Ext.form.NumberField({
         fieldLabel: 'γ',
         allowBlank: false,
         decimalPrecision: 7,
-        anchor: '-10',
+        anchor: '-10'
     });
     var wavelengthField = new Ext.form.NumberField({
         fieldLabel: 'Wavelength',
         allowBlank: true,
-        decimalPrecision: 7,
+        decimalPrecision: 7
     });
     
     
     //scattering plane h, k, l numberfields:
     var h1Field = new Ext.form.NumberField({
         fieldLabel: 'h1',
-        allowBlank: false,
+        allowBlank: true,
         decimalPrecision: 7,
-        anchor: '-10',
+        anchor: '-10'
     });
     var k1Field = new Ext.form.NumberField({
         fieldLabel: 'k1',
-        allowBlank: false,
+        allowBlank: true,
         decimalPrecision: 7,
-        anchor: '-10',
+        anchor: '-10'
     });
     var l1Field = new Ext.form.NumberField({
         fieldLabel: 'l1',
-        allowBlank: false,
+        allowBlank: true,
         decimalPrecision: 7,
-        anchor: '-10',
+        anchor: '-10'
     });
     var h2Field = new Ext.form.NumberField({
         fieldLabel: 'h2',
-        allowBlank: false,
+        allowBlank: true,
         decimalPrecision: 7,
-        anchor: '-10',
+        anchor: '-10'
     });
     var k2Field = new Ext.form.NumberField({
         fieldLabel: 'k2',
-        allowBlank: false,
+        allowBlank: true,
         decimalPrecision: 7,
-        anchor: '-10',
+        anchor: '-10'
     });
     var l2Field = new Ext.form.NumberField({
         fieldLabel: 'l2',
-        allowBlank: false,
+        allowBlank: true,
         decimalPrecision: 7,
-        anchor: '-10',
+        anchor: '-10'
     });
+    
+    //UB matrix numberfields:
+    var UB11Field = new Ext.form.NumberField({
+        //fieldLabel: 'UB11',
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+     var UB12Field = new Ext.form.NumberField({
+        //fieldLabel: 'UB12',
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+     var UB13Field = new Ext.form.NumberField({
+        //fieldLabel: 'UB13',
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+     var UB21Field = new Ext.form.NumberField({
+        //fieldLabel: 'UB21',
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+     var UB22Field = new Ext.form.NumberField({
+        //fieldLabel: 'UB22',
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+     var UB23Field = new Ext.form.NumberField({
+        //fieldLabel: 'UB23',
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+     var UB31Field = new Ext.form.NumberField({
+        //fieldLabel: 'UB31',
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+     var UB32Field = new Ext.form.NumberField({
+        //fieldLabel: 'UB32',
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+     var UB33Field = new Ext.form.NumberField({
+        //fieldLabel: 'UB33',
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+    
     
     // ********* END - Defining and assigning variables for the numberfield inputs  *********  
  
@@ -418,7 +527,7 @@ Ext.onReady(function () {
     var myComboStore = new Ext.data.ArrayStore({
         data: [[1, 'Bisecting Plane'], [2, 'Scattering Plane']],
         fields: ['id', 'mode'],
-        idIndex: 0, 
+        idIndex: 0
     });
     
     var myCombo = new Ext.form.ComboBox ({
@@ -431,7 +540,7 @@ Ext.onReady(function () {
         
         triggerAction:  'all', //Lets you see all drop down options when arrow is clicked
         selectOnFocus:  true,
-        value        : 'Bisecting Plane',
+        value        : 'Bisecting Plane'
         
     });
 
@@ -443,7 +552,7 @@ Ext.onReady(function () {
         defaultType : 'numberfield',
         defaults    : {
             allowBlank : false,
-            decimalPrecision: 10,
+            decimalPrecision: 10
         },
         items: [
             {
@@ -483,7 +592,7 @@ Ext.onReady(function () {
                         xtype       : 'container',
                         layout      : 'form',
                         columnWidth : 1,
-                        labelWidth  : 1,
+                        labelWidth  : 1
                     }
                 ]
             },
@@ -524,7 +633,7 @@ Ext.onReady(function () {
                         xtype       : 'container',
                         layout      : 'form',
                         columnWidth : 1,
-                        labelWidth  : 1,
+                        labelWidth  : 1
                     }
                 ]
             },
@@ -537,12 +646,12 @@ Ext.onReady(function () {
     // ********* START - Setting up scattering plane h/k/l GUI  ********* 
     var bottomFieldset = {
         xtype       : 'fieldset',
-        title       : 'Scattering Plane Vectors',
+        //title       : 'Scattering Plane Vectors',
         border      : false,
         defaultType : 'numberfield',
         defaults    : {
             allowBlank : false,
-            decimalPrecision: 10,
+            decimalPrecision: 10
         },
         items: [
             {
@@ -582,7 +691,7 @@ Ext.onReady(function () {
                         xtype       : 'container',
                         layout      : 'form',
                         columnWidth : 1,
-                        labelWidth  : 1,
+                        labelWidth  : 1
                     }
                 ]
             },
@@ -623,7 +732,7 @@ Ext.onReady(function () {
                         xtype       : 'container',
                         layout      : 'form',
                         columnWidth : 1,
-                        labelWidth  : 1,
+                        labelWidth  : 1
                     }
                 ]
             },
@@ -631,22 +740,160 @@ Ext.onReady(function () {
                 //empty container to allow horizontal inputboxes for h,k,l
                 xtype       : 'container',
                 border      : false,
-                width       : 230,
+                width       : 230
             } 
         ]
     };
     
     // ********* END - Setting up scattering plane h/k/l GUI  ********* 
     
+    // ********* START - Setting up calculated UB matrix GUI  ********* 
+    var UBFieldset = {
+        xtype       : 'fieldset',
+        title       : 'UB Matrix',
+        border      : false,
+        defaultType : 'numberfield',
+        defaults    : {
+            allowBlank : true,
+            decimalPrecision: 7
+        },
+        items: [
+            {
+                xtype       : 'container',
+                border      : false,
+                layout      : 'column',
+                anchor      : '100%',
+                items       : [
+                    {
+                        xtype       : 'container',
+                        layout      : 'form',
+                        width       : 75,
+                        labelWidth  : 1,
+                        items   : [
+                            UB11Field
+                        ]
+                    },
+                    {
+                        xtype       : 'container',
+                        layout      : 'form',
+                        width       : 75,
+                        labelWidth  : 1,
+                        items       : [
+                            UB12Field                               
+                        ]
+                    },
+                    {
+                        xtype       : 'container',
+                        layout      : 'form',
+                        width       : 75,
+                        labelWidth  : 1,
+                        items       : [
+                            UB13Field                               
+                        ]
+                    }, {
+                        //Buffer blank space to even out the first row of numberfields
+                        xtype       : 'container',
+                        layout      : 'form',
+                        columnWidth : 1,
+                        labelWidth  : 1
+                    }
+                ]
+            },
+            {
+                xtype       : 'container',
+                border      : false,
+                layout      : 'column',
+                anchor      : '100%',
+                items       : [
+                    {
+                        xtype       : 'container',
+                        layout      : 'form',
+                        width       : 75,
+                        labelWidth  : 1,
+                        items   : [
+                             UB21Field
+                        ]
+                    },
+                    {
+                        xtype       : 'container',
+                        layout      : 'form',
+                        width       : 75,
+                        labelWidth  : 1,
+                        items       : [
+                            UB22Field                               
+                        ]
+                    },
+                    {
+                        xtype       : 'container',
+                        layout      : 'form',
+                        width       : 75,
+                        labelWidth  : 1,
+                        items       : [
+                            UB23Field                               
+                        ]
+                    }, {
+                        //Buffer blank space to even out the second row of numberfields
+                        xtype       : 'container',
+                        layout      : 'form',
+                        columnWidth : 1,
+                        labelWidth  : 1
+                    }
+                ]
+            },
+            {
+                xtype       : 'container',
+                border      : false,
+                layout      : 'column',
+                anchor      : '100%',
+                items       : [
+                    {
+                        xtype       : 'container',
+                        layout      : 'form',
+                        width       : 75,
+                        labelWidth  : 1,
+                        items   : [
+                             UB31Field
+                        ]
+                    },
+                    {
+                        xtype       : 'container',
+                        layout      : 'form',
+                        width       : 75,
+                        labelWidth  : 1,
+                        items       : [
+                            UB32Field                               
+                        ]
+                    },
+                    {
+                        xtype       : 'container',
+                        layout      : 'form',
+                        width       : 75,
+                        labelWidth  : 1,
+                        items       : [
+                            UB33Field                               
+                        ]
+                    }, {
+                        //Buffer blank space to even out the third row of numberfields
+                        xtype       : 'container',
+                        layout      : 'form',
+                        columnWidth : 1,
+                        labelWidth  : 1
+                    }
+                ]
+            },
+            {
+                //empty container to allow horizontal inputboxes for h,k,l
+                xtype       : 'container',
+                border      : false,
+                width       : 230
+            } 
+        ]
+    };
+    
+    
+    // ********* END - Setting up calculated UB matrix GUI  ********* 
+    
     // ********* START - Handling loading and saving data  ********* 
-    /*var inputField = new Ext.ux.FieldUploadField ({
-            anchor      : '100%',
-            id          : 'inputfile',
-            emptyText   : 'Select a file...',
-            fieldLabel  : 'File',
-            name        : 'file',
-            buttonText  : 'Browse...',
-    })*/
     
     var uploadPanel = new Ext.FormPanel({
         fileUpload: true,
@@ -662,12 +909,12 @@ Ext.onReady(function () {
             emptyText   : 'Select a file...',
             fieldLabel  : 'File',
             name        : 'file',
-            buttonText  : 'Browse...',
+            buttonText  : 'Browse...'
         }],
         buttons: [{
             text: 'Save & Download Data', //Save & Download Data button
             icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png', //graphic that accompanies the button
-            handler: saveFunction,
+            handler: saveFunction
         }, {
             text: 'Load Data',  //Load Data button
             icon: 'http://famfamfam.com/lab/icons/silk/icons/add.png',
@@ -680,13 +927,13 @@ Ext.onReady(function () {
                         success: uploadFunction,
                         failure: function() {
                             Ext.Msg.alert('Error: Could not upload data.');
-                        },
+                        }
                     })
                 }
                 else {
                     Ext.Msg.alerg('Error: Could not upload data.');
                 }
-            },
+            }
         }]
     });
     
@@ -714,7 +961,7 @@ Ext.onReady(function () {
             'gamma'     : gammaField.getValue(),
             'mode'      : myCombo.getValue(),
             'numrows'   : numrows,
-            'ub'        : myUBmatrix, 
+            'ub'        : myUBmatrix 
         });
         for (var i = 0; i < 2; i++) { //all the observation table's data (only 2 rows' worth)
             var record1 = store.getAt(i)
@@ -781,32 +1028,27 @@ Ext.onReady(function () {
         console.log(newData);
         console.log(h1Field.getValue());
         
-        submitData(null, null); //CHECK - might produce errors
+        submitData(null, null); //calculates the UB matrix instead of using the saved one
     };
 
 
     // ********* END - Handling loading and saving data  *********  
     
     //Setting up and rendering Panels
-    var southPanel = new Ext.Panel ({
-        region: 'south',
-        height: 25,
-        title: 'UB Calculated: '+isUBcalculated,
-    });
     
     var northPanel = new Ext.Panel ({
         region      : 'north',
         height      : 100,
-        items       : [uploadPanel],
+        items       : [uploadPanel]
     });
     
     var innerLeftTopPanel = new Ext.Panel({
         layout: 'border',
         width: 440,
-        height: 250, 
+        height: 260, 
         items: [{
             region: 'center',
-            items: [observationGrid],
+            items: [observationGrid]
         }, 
             northPanel,
         ]
@@ -815,22 +1057,26 @@ Ext.onReady(function () {
     var innerRightTopPanel = new Ext.Panel({
         layout: 'border',
         width: 350,
-        height: 250,
+        height: 260,
         border: true,
         items: [{
-            title: 'Lattice Constants',
-            region: 'center',
-            margins: '0 5 0 0', //small margins to the east of box
-            items: [topFieldset],
+            title   : 'Lattice Constants',
+            region  : 'center',
+            margins : '0 5 0 0', //small margins to the east of box
+            items   : [topFieldset]
         }, {
-            title: 'Choose the Mode:',
-            region: 'north',
-            height: 50,
-            margins: '0 5 0 0',
-            items: [myCombo],
-        },
-            southPanel,
-        ]
+            title   : 'Choose the Mode',
+            region  : 'north',
+            height  : 50,
+            margins : '0 5 0 0',
+            items   : [myCombo]
+        }, {
+            title   : 'Scattering Plane Vectors  (Scattering Plane Mode ONLY)',
+            region  : 'south',
+            height  : 90,
+            margins : '0 5 0 0',
+            items   : [bottomFieldset]
+        }]
     });  
     
     var TopPanel = new Ext.Panel({
@@ -840,7 +1086,7 @@ Ext.onReady(function () {
         layoutConfig: {
             columns: 2
         },
-        items: [innerLeftTopPanel, innerRightTopPanel],
+        items: [innerLeftTopPanel, innerRightTopPanel]
     });
 
     var BottomPanel = new Ext.Panel({
@@ -850,7 +1096,7 @@ Ext.onReady(function () {
         layoutConfig: {
             columns: 2
         },
-        items: [bottomFieldset, grid2]
+        items: [UBFieldset, grid2]
     });
 
     TopPanel.render('data-grid');

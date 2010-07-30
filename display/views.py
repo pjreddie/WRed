@@ -159,16 +159,23 @@ def upload_file_angleCalc(request):
         form = UploadFileForm(request.POST, request.FILES)
         #print form.is_valid()
         if form.is_valid():
-            #print request.FILES
+            print request.FILES['file'].name
             filename = request.FILES['file'].name
-           
-            uploadarray = uploadInputFile (filename)
+            fid = request.FILES['file'].open()
+            #content = request.FILES['file'].read()            
+            #fid = open('/tmp/upload', 'w')
+            #fid.write(content)
+            #fid.close()
+            
+            #uploadarray = uploadInputFile ('/tmp/upload')
+            uploadarray = uploadInputFile (request.FILES['file'])
             json['success'] = True
             json['data'] = {'array': uploadarray}
         else:
             return HttpResponse('not valid. Form:', form)
     else:
         return HttpResponse('method != POST')
+        
     #returns a dictionary with 'data' = dictionary with 'array' = array of dictionaries created from uploadInputFile method.
     return HttpResponse(simplejson.dumps(json))
     

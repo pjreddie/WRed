@@ -14,26 +14,25 @@ from Alex.ubmatrix import *
 
 
 def runcalc1(request):
-    "Calculations for omega = 0 mode"
+    "Calculations for Bisecting Plane mode. Also calculates and returns the UB matrix"
     #print request.POST
     #Strangely, data is sent as a dictionary, where all data is the key and the dictionary's value is random characters.
     #Therefore, extracting data from dictionary key
     requestObject = simplejson.loads(request.POST.keys()[0]) 
     data = requestObject['data']
     
-    #LOADING THE B MATRIX, UB MATRIX, AND STARS DICTIONARY FROM DJANGO'S CACHE
-    Bmatrix = request.session['Bmatrix']
-    UBmatrix = request.session['UBmatrix']
-    stars = request.session['stars']
+    #CALCULATING THE B MATRIX, UB MATRIX, AND STARS DICTIONARIES
+    Bmatrix, UBmatrix, stars = calculateResultsUB(data)
     
     response = []
+    response.append([UBmatrix[0][0], UBmatrix[0][1], UBmatrix[0][2], UBmatrix[1][0], UBmatrix[1][1], UBmatrix[1][2], UBmatrix[2][0], UBmatrix[2][1], UBmatrix[2][2]])
+    
     #wavelength was a string for some reason...
-    #wavelength = float(data[0]['wavelength'])
     wavelength = data[0]['wavelength']
     
     #rest of the calculations
-    for i in range(1, data[0]['numrows'] + 1):
-        twotheta, theta, omega, chi, phi = calcIdealAngles([data[i]['h'], data[i]['k'], data[i]['l']], UBmatrix,Bmatrix, wavelength, stars)
+    for i in range(3, data[0]['numrows'] + 3):
+        twotheta, theta, omega, chi, phi = calcIdealAngles([data[i]['h'], data[i]['k'], data[i]['l']], UBmatrix, Bmatrix, wavelength, stars)
         angles = {'twotheta': twotheta, 'theta':theta, 'omega': omega,'chi':chi, 'phi': phi}
         response.append(angles)
 
@@ -46,19 +45,21 @@ def runcalc2(request):
     requestObject = simplejson.loads(request.POST.keys()[0])
     data = requestObject['data']
     
-    #LOADING THE UB MATRIX AND STARS DICTIONARY FROM DJANGO'S CACHE
-    UBmatrix = request.session['UBmatrix']
-    stars = request.session['stars'] #TODO check float 
+    #CALCULATING THE B MATRIX, UB MATRIX, AND STARS (though not needed in this method) DICTIONARIES
+    Bmatrix, UBmatrix, stars = calculateResultsUB(data)
+    
+    response = []
+    response.append([UBmatrix[0][0], UBmatrix[0][1], UBmatrix[0][2], UBmatrix[1][0], UBmatrix[1][1], UBmatrix[1][2], UBmatrix[2][0], UBmatrix[2][1], UBmatrix[2][2]])
     
 
     #wavelength was a string for some reason...
     #wavelength = float(data[0]['wavelength'])
     wavelength = data[0]['wavelength']
-    response = []    
+
     chi, phi = calcScatteringPlane ([data[0]['h1'], data[0]['k1'], data[0]['l1']], [data[0]['h2'], data[0]['k2'], data[0]['l2']], UBmatrix, wavelength) #calculate chi and phi (in DEGREES) for the Scattering Plane
     
     #calculations for the desired (h,k,l) vectors
-    for i in range(1, data[0]['numrows'] + 1):
+    for i in range(3, data[0]['numrows'] + 3):
         twotheta, theta, omega = calcIdealAngles2([data[i]['h'], data[i]['k'], data[i]['l']], N.radians(chi), N.radians(phi), UBmatrix, wavelength, stars)
         angles = {'twotheta': twotheta, 'theta':theta, 'omega': omega,'chi':chi, 'phi': phi}
         response.append(angles)
@@ -67,9 +68,27 @@ def runcalc2(request):
     
     
     
+def calculateResultsUB(data):
+    "Calculates and returns the Bmatrx, UBmatrix and stars array for use in the runcalc1 method"
+    a, b, c, alpha, beta, gamma, h1, k1, l1, twotheta1, theta1, chi1, phi1, h2, k2, l2, twotheta2, theta2, chi2, phi2 = float(data[0]['a']), float(data[0]['b']), float(data[0]['c']), float(data[0]['alpha']), float(data[0]['beta']), float(data[0]['gamma']), float(data[1]['h']), float(data[1]['k']), float(data[1]['l']), float(data[1]['twotheta']), float(data[1]['theta']), float(data[1]['chi']), float(data[1]['phi']), float(data[2]['h']), float(data[2]['k']), float(data[2]['l']), float(data[2]['twotheta']), float(data[2]['theta']), float(data[2]['chi']), float(data[2]['phi'])
+    
+    #data given as  2 sets of {h,k,l,2theta,theta,chi,phi} and numberFields {a, b, c, alpha, beta, gamma, wavelength}
+    #UB args: (h1, k1, l1, h2, k2, l2, omega1, chi1, phi1, omega2, chi2, phi2, Bmatrix)
+    omega1 = theta1 - twotheta1/2
+    omega2 = theta2 - twotheta2/2
+    
+    astar, bstar, cstar, alphastar, betastar, gammastar = star(a, b, c, alpha, beta, gamma)
+    starDict = {'astar': astar, 'bstar': bstar, 'cstar': cstar, 'alphastar': alphastar, 'betastar': betastar, 'gammastar': gammastar}
+    
+    Bmatrix = calcB(astar,bstar,cstar,alphastar,betastar,gammastar,c, alpha)
+    UBmatrix = calcUB(h1, k1, l1, h2, k2, l2, omega1, chi1, phi1, omega2, chi2, phi2, Bmatrix)
+
+    return Bmatrix, UBmatrix, starDict
+     
+    
     
 def calculateUB(request):
-    "Calculates the UB matrix and stores it in Django for use in the runcal# methods"
+    "Calculates the UB matrix and returns it to the frontend"
     requestObject = simplejson.loads(request.POST.keys()[0]) 
     data = requestObject['data']
     a, b, c, alpha, beta, gamma, h1, k1, l1, twotheta1, theta1, chi1, phi1, h2, k2, l2, twotheta2, theta2, chi2, phi2 = float(data[2]['a']), float(data[2]['b']), float(data[2]['c']), float(data[2]['alpha']), float(data[2]['beta']), float(data[2]['gamma']), float(data[0]['h']), float(data[0]['k']), float(data[0]['l']), float(data[0]['twotheta']), float(data[0]['theta']), float(data[0]['chi']), float(data[0]['phi']), float(data[1]['h']), float(data[1]['k']), float(data[1]['l']), float(data[1]['twotheta']), float(data[1]['theta']), float(data[1]['chi']), float(data[1]['phi'])
@@ -90,9 +109,6 @@ def calculateUB(request):
     
 
     #storing the B and UB matricies in the Django cache
-    request.session['Bmatrix'] = Bmatrix
-    request.session['UBmatrix'] = UBmatrix
-    request.session['stars'] = starDict
     return HttpResponse([UBmatrix[0][0],', ', UBmatrix[0][1],', ', UBmatrix[0][2],', ', UBmatrix[1][0],', ', UBmatrix[1][1],', ', UBmatrix[1][2],', ', UBmatrix[2][0],', ', UBmatrix[2][1],', ', UBmatrix[2][2]])
     
     #return HttpResponse(simplejson.dumps(UBmatrix)) #not working atm
@@ -154,20 +170,13 @@ def makeSaveFile (request):
     return HttpResponse('saved.')
     
     
-'''    
-def downloadFile (request):
-    
-    data = file('savedata.txt')
-    response = HttpResponse(data, mimetype='application/force-download')
-    response['Content-Disposition'] = 'attachment; filename=' + rFile.name
-    return HttpResponse(response)
-'''
 
-def uploadInputFile (filename):
+
+def uploadInputFile (fid):
     response = []
 
     #open(filename, letter) --> letter defaults to 'r' (read only)
-    dataReader = csv.reader(open(filename), delimiter=',')
+    dataReader = csv.reader(fid, delimiter=',')
     data = []
     for row in dataReader:
         data.append(', '.join(row)) #making an array of row Strings.
@@ -179,11 +188,13 @@ def uploadInputFile (filename):
     desirednum = data.index('#Desired h k l twotheta theta omega chi phi')
     enddesirednum = data.index('#End desired')
     
+    print modenum
+    
     if (modenum < 0 or latticenum < 0 or observationsnum < 0 or scatteringnum < 0 or desirednum < 0):
         #if any of the data titles aren't found, input fails
         #TODO make sure it fails here; bellow line counts as success, I think
         #return HttpResponse('failed')
-        print 'failed'
+        raise ValueError('missing line')
     else:
         #getting the lattice data
         latticearr = data[latticenum+1].split(',')
