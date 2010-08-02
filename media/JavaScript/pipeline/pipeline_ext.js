@@ -493,13 +493,37 @@ function onReadyFunction() {
         pressed: false,
     }, */
     {
-        text: 'Filter',
+        text: 'Filters',
         id: 'filter',
         icon: '/media/icons/silk/calculator.png',
-        cls: 'button-draggable',
-        listeners: {
-            render: initDragZone
-        }
+        menu:
+            [{
+                text: 'Detailed Balance',
+                id: 'detailed_balance',
+                icon: '/media/icons/fugue/balance.png',
+                cls: 'button-draggable',
+                listeners: {
+                    render: initDragZone
+                }
+            },
+            {
+                text: 'Scalar Multiplication',
+                id: 'scalar_multiplication',
+                icon: '/media/icons/fugue/cross.png',
+                cls: 'button-draggable',
+                listeners: {
+                    render: initDragZone
+                }
+            },
+            {
+                text: 'Scalar Addition',
+                id: 'scalar_addition',
+                icon: '/media/icons/fugue/plus.png',
+                cls: 'button-draggable',
+                listeners: {
+                    render: initDragZone
+                }
+            }],
         //enableToggle: true,
         //toggleGroup: 'toggle',
         //toggleHandler: onItemToggle,
@@ -1011,8 +1035,14 @@ whenever any message comes through (whenever files are added, removed, or change
         case 'minus':
             new MinusBox(coords[0], coords[1], 16, 16).draw(ctx);
             break;
-        case 'filter':
+        case 'detailed_balance':
             new FilterBox(coords[0], coords[1], 'Detailed Balance').draw(ctx);
+            break;
+        case 'scalar_multiplication':
+            new FilterBox(coords[0], coords[1], 'Scalar Multiplication').draw(ctx);
+            break;
+        case 'scalar_addition':
+            new FilterBox(coords[0], coords[1], 'Scalar Addition').draw(ctx);
             break;
         case 'pointer':
             break;
@@ -1077,8 +1107,14 @@ whenever any message comes through (whenever files are added, removed, or change
                 }
                 boxes.push(fb);
                 break;
-            case 'filter':
+            case 'detailed_balance':
                 boxes.push(new FilterBox(coords[0], coords[1], 'Detailed Balance'));
+                break;
+            case 'scalar_multiplication':
+                boxes.push(new FilterBox(coords[0], coords[1], 'Scalar Multiplication'));
+                break;
+            case 'scalar_addition':
+                boxes.push(new FilterBox(coords[0], coords[1], 'Scalar Addition'));
                 break;
             case 'pointer':
                 if (!e.ctrlKey && coords[0] == mousedownc[0] && coords[1] == mousedownc[1]) {
