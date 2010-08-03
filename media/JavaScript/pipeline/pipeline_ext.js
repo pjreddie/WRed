@@ -16,7 +16,7 @@ subImg.src = '/media/icons/silk/delete.png';
 Ext.onReady(onReadyFunction);
 
 function onReadyFunction() {
-
+    var noWindow = true;
     // Returns simplified versions of boxes without pointers to other boxes (JSON-serialized)
     function clone_boxes() {
         var bclone = [];
@@ -321,6 +321,7 @@ function onReadyFunction() {
 
     // Save a pipeline to the database
     function save_pipeline() {
+        noWindow = false;
         var form = new Ext.form.FormPanel({
             baseCls: 'x-plain',
             layout: 'absolute',
@@ -359,9 +360,11 @@ function onReadyFunction() {
                             'name': form.getForm().getFieldValues().name,
                         },
                         success: function (responseObject) {
+                            noWindow = true;
                             win.hide();
                         },
                         failure: function () {
+                            noWindow = true;
                             win.hide();
                         }
                     });
@@ -369,6 +372,7 @@ function onReadyFunction() {
             {
                 text: 'Cancel',
                 handler: function () {
+                    noWindow = true;
                     win.hide();
                 }
             }]
@@ -378,6 +382,7 @@ function onReadyFunction() {
 
     // Save the output of an operation to the database
     function save() {
+        noWindow = false;
         var form = new Ext.form.FormPanel({
             baseCls: 'x-plain',
             layout: 'absolute',
@@ -396,6 +401,7 @@ function onReadyFunction() {
                 }]
         });
         var win = new Ext.Window({
+
             title: 'Save To Database...',
             width: 300,
             height: 100,
@@ -415,9 +421,11 @@ function onReadyFunction() {
                             'file_name': form.getForm().getFieldValues().name,
                         },
                         success: function (responseObject) {
+                            noWindow = true;
                             win.hide();
                         },
                         failure: function () {
+                            noWindow = true;
                             win.hide();
                         }
                     });
@@ -425,6 +433,7 @@ function onReadyFunction() {
             {
                 text: 'Cancel',
                 handler: function () {
+                    noWindow = true;
                     win.hide();
                 }}]
         });
@@ -811,6 +820,7 @@ whenever any message comes through (whenever files are added, removed, or change
     });
 
     function set_scalar(b, e) {
+        noWindow = false;
         var form = new Ext.form.FormPanel({
             baseCls: 'x-plain',
             layout: 'absolute',
@@ -844,12 +854,14 @@ whenever any message comes through (whenever files are added, removed, or change
                             boxes[i].scalar = parseFloat(form.getForm().getFieldValues().scalar)
                         }
                     }
+                    noWindow = true;
                     win.hide();
                     redraw(e);
                 }},
             {
                 text: 'Cancel',
                 handler: function () {
+                    noWindow = true;
                     win.hide();
                     redraw(e);
                 }}]
@@ -1218,7 +1230,7 @@ whenever any message comes through (whenever files are added, removed, or change
     }
 
     function keyUp(e) {
-        if (e.getKey() == 8 || e.getKey() == 46) {
+        if ((e.getKey() == 8 || e.getKey() == 46) && noWindow) {
             for (var i = 0; i < boxes.length; ++i) {
                 if (boxes[i].selected) {
                     var temp = boxes[i];

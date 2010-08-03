@@ -1,5 +1,6 @@
 from json_parser import read_standards
 import scanparser3
+import readncnr3
 import numpy as np
 import copy
 from scipy import interpolate
@@ -27,71 +28,206 @@ class Standard:
 
 class Data:
     def __init__(self,filename):
+        self.data = []
         self.standards = read_standards()
         f = file(filename, 'r')
         t = []
         template = {}
         for s in self.standards:
             template[s] = [None]
-        for lines in f:
-            lines = lines.split()
-            if len(lines) == 0:
-                continue
-            if lines[0] == '#Columns':
-                t.append(lines[1:])
-                break
-            else:
-                if lines[0][1:] in self.standards:
-                    pass
-                else:
-                    self.standards[lines[0][1:]] = Standard(metadata = True).__dict__
-                template[lines[0][1:]] = lines[1:] or [None]
-        for lines in f:
-            if lines[0] == '#': break
-            t.append(lines.split())
+            
+        s = f.read()
         f.close()
-        self.data = []
-        for s in t[0]:
-            if s in self.standards:
-                self.standards[s]['metadata'] = False
-            else:
-                self.standards[s] = Standard().__dict__
-                template[s] = [None]
-        for i in range(1,len(t)):
-            self.data.append(copy.copy(template))
-            for j in range(len(t[0])):
-                try:
-                    self.data[i-1][t[0][j]] = [float(t[i][j])]
-                except ValueError:
-                    self.data[i-1][t[0][j]] = [t[i][j]]
-        self.detectors = set(['Detector','_Detector'])
-        for s in self.standards:
-            if s[:8] == 'Analyzer' and s[-5:] == 'Group':
-                self.detectors = self.detectors | set(self.data[0][s])
-                for d in self.data[0][s]:
-                    self.detectors.add('_' + d)
-        for d in self.detectors:
-            if d in self.standards and d[0] is not '_':
-                if '_' + d not in self.standards:
-                    self.standards['_' + d] = Standard().__dict__
-                    for p in self.data:
-                        p['_' + d] = p[d]
-    def correct_scan(self):
-        if 'ScanDescr' in self.standards and self.standards['ScanDescr']['metadata']:
-            scanstr = '' + self.data[0]['ScanDescr'][0]
-            for s in self.data[0]['ScanDescr'][1:]:
-                scanstr += ' ' + s
-            myparser = scanparser3.scanparser(scanstr)
-            scanlc = myparser.get_varying()
-            scan = []
+        f = file(filename, 'r')
+        if s[0] == '#':
+            print 'hey'
+            for lines in f:
+                lines = lines.split()
+                if len(lines) == 0:
+                    continue
+                if lines[0] == '#Columns':
+                    t.append(lines[1:])
+                    break
+                else:
+                    if lines[0][1:] in self.standards:
+                        pass
+                    else:
+                        self.standards[lines[0][1:]] = Standard(metadata = True).__dict__
+                    template[lines[0][1:]] = lines[1:] or [None]
+            for lines in f:
+                if lines[0] == '#': break
+                t.append(lines.split())
+            f.close()
+
+            for s in t[0]:
+                if s in self.standards:
+                    self.standards[s]['metadata'] = False
+                else:
+                    self.standards[s] = Standard().__dict__
+                    template[s] = [None]
+            for i in range(1,len(t)):
+                self.data.append(copy.copy(template))
+                for j in range(len(t[0])):
+                    try:
+                        self.data[i-1][t[0][j]] = [float(t[i][j])]
+                    except ValueError:
+                        self.data[i-1][t[0][j]] = [t[i][j]]
+            self.detectors = set(['Detector','_Detector'])
             for s in self.standards:
-                if s.lower() in scanlc:
-                    scan.append(s)
-            self.standards['Scan'] = Standard(metadata = True).__dict__
-            self.standards['ScanRanges'] = Standard(metadata = True).__dict__
+                if s[:8] == 'Analyzer' and s[-5:] == 'Group':
+                    self.detectors = self.detectors | set(self.data[0][s])
+                    for d in self.data[0][s]:
+                        self.detectors.add('_' + d)
+            for d in self.detectors:
+                if d in self.standards and d[0] is not '_':
+                    if '_' + d not in self.standards:
+                        self.standards['_' + d] = Standard().__dict__
+                        for p in self.data:
+                            p['_' + d] = p[d]
+                            
+                            
+        else:
+            reader = readncnr3.datareader()
+            mydata = reader.readbuffer(filename)
+            try:
+                template['Collimations'] = [mydata.metadata['collimations']['coll1'],mydata.metadata['collimations']['coll2'],mydata.metadata['collimations']['coll3'],mydata.metadata['collimations']['coll4']]
+                self.standards['Collimations'] = Standard(metadata = True).__dict__
+            except:
+                pass
+            try:
+                template['Lattice'] = [mydata.metadata['lattice']['a'],mydata.metadata['lattice']['b'],mydata.metadata['lattice']['c'],mydata.metadata['lattice']['alpha'],mydata.metadata['lattice']['beta'],mydata.metadata['lattice']['gamma']]
+            except:
+                pass
+            
+            try:
+                for sl in mydata.metadata['count_info']:
+                    inStandards = False
+                    for s in self.standards:
+                        if s.lower().split() == ''.join(sl.split('_')):
+                            inStandards = True
+                            template[s] = [mydata.metadata['count_info'][s]]
+                    if not inStandards:
+                        s = sl.split('_')
+                        for i in range(len(s)):
+                            s[i] = s[i].capitalize()
+                        s = ''.join(s)
+                        template[s] = [mydata.metadata['count_info'][s]]
+                        self.standards[s] = Standard(metadata = True).__dict__
+            except:
+                pass
+            try:
+                template['MonoSpacing'] = [mydata.metadata['dspacing']['monochromator_dspacing']]
+                template['AnaSpacing'] = [mydata.metadata['dspacing']['analyzer_dspacing']]
+            except:
+                pass
+            try:
+                template['FixedE'] = [mydata.metadata['energy_info']['efixed'], mydata.metadata['energy_info']['ef']]
+            except:
+                pass 
+                        
+            try:
+
+                for sl in mydata.metadata['file_info']:
+                    inStandards = False
+                    for s in self.standards:
+                        if s.lower().split().join('_') == sl:
+                            inStandards = True
+                            template[s] = [mydata.metadata['file_info'][s]]
+                    if not inStandards:
+                        s = sl.split('_')
+                        for i in range(len(s)):
+                            s[i] = s[i].capitalize()
+                        s = ' '.join(s)
+                        template[s] = [mydata.metadata['file_info'][s]]
+                        self.standards[s] = Standard(metadata = True).__dict__
+            except:
+                pass
+            try:
+                template['HField'] = [mydata.metadata['magnetic_field']['hfield']]
+                self.standards['HField'] = Standard(metadata = True).__dict__
+            except:
+                pass
+            try:
+                template['AnalyzerMosaic'] = [mydata.metadata['mosaic']['mosaic_analyzer']]
+                self.standards['AnalyzerMosaic'] = Standard(metadata = True).__dict__
+                template['MonochromatorMosaic'] = [mydata.metadata['mosaic']['mosaic_monochromator']]
+                self.standards['MonochromatorMosaic'] = Standard(metadata = True).__dict__
+                template['SampleMosaic'] = [mydata.metadata['mosaic']['mosaic_sample']]
+                self.standards['SampleMosaic'] = Standard(metadata = True).__dict__
+            except:
+                pass
+            try:
+                template['Orient'] = [mydata.metadata['orient1']['h'], mydata.metadata['orient1']['k'],mydata.metadata['orient1']['l'],mydata.metadata['orient2']['h'],mydata.metadata['orient2']['k'], mydata.metadata['orient2']['l']]
+            except:
+                pass
+            areMotors = True
+            motors = []
+            try:
+                for i in range(6):
+                    motors.append([mydata.metadata['motor'+str(1+i)]['start'], mydata.metadata['motor' + str(1+i)]['step']])
+            except:
+                #print mydata.metadata
+                areMotors = False
+            try:
+                for p in mydata.data:
+                    pcorr = p.split('_')
+                    for i in range(len(pcorr)):
+                        pcorr[i] = pcorr[i].capitalize()
+                    pcorr = ''.join(pcorr)
+
+                    if pcorr not in self.standards and pcorr not in ['Qx','Qy','Qz']:
+                        self.standards[pcorr] = Standard(metadata = False).__dict__
+                count = 0
+                while(True):
+                    print 'hey'
+                    try:
+                        newdata = copy.copy(template)
+                        for p in mydata.data:
+                            pcorr = p.split('_')
+                            for i in range(len(pcorr)):
+                                pcorr[i] = pcorr[i].capitalize()
+                            pcorr = ''.join(pcorr)
+                            if pcorr[0] == 'Q':
+                                if pcorr[1] == 'x':
+                                    pcorr = 'QX'
+                                elif pcorr[1] == 'y':
+                                    pcorr = 'QY'
+                                elif pcorr[1] == 'z':
+                                    pcorr = 'QZ'
+                            newdata[pcorr] = [mydata.data[p][count]]
+
+                        if(areMotors):
+                            for i in range(len(motors)):
+                                newdata['A' + str(i+1)] = [motors[i][0] +  motors[i][1] * count]
+                        self.data.append(newdata)
+                        count+=1
+                    except:
+                        break
+                        
+                            
+            except:
+                pass
+    def correct_scan(self):
+        try:        
+            if 'ScanDescr' in self.standards and self.standards['ScanDescr']['metadata']:
+                scanstr = '' + self.data[0]['ScanDescr'][0]
+                for s in self.data[0]['ScanDescr'][1:]:
+                    scanstr += ' ' + s
+                myparser = scanparser3.scanparser(scanstr)
+                scanlc = myparser.get_varying()
+                scan = []
+                for s in self.standards:
+                    if s.lower() in scanlc:
+                        scan.append(s)
+                self.standards['Scan'] = Standard(metadata = True).__dict__
+                self.standards['ScanRanges'] = Standard(metadata = True).__dict__
+                for p in self.data:
+                    p['ScanRanges'] = scan
+                    p['Scan'] = scan
+        except:
             for p in self.data:
-                p['ScanRanges'] = scan
-                p['Scan'] = scan
+                    p['ScanRanges'] = ['QY']
+                    p['Scan'] = ['QY']
             
     def write(self, filename):
         f = file(filename, 'w')
