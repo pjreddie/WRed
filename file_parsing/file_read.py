@@ -9,19 +9,19 @@ from file_operator import *
 
 def handle_uploaded_file(files, proposal_id):
     filename = files.name
-    tempfile = file('db/temp.' + filename.split('.')[-1], 'wb+')
+    tempfile = file('db/'+filename, 'wb+')
     for chunk in files.chunks():
         tempfile.write(chunk)
     tempfile.close()
-    addfile('db/temp.' + filename.split('.')[-1], filename, proposal_id, False)
+    addfile('db/' + filename, filename, proposal_id, False)
 
 def handle_uploaded_live_file(files, filename, proposal_id):
     print '*******livefile: ',filename
-    tempfile = file('db/temp.' + filename.split('.')[-1], 'wb+')
+    tempfile = file('db/' + filename, 'wb+')
     for chunk in files.chunks():
         tempfile.write(chunk)
     tempfile.close()
-    addfile('db/temp.' + filename.split('.')[-1], filename, proposal_id, True)
+    addfile('db/' + filename, filename, proposal_id, True)
 
 @transaction.commit_manually
 def addfile(filestr, filename, proposal_id, dirty):
@@ -90,3 +90,4 @@ def addfile(filestr, filename, proposal_id, dirty):
         except ValueError:
             pass
     transaction.commit()
+    os.remove(filestr)

@@ -39,6 +39,7 @@ class Data:
         s = f.read()
         f.close()
         f = file(filename, 'r')
+
         if s[0] == '#':
             print 'hey'
             for lines in f:
@@ -86,6 +87,37 @@ class Data:
                             p['_' + d] = p[d]
                             
                             
+        elif 'fpx' in filename or 'fpt' in filename and s[0] != '#':
+            fields = []
+            date = []
+            first = True
+            for lines in f:
+                if first:
+                    first = False
+                    spl = lines.split()
+                    for i in range(len(spl)):
+                        try:
+                            if int(spl[i]) in range(1,7):
+                                fields.append('A'+spl[i])
+                        except:
+                            if spl[i] == 'Intensity':
+                                fields.append('Detector')
+                                date = spl[i+1:]
+                                break
+                    self.standards = {'Date': Standard(metadata = True).__dict__}
+                    for s in fields:
+                        self.standards[s] = Standard(metadata = False).__dict__
+                else:
+                    newdata = {}
+                    spl = lines.split()
+                    for i in range(len(spl)):
+                        
+                        try:    
+                            newdata[fields[i]] = [float(spl[i])]
+                        except:
+                            pass
+                    newdata['Date'] = date
+                    self.data.append(newdata)
         else:
             reader = readncnr3.datareader()
             mydata = reader.readbuffer(filename)
@@ -175,7 +207,7 @@ class Data:
                         pcorr[i] = pcorr[i].capitalize()
                     pcorr = ''.join(pcorr)
 
-                    if pcorr not in self.standards and pcorr not in ['Qx','Qy','Qz']:
+                    if pcorr not in self.standards and pcorr not in ['Qx','Qy','Qz','Counts']:
                         self.standards[pcorr] = Standard(metadata = False).__dict__
                 count = 0
                 while(True):
@@ -194,6 +226,8 @@ class Data:
                                     pcorr = 'QY'
                                 elif pcorr[1] == 'z':
                                     pcorr = 'QZ'
+                            if pcorr == 'Counts':
+                                pcorr = 'Detector'
                             newdata[pcorr] = [mydata.data[p][count]]
 
                         if(areMotors):
