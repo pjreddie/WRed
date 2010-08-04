@@ -253,7 +253,7 @@ Ext.onReady(function () {
         numrows = idealDataStore.getCount(); //number of rows in the Desired Data table
         
         //IF the combobox is in the Bisecting Plane mode
-        if (myCombo.getValue() == 'Bisecting Plane'){
+        if (myCombo.getValue() == 'Bisecting'){
 
             //sending back all necessary data to calculate UB and desired angles
             params['data'].push({
@@ -525,7 +525,7 @@ Ext.onReady(function () {
  
     //Setting up the ComboBox
     var myComboStore = new Ext.data.ArrayStore({
-        data: [[1, 'Bisecting Plane'], [2, 'Scattering Plane']],
+        data: [[1, 'Bisecting'], [2, 'Scattering Plane']],
         fields: ['id', 'mode'],
         idIndex: 0
     });
@@ -540,7 +540,7 @@ Ext.onReady(function () {
         
         triggerAction:  'all', //Lets you see all drop down options when arrow is clicked
         selectOnFocus:  true,
-        value        : 'Bisecting Plane'
+        value        : 'Bisecting'
         
     });
 

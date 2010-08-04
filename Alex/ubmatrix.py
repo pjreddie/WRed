@@ -55,7 +55,7 @@ def calcB(astar,bstar,cstar,alphastar,betastar,gammastar,c, alpha):
    #"cstarN.sin(betastar)*N.sin(alpha)" for third element is equivalent
    return Bmatrix
 
-def calcUB(h1, k1, l1, h2, k2, l2, omega1, chi1, phi1, omega2, chi2, phi2, Bmatrix):
+def calcU(h1, k1, l1, h2, k2, l2, omega1, chi1, phi1, omega2, chi2, phi2, Bmatrix):
    "Calculates the UB matrix using 2 sets of observations (h#, k#, l#) and their respective angle measurements in degrees (omega#, chi#, phi#)"
    #Convertiung angles given in degrees to radians
    omega1 = N.radians(omega1)
@@ -104,10 +104,13 @@ def calcUB(h1, k1, l1, h2, k2, l2, omega1, chi1, phi1, omega2, chi2, phi2, Bmatr
    
    #calculating the UB matrix
    Umatrix = N.dot(Tp, Tc.T) 
-   UBmatrix = N.dot(Umatrix, Bmatrix)
-   return UBmatrix
+   #UBmatrix = N.dot(Umatrix, Bmatrix)
+   return Umatrix 
    
-
+def calcUB (*args):
+    Umatrix = calcU(*args)
+    UBmatrix = N.dot(Umatrix, args[-1])
+    return UBmatrix
 
 def calcIdealAngles(h, UBmatrix, Bmatrix, wavelength, stars):
    "Calculates the remaining angles with omega given as 0"
@@ -255,14 +258,23 @@ def UBtestrun():
    UB["8"] = -0.03224481098900243
    '''
 
-   astar,bstar,cstar,alphastar,betastar,gammastar = star(a, b, c, alpha, beta, gamma)
-   Bmatrix = calcB(astar, bstar, cstar, alphastar, betastar, gammastar, c, alpha)
+#   astar, bstar, cstar, alphastar, betastar, gammastar = star(a, b, c, alpha, beta, gamma)
+#   stars = astar, bstar, cstar, alphastar, betastar, gammastar
+#   Bmatrix = calcB(astar, bstar, cstar, alphastar, betastar, gammastar, c, alpha)
+   stars = star(a, b, c, alpha, beta, gamma)
+   Bmatrix = calcB(*(list(stars)+[c, alpha]))
+   U = calcU(h1, k1, l1, h2, k2, l2, omega1, chi1, phi1, omega2, chi2, phi2, Bmatrix)
    UB=calcUB(h1, k1, l1, h2, k2, l2, omega1, chi1, phi1, omega2, chi2, phi2, Bmatrix)
-   #calcIdealAngles(N.array([1,1,1],'Float64'),UB,0,Bmatrix)
+   stars_dict = dict(zip(('astar','bstar','cstar','alphastar','betastar','gammastar'),
+                         stars))
+   onehkl = lambda i: calcIdealAngles(N.array(i,'Float64'), UB,Bmatrix, 2.35916, stars_dict)
+   allhkl = lambda hkl: [onehkl(i) for i in hkl]
+   #h, UBmatrix, Bmatrix, wavelength, stars
    hv1=[1,0,0]
    hv2=[0,1,0]
    #result = calcIdealAngles2(hv1, hv2, UB, 2.35916)
    print UB
+   return allhkl
    #print result
    #print 'chi',(180-result[0])%360
    #print 'phi',(result[1]+180)%360
