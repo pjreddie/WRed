@@ -19,8 +19,11 @@ class datawriter:
                 detectorpos=count
                 #print 'detectorpos ',detectorpos
             #print 'writing key',key,'varying',mydata.metadata['count_info']['varying']
-            if key==mydata.metadata['count_info']['varying'][0]:
-                scanpos=count
+            try:
+                if key==mydata.metadata['count_info']['varying'][0]:
+                    scanpos=count
+            except:
+                pass
             count=count+1
         myoutfile=open(myoutfilestr,'wt')
         for i in range(len(mydata.header)):
@@ -28,9 +31,11 @@ class datawriter:
             tokenized=s.rstrip().lower().split()
             if tokenized[0]=='#signal'.lower():
                 s='#signal'+' '+str(detectorpos)+' '+'detector\n'
-            if tokenized[0]=='#scan'.lower():
-                s='#scan'+' '+str(scanpos)+' '+mydata.metadata['count_info']['varying'][0]+'\n'
-
+            try:
+                if tokenized[0]=='#scan'.lower():
+                    s='#scan'+' '+str(scanpos)+' '+mydata.metadata['count_info']['varying'][0]+'\n'
+            except:
+                pass
 
 
 

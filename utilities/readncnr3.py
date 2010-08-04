@@ -645,7 +645,7 @@ class datareader:
                 self.myfilestr=myfilestr
                 self.lines=lines
                 myfile = open(myfilestr, 'r')
-                self.instrument=myfilestr.split('.')[1]
+                self.instrument=myfilestr.split('.')[-1]
                 if self.instrument in ['bt9','ng5']:
                         # Determine FileType
                         self.determinefiletype(myfile)

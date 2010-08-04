@@ -128,21 +128,21 @@
   background-image: url(http://telem.fr/pub/System/FamFamFamSilkCompanion2Icons/radio-checked.png) !important;
 }
 .data_table {
-  background-image: url(http://famfamfam.com/lab/icons/silk/icons/table.png) !important;
+  background-image: url(/media/icons/silk/table.png) !important;
 }
 .chart_curve {
-  background-image: url(http://famfamfam.com/lab/icons/silk/icons/chart_curve.png) !important;
+  background-image: url(/media/icons/silk/chart_curve.png) !important;
 }
 .icon-function {
-  background-image: url(http://p.yusukekamiyamane.com/icons/search/fugue/icons/function.png) !important;
+  background-image: url(/media/icons/fugue/function.png) !important;
 }
 .icon-cross-circle {
-  background-image: url(http://p.yusukekamiyamane.com/icons/search/fugue/icons/cross-circle.png) !important;
+  background-image: url(/media/icons/fugue/cross-circle.png) !important;
 }
 .icon-layer-vector {
-  background-image: url(http://p.yusukekamiyamane.com/icons/search/fugue/icons/layer-vector.png) !important;
+  background-image: url(/media/icons/fugue/layer-vector.png) !important;
 }
 
 .icon-table-sum {
-  background-image: url(http://p.yusukekamiyamane.com/icons/search/fugue/icons/table-sum.png) !important;
+  background-image: url(/media/icons/fugue/table-sum.png) !important;
 }

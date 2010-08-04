@@ -95,7 +95,7 @@ function onReadyFunction () {
         id:             'GridRowContextMenu',
         items:          [{
                             text:       'Highlight this point on chart',
-                            icon:       'http://famfamfam.com/lab/icons/silk/icons/tag_yellow.png',
+                            icon:       '/media/icons/silk/tag_yellow.png',
                             handler:    GridRowContextHighlight,
                         }],
     });
@@ -331,19 +331,19 @@ function onReadyFunction () {
         id:             'PlotContextMenu',
         items:          [{
                             text:       'Zoom reset',
-                            icon:       'http://famfamfam.com/lab/icons/silk/icons/zoom.png',
+                            icon:       '/media/icons/silk/zoom.png',
                             handler:    zoomPlot,
                             data:       0.0,
                         },
                         {
                             text:       'Zoom in (+25%)',
-                            icon:       'http://famfamfam.com/lab/icons/silk/icons/zoom_in.png',
+                            icon:       '/media/icons/silk/zoom_in.png',
                             handler:    zoomPlot,
                             data:       1.25,
                         },
                         {
                             text:       'Zoom out (\u201325%)',
-                            icon:       'http://famfamfam.com/lab/icons/silk/icons/zoom_out.png',
+                            icon:       '/media/icons/silk/zoom_out.png',
                             handler:    zoomPlot,
                             data:       0.8,
                         },
@@ -351,7 +351,7 @@ function onReadyFunction () {
                         {
                             id:         'dragCheckZoom',
                             text:       'Drag and select to zoom',
-                          //icon:       'http://famfamfam.com/lab/icons/silk/icons/magnifier.png',
+                          //icon:       '/media/icons/silk/magnifier.png',
                           //iconCls:    'icon-radio-unchecked',
                             group:      'dragCheck',
                             checked:    false,

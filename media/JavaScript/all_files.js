@@ -64,7 +64,7 @@ Ext.onReady(function() {
         }],
         buttons: [{
             text: 'Upload',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/page_white_add.png',
+            icon: '/media/icons/silk/page_white_add.png',
             handler: function(){
                 if (fp.getForm().isValid()) {
 	                fp.getForm().submit({
@@ -79,7 +79,7 @@ Ext.onReady(function() {
         '-',
         {
             text: 'Cancel',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/cancel.png',
+            icon: '/media/icons/silk/cancel.png',
             handler: function() {
                 fp.getForm().reset();
             }
@@ -108,7 +108,7 @@ Ext.onReady(function() {
         items:  [{
                     text: 'Delete',
                     handler: deleteRow,
-                    icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
+                    icon: '/media/icons/silk/delete.png',
                 }],
     });
 /*Sends a POST request to server to delete a file*/

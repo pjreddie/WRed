@@ -8,15 +8,15 @@ until it is further along...*/
 var TEXTHEIGHT = 8;
 var PADDING = 4;
 var addImg = new Image();
-addImg.src = 'http://famfamfam.com/lab/icons/silk/icons/add.png';
+addImg.src = '/media/icons/silk/add.png';
 var subImg = new Image();
-subImg.src = 'http://famfamfam.com/lab/icons/silk/icons/delete.png';
+subImg.src = '/media/icons/silk/delete.png';
 
 //*******EXT Stuff***********
 Ext.onReady(onReadyFunction);
 
 function onReadyFunction() {
-
+    var noWindow = true;
     // Returns simplified versions of boxes without pointers to other boxes (JSON-serialized)
     function clone_boxes() {
         var bclone = [];
@@ -107,7 +107,7 @@ function onReadyFunction() {
             }],
         buttons: [{
             text: 'Upload',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/page_white_add.png',
+            icon: '/media/icons/silk/page_white_add.png',
             handler: function () {
                 if (fp.getForm().isValid()) {
                     fp.getForm().submit({
@@ -119,7 +119,7 @@ function onReadyFunction() {
             }}, '-',
         {
             text: 'Cancel',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/cancel.png',
+            icon: '/media/icons/silk/cancel.png',
             handler: function () {
                 fp.getForm().reset();
             }}]
@@ -222,12 +222,12 @@ function onReadyFunction() {
         items: [{
             text: 'Delete',
             handler: deleteRow,
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
+            icon: '/media/icons/silk/delete.png',
             },
         {
             text: 'Download',
             handler: download,
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png',
+            icon: '/media/icons/silk/disk.png',
             }],
     });
     grid.on('rowcontextmenu', function (grid, rowIndex, e) {
@@ -321,6 +321,7 @@ function onReadyFunction() {
 
     // Save a pipeline to the database
     function save_pipeline() {
+        noWindow = false;
         var form = new Ext.form.FormPanel({
             baseCls: 'x-plain',
             layout: 'absolute',
@@ -359,9 +360,11 @@ function onReadyFunction() {
                             'name': form.getForm().getFieldValues().name,
                         },
                         success: function (responseObject) {
+                            noWindow = true;
                             win.hide();
                         },
                         failure: function () {
+                            noWindow = true;
                             win.hide();
                         }
                     });
@@ -369,6 +372,7 @@ function onReadyFunction() {
             {
                 text: 'Cancel',
                 handler: function () {
+                    noWindow = true;
                     win.hide();
                 }
             }]
@@ -378,6 +382,7 @@ function onReadyFunction() {
 
     // Save the output of an operation to the database
     function save() {
+        noWindow = false;
         var form = new Ext.form.FormPanel({
             baseCls: 'x-plain',
             layout: 'absolute',
@@ -396,6 +401,7 @@ function onReadyFunction() {
                 }]
         });
         var win = new Ext.Window({
+
             title: 'Save To Database...',
             width: 300,
             height: 100,
@@ -415,9 +421,11 @@ function onReadyFunction() {
                             'file_name': form.getForm().getFieldValues().name,
                         },
                         success: function (responseObject) {
+                            noWindow = true;
                             win.hide();
                         },
                         failure: function () {
+                            noWindow = true;
                             win.hide();
                         }
                     });
@@ -425,6 +433,7 @@ function onReadyFunction() {
             {
                 text: 'Cancel',
                 handler: function () {
+                    noWindow = true;
                     win.hide();
                 }}]
         });
@@ -461,7 +470,7 @@ function onReadyFunction() {
     toolbar.add({
         text: 'Add',
         id: 'plus',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/add.png',
+        icon: '/media/icons/silk/add.png',
         cls: 'button-draggable',
         listeners: {
             render: initDragZone
@@ -473,7 +482,7 @@ function onReadyFunction() {
     }, {
         text: 'Subtract',
         id: 'minus',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/delete.png',
+        icon: '/media/icons/silk/delete.png',
         cls: 'button-draggable',
         listeners: {
             render: initDragZone
@@ -486,20 +495,44 @@ function onReadyFunction() {
 /*{
         text: 'File',
         id: 'file',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/page.png',
+        icon: '/media/icons/silk/page.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
         pressed: false,
     }, */
     {
-        text: 'Filter',
+        text: 'Filters',
         id: 'filter',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/calculator.png',
-        cls: 'button-draggable',
-        listeners: {
-            render: initDragZone
-        }
+        icon: '/media/icons/silk/calculator.png',
+        menu:
+            [{
+                text: 'Detailed Balance',
+                id: 'detailed_balance',
+                icon: '/media/icons/fugue/balance.png',
+                cls: 'button-draggable',
+                listeners: {
+                    render: initDragZone
+                }
+            },
+            {
+                text: 'Scalar Multiplication',
+                id: 'scalar_multiplication',
+                icon: '/media/icons/fugue/cross.png',
+                cls: 'button-draggable',
+                listeners: {
+                    render: initDragZone
+                }
+            },
+            {
+                text: 'Scalar Addition',
+                id: 'scalar_addition',
+                icon: '/media/icons/fugue/plus.png',
+                cls: 'button-draggable',
+                listeners: {
+                    render: initDragZone
+                }
+            }],
         //enableToggle: true,
         //toggleGroup: 'toggle',
         //toggleHandler: onItemToggle,
@@ -509,25 +542,25 @@ function onReadyFunction() {
     {
         text: 'Save Current Pipeline',
         id: 'save_pipeline',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png',
+        icon: '/media/icons/silk/disk.png',
         handler: save_pipeline,
 
     },
     {
         text: 'Load Pipeline',
         id: 'load_pipeline',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/folder_table.png',
+        icon: '/media/icons/silk/folder_table.png',
         menu: [
             {
                 text: 'Templates',
                 id: 'templates',
-                icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+                icon: '/media/icons/silk/table_gear.png',
                 menu: ['-'],
             },
             {
                 text: 'My Pipelines',
                 id: 'my_pipelines',
-                icon: 'http://famfamfam.com/lab/icons/silk/icons/table.png',
+                icon: '/media/icons/silk/table.png',
                 menu: ['-'],
             }
         ],
@@ -539,7 +572,7 @@ function onReadyFunction() {
     },{
         text: 'Clear Pipeline',
         id: 'clear_pipeline',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/bomb.png',
+        icon: '/media/icons/silk/bomb.png',
         handler: function(b,e){boxes = []; redraw(e);},
 
     }
@@ -547,7 +580,7 @@ function onReadyFunction() {
 /*{
         text: 'Pointer',
         id: 'pointer',
-        icon: 'http://famfamfam.com/lab/icons/silk/icons/cursor.png',
+        icon: '/media/icons/silk/cursor.png',
         enableToggle: true,
         toggleGroup: 'toggle',
         toggleHandler: onItemToggle,
@@ -679,7 +712,7 @@ anytime there is new data, and initially to populate the table.*/
                         text: json_response[i].name,
                         id: '' + i,
                         handler: load_pipeline,
-                        icon: 'http://famfamfam.com/lab/icons/silk/icons/table.png',
+                        icon: '/media/icons/silk/table.png',
                     });
                     pipelines.push(Ext.decode(json_response[i].pipeline));
                 }
@@ -737,13 +770,13 @@ whenever any message comes through (whenever files are added, removed, or change
             text: 'Connect',
             handler: connector,
             id: 'connect',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/connect.png',
+            icon: '/media/icons/silk/connect.png',
             },
         {
             text: 'Disconnect',
             handler: disconnector,
             id: 'disconnect',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/disconnect.png',
+            icon: '/media/icons/silk/disconnect.png',
             }, '-',
         {
             text: 'Filter Options',
@@ -751,11 +784,11 @@ whenever any message comes through (whenever files are added, removed, or change
                 {
                 text: 'Set Scalar Value',
                 handler: set_scalar,
-                icon: 'http://famfamfam.com/lab/icons/silk/icons/pencil.png',
+                icon: '/media/icons/silk/pencil.png',
                 }
             ],
             id: 'filter_options',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/table_edit.png',
+            icon: '/media/icons/silk/table_edit.png',
             },
         {
             text: 'Filter Type',
@@ -763,30 +796,31 @@ whenever any message comes through (whenever files are added, removed, or change
                 {
                 text: 'Detailed Balance',
                 handler: filter_type,
-                icon: 'http://p.yusukekamiyamane.com/icons/search/fugue/icons/balance.png',
+                icon: '/media/icons/fugue/balance.png',
                 },{
                 text: 'Scalar Multiplication',
                 handler: filter_type,
-                icon: 'http://p.yusukekamiyamane.com/icons/search/fugue/icons/cross.png',
+                icon: '/media/icons/fugue/cross.png',
                 },{
                 text: 'Scalar Addition',
                 handler: filter_type,
-                icon: 'http://p.yusukekamiyamane.com/icons/search/fugue/icons/plus.png',
+                icon: '/media/icons/fugue/plus.png',
                 }
             ],
             id: 'filter_type',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/table_gear.png',
+            icon: '/media/icons/silk/table_gear.png',
             }, '-',
         {
             text: 'Save To Database',
             handler: save,
             id: 'save',
-            icon: 'http://famfamfam.com/lab/icons/silk/icons/disk.png',
+            icon: '/media/icons/silk/disk.png',
             },
                     ],
     });
 
     function set_scalar(b, e) {
+        noWindow = false;
         var form = new Ext.form.FormPanel({
             baseCls: 'x-plain',
             layout: 'absolute',
@@ -820,12 +854,14 @@ whenever any message comes through (whenever files are added, removed, or change
                             boxes[i].scalar = parseFloat(form.getForm().getFieldValues().scalar)
                         }
                     }
+                    noWindow = true;
                     win.hide();
                     redraw(e);
                 }},
             {
                 text: 'Cancel',
                 handler: function () {
+                    noWindow = true;
                     win.hide();
                     redraw(e);
                 }}]
@@ -1011,8 +1047,14 @@ whenever any message comes through (whenever files are added, removed, or change
         case 'minus':
             new MinusBox(coords[0], coords[1], 16, 16).draw(ctx);
             break;
-        case 'filter':
+        case 'detailed_balance':
             new FilterBox(coords[0], coords[1], 'Detailed Balance').draw(ctx);
+            break;
+        case 'scalar_multiplication':
+            new FilterBox(coords[0], coords[1], 'Scalar Multiplication').draw(ctx);
+            break;
+        case 'scalar_addition':
+            new FilterBox(coords[0], coords[1], 'Scalar Addition').draw(ctx);
             break;
         case 'pointer':
             break;
@@ -1077,8 +1119,14 @@ whenever any message comes through (whenever files are added, removed, or change
                 }
                 boxes.push(fb);
                 break;
-            case 'filter':
+            case 'detailed_balance':
                 boxes.push(new FilterBox(coords[0], coords[1], 'Detailed Balance'));
+                break;
+            case 'scalar_multiplication':
+                boxes.push(new FilterBox(coords[0], coords[1], 'Scalar Multiplication'));
+                break;
+            case 'scalar_addition':
+                boxes.push(new FilterBox(coords[0], coords[1], 'Scalar Addition'));
                 break;
             case 'pointer':
                 if (!e.ctrlKey && coords[0] == mousedownc[0] && coords[1] == mousedownc[1]) {
@@ -1182,7 +1230,7 @@ whenever any message comes through (whenever files are added, removed, or change
     }
 
     function keyUp(e) {
-        if (e.getKey() == 8 || e.getKey() == 46) {
+        if ((e.getKey() == 8 || e.getKey() == 46) && noWindow) {
             for (var i = 0; i < boxes.length; ++i) {
                 if (boxes[i].selected) {
                     var temp = boxes[i];
