@@ -3,9 +3,8 @@ import numpy as N
 import datetime
 from time import mktime
 #import mx.DateTime
-import writebt7
 import re
-import scanparser
+import scanparser3 as scanparser
 import os
 
 
@@ -810,7 +809,7 @@ def num2string(num):
                 numstr=str(num)
         return numstr
 
-if __name__=='__main__':
+"""if __name__=='__main__':
 
         if 0:
                 #ibuff
@@ -856,4 +855,4 @@ if __name__=='__main__':
                 print 'additional metadata'
                 print mydata.additional_metadata
 
-
+"""

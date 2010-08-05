@@ -16,7 +16,7 @@ subImg.src = '/media/icons/silk/delete.png';
 Ext.onReady(onReadyFunction);
 
 function onReadyFunction() {
-
+    var noWindow = true;
     // Returns simplified versions of boxes without pointers to other boxes (JSON-serialized)
     function clone_boxes() {
         var bclone = [];
@@ -321,6 +321,7 @@ function onReadyFunction() {
 
     // Save a pipeline to the database
     function save_pipeline() {
+        noWindow = false;
         var form = new Ext.form.FormPanel({
             baseCls: 'x-plain',
             layout: 'absolute',
@@ -359,9 +360,11 @@ function onReadyFunction() {
                             'name': form.getForm().getFieldValues().name,
                         },
                         success: function (responseObject) {
+                            noWindow = true;
                             win.hide();
                         },
                         failure: function () {
+                            noWindow = true;
                             win.hide();
                         }
                     });
@@ -369,6 +372,7 @@ function onReadyFunction() {
             {
                 text: 'Cancel',
                 handler: function () {
+                    noWindow = true;
                     win.hide();
                 }
             }]
@@ -378,6 +382,7 @@ function onReadyFunction() {
 
     // Save the output of an operation to the database
     function save() {
+        noWindow = false;
         var form = new Ext.form.FormPanel({
             baseCls: 'x-plain',
             layout: 'absolute',
@@ -396,6 +401,7 @@ function onReadyFunction() {
                 }]
         });
         var win = new Ext.Window({
+
             title: 'Save To Database...',
             width: 300,
             height: 100,
@@ -415,9 +421,11 @@ function onReadyFunction() {
                             'file_name': form.getForm().getFieldValues().name,
                         },
                         success: function (responseObject) {
+                            noWindow = true;
                             win.hide();
                         },
                         failure: function () {
+                            noWindow = true;
                             win.hide();
                         }
                     });
@@ -425,6 +433,7 @@ function onReadyFunction() {
             {
                 text: 'Cancel',
                 handler: function () {
+                    noWindow = true;
                     win.hide();
                 }}]
         });
@@ -493,13 +502,37 @@ function onReadyFunction() {
         pressed: false,
     }, */
     {
-        text: 'Filter',
+        text: 'Filters',
         id: 'filter',
         icon: '/media/icons/silk/calculator.png',
-        cls: 'button-draggable',
-        listeners: {
-            render: initDragZone
-        }
+        menu:
+            [{
+                text: 'Detailed Balance',
+                id: 'detailed_balance',
+                icon: '/media/icons/fugue/balance.png',
+                cls: 'button-draggable',
+                listeners: {
+                    render: initDragZone
+                }
+            },
+            {
+                text: 'Scalar Multiplication',
+                id: 'scalar_multiplication',
+                icon: '/media/icons/fugue/cross.png',
+                cls: 'button-draggable',
+                listeners: {
+                    render: initDragZone
+                }
+            },
+            {
+                text: 'Scalar Addition',
+                id: 'scalar_addition',
+                icon: '/media/icons/fugue/plus.png',
+                cls: 'button-draggable',
+                listeners: {
+                    render: initDragZone
+                }
+            }],
         //enableToggle: true,
         //toggleGroup: 'toggle',
         //toggleHandler: onItemToggle,
@@ -787,6 +820,7 @@ whenever any message comes through (whenever files are added, removed, or change
     });
 
     function set_scalar(b, e) {
+        noWindow = false;
         var form = new Ext.form.FormPanel({
             baseCls: 'x-plain',
             layout: 'absolute',
@@ -820,12 +854,14 @@ whenever any message comes through (whenever files are added, removed, or change
                             boxes[i].scalar = parseFloat(form.getForm().getFieldValues().scalar)
                         }
                     }
+                    noWindow = true;
                     win.hide();
                     redraw(e);
                 }},
             {
                 text: 'Cancel',
                 handler: function () {
+                    noWindow = true;
                     win.hide();
                     redraw(e);
                 }}]
@@ -1011,8 +1047,14 @@ whenever any message comes through (whenever files are added, removed, or change
         case 'minus':
             new MinusBox(coords[0], coords[1], 16, 16).draw(ctx);
             break;
-        case 'filter':
+        case 'detailed_balance':
             new FilterBox(coords[0], coords[1], 'Detailed Balance').draw(ctx);
+            break;
+        case 'scalar_multiplication':
+            new FilterBox(coords[0], coords[1], 'Scalar Multiplication').draw(ctx);
+            break;
+        case 'scalar_addition':
+            new FilterBox(coords[0], coords[1], 'Scalar Addition').draw(ctx);
             break;
         case 'pointer':
             break;
@@ -1077,8 +1119,14 @@ whenever any message comes through (whenever files are added, removed, or change
                 }
                 boxes.push(fb);
                 break;
-            case 'filter':
+            case 'detailed_balance':
                 boxes.push(new FilterBox(coords[0], coords[1], 'Detailed Balance'));
+                break;
+            case 'scalar_multiplication':
+                boxes.push(new FilterBox(coords[0], coords[1], 'Scalar Multiplication'));
+                break;
+            case 'scalar_addition':
+                boxes.push(new FilterBox(coords[0], coords[1], 'Scalar Addition'));
                 break;
             case 'pointer':
                 if (!e.ctrlKey && coords[0] == mousedownc[0] && coords[1] == mousedownc[1]) {
@@ -1182,7 +1230,7 @@ whenever any message comes through (whenever files are added, removed, or change
     }
 
     function keyUp(e) {
-        if (e.getKey() == 8 || e.getKey() == 46) {
+        if ((e.getKey() == 8 || e.getKey() == 46) && noWindow) {
             for (var i = 0; i < boxes.length; ++i) {
                 if (boxes[i].selected) {
                     var temp = boxes[i];
