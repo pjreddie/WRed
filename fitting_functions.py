@@ -115,7 +115,9 @@ class FunctionGroup(object):
         
         functionY = sum(N.array(functionYs))
         functionResiduals = N.subtract(functionY, yData)
-        functionResidualData = zip_(xData, functionResiduals)
+        functionResidualsScaled = N.divide(functionResiduals, self.countFunctionParams())
+        #functionResidualData = zip_(xData, functionResiduals)
+        functionResidualData = zip_(xData, functionResidualsScaled)
 
         print
         print functionRange

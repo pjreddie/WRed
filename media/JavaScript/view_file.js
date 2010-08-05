@@ -514,9 +514,20 @@ function onReadyFunction () {
         iconAlign:    'left',
         width:        '50',
     });
+    var AutoFitSeriesButton = new Ext.Button({
+        id:           'AutoFitSeriesButton',
+        text:         'AutoFit',
+        iconCls:      'icon-wand',
+        handler:      autoFitSeries,
+        
+        cls:          'strongButton',
+        arrowAlign:   'right',
+        iconAlign:    'left',
+        width:        '50',
+    });
     var FitButtonGroup = new Ext.ButtonGroup({
         title:  'Fitting',
-        items: [ FitSeriesButton ]
+        items: [ FitSeriesButton, AutoFitSeriesButton ]
     });
     var ChartBar = {
         items: [ FunctionsButtonGroup, FitButtonGroup ]
@@ -538,35 +549,39 @@ function onReadyFunction () {
                 Ext.Msg.alert('Form incomplete', 'Please select at least one curve to which you would like to add the function.');
             }
             else {
-                var data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
-                
-                var prevFunctions = [];
-                if (button.id.indexOf('AddFunctionToSelectedCurve') === 0) {
-                    for (var checkedFunctionIndex = 0; checkedFunctionIndex < checkedIndices.functionSeries.length; checkedFunctionIndex ++) {
-                        //console.log('==', selectedFunctionIndex);
-                        var selectedFunctionIndex = checkedIndices.functionSeries[checkedFunctionIndex];
-                        var selectedFunctionSeries = globalFunctionSeries.plot[selectedFunctionIndex];
-                        //console.log('Selected series: ', selectedFunctionSeries);
-                        prevFunctions = prevFunctions.concat(selectedFunctionSeries.functionInfos);
-                        //console.log('Length: ', prevFunctions);
-                        //console.log('==');
-                        /* { 'functionID':     selectedFunctionSeries.functionID,
-                             'functionParams': selectedFunctionSeries.functionParams,
-                             'functionIndex':  selectedFunctionIndex }*/
-                    }
-                    //console.log(globalFunctionSeries.plot);
-                    //console.log(prevFunctions);
-                    replaceIndices = checkedIndices.functionSeries;
-                }
-                else
-                    replaceIndices = [ globalFunctionSeries.plot.length ];
-                
-                var functionID = FunctionSelect.getValue();
-                makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData', 'functionID': functionID,
-                                     'replaceIndices': JSON.stringify(replaceIndices),
-                                     'data': JSON.stringify(data), 'prevFunctions': JSON.stringify(prevFunctions) }, doFitInstruction);
+                sendFunction(button, checkedIndices);
             }
         }
+    }
+    
+    function sendFunction(button, checkedIndices) {
+        var data = getDataInCols(store, xChoice.getValue(), yChoice.getValue());
+        
+        var prevFunctions = [];
+        if (button.id.indexOf('AddFunctionToSelectedCurve') === 0) {
+            for (var checkedFunctionIndex = 0; checkedFunctionIndex < checkedIndices.functionSeries.length; checkedFunctionIndex ++) {
+                //console.log('==', selectedFunctionIndex);
+                var selectedFunctionIndex = checkedIndices.functionSeries[checkedFunctionIndex];
+                var selectedFunctionSeries = globalFunctionSeries.plot[selectedFunctionIndex];
+                //console.log('Selected series: ', selectedFunctionSeries);
+                prevFunctions = prevFunctions.concat(selectedFunctionSeries.functionInfos);
+                //console.log('Length: ', prevFunctions);
+                //console.log('==');
+                /* { 'functionID':     selectedFunctionSeries.functionID,
+                     'functionParams': selectedFunctionSeries.functionParams,
+                     'functionIndex':  selectedFunctionIndex }*/
+            }
+            //console.log(globalFunctionSeries.plot);
+            //console.log(prevFunctions);
+            replaceIndices = checkedIndices.functionSeries;
+        }
+        else
+            replaceIndices = [ globalFunctionSeries.plot.length ];
+        
+        var functionID = FunctionSelect.getValue();
+        makeFittingRequest({ 'actionID': 1, 'actionName': 'sendData', 'functionID': functionID,
+                             'replaceIndices': JSON.stringify(replaceIndices),
+                             'data': JSON.stringify(data), 'prevFunctions': JSON.stringify(prevFunctions) }, doFitInstruction);
     }
     
     function getCheckedIndices() {
@@ -606,7 +621,7 @@ function onReadyFunction () {
             var checkedFunctionSeriesInfos = checkedFunctionSeries.functionInfos;
             allFunctionInfos.push(checkedFunctionSeriesInfos);
         }
-        console.log(allData, allFunctionInfos);
+      //console.log(allData, allFunctionInfos);
         
         if (allData.length < 1 || allFunctionInfos.length < 1)
             Ext.Msg.alert('Form incomplete', 'Please select at least one data series and at least one function.');
@@ -615,6 +630,9 @@ function onReadyFunction () {
                                  'allData': JSON.stringify(allData), 'allFunctionInfos': JSON.stringify(allFunctionInfos) }, doFitInstruction);
             updateLegend();
         }
+    }
+    function autoFitSeries(button, event) {
+    
     }
     
     function doFitInstruction(responseObject) {
@@ -657,11 +675,11 @@ function onReadyFunction () {
         $('#PlotContainer').one('dragend', function (event) {
             $('#PlotContainer').unbind('plothover', onDrag);
             updateFittingStatus();
-            console.log('End');
+          //console.log('End');
         });
     }
     function onDragStart (event) {
-        console.log('Start');
+      //console.log('Start');
         
         pos = event2pos(event);
         /*
@@ -683,14 +701,14 @@ function onReadyFunction () {
         //console.log(responseJSON);
         
         if (allowNextRequest) {
-        //    console.log('Request');
+        //  //console.log('Request');
             makeFittingRequest({ 'actionID': 2, 'actionName': 'sendPoint', 'dataType': 'askDrag', 'dragMode': 'during',
                                  'xPos': pos.x, 'yPos': pos.y, 'xID': event.data.responseJSON['xIDend'], 'yID': event.data.responseJSON['yIDend'] },
                                  doFitInstruction);
             allowNextRequest = false;
         }
         //else
-        //    console.log('No request');
+        //  //console.log('No request');
     }
     function event2pos (event) {
         var offset = plot.offset(),
@@ -710,9 +728,9 @@ function onReadyFunction () {
         if (responseJSON.replaceIndices)
             var functionSeriesReplaceIndices = responseJSON.replaceIndices;
         
-        console.log('Response: ', responseJSON);
-        console.log(FunctionName + ': ', functionSeriesReplaceIndices);
-        console.log('Functions retrieved: ', responseJSON.functionInfos);
+      //console.log('Response: ', responseJSON);
+      //console.log(FunctionName + ': ', functionSeriesReplaceIndices);
+      //console.log('Functions retrieved: ', responseJSON.functionInfos);
         
         
         fitpoints = responseJSON.fit;
@@ -1026,6 +1044,7 @@ function onReadyFunction () {
 
     /* When the user selects a new parameter from the comboboxes, the chart is redrawn with that choice in mind */
     function selection(selectedstore, value) {
+        initializeData(store, xChoice.getValue(), yChoice.getValue(), 'PlotContainer');
         activateChart();
     }
 
@@ -1039,7 +1058,7 @@ function onReadyFunction () {
                 responseJSON = Ext.decode(responseObject.responseText);
                 metadataObj = responseJSON.metadata;
                 
-                console.log('update', stage);
+              //console.log('update', stage);
                 // Detect independent variable [Joe]
                 if (stage === 1) {
                     yChoice.setValue('Detector');
@@ -1054,7 +1073,9 @@ function onReadyFunction () {
                 reloadData();
                 drawChart(store, xChoice.getValue(), yChoice.getValue(), 'PlotContainer');
                 loadMask.hide();
-                stage = 2;
+                if (stage === 1) {
+                    stage = 2;
+                }
             },
             failure: function () {
                 Ext.Msg.alert('Error', 'Failed JSON request');
@@ -1065,7 +1086,7 @@ function onReadyFunction () {
     /* Same idea as in all_files.js, when new data comes, we must re-initialize our store to update the plot */
     function reloadData() {
         fieldData = dataArray[0];
-        console.log('reloadData', stage);
+      //console.log('reloadData', stage);
         if (stage === 1) {
             xChoice.store = fieldData;
             yChoice.store = fieldData;
@@ -1197,7 +1218,7 @@ function onReadyFunction () {
         if (checkedIndices.dataSeries.length) {
             AddFunctionToSelectedCurveButton.disable();
             ClearFunctionButton.disable();
-            console.log(checkedIndices);
+          //console.log(checkedIndices);
             if (checkedIndices.functionSeries.length) {
                 FitSeriesButton.enable();
             }
@@ -1356,19 +1377,19 @@ function onReadyFunction () {
         };
         
         if (replaceAll) {
-            globalDataSeries.plot = plotDataSeries;
-            globalDataSeries.residplot = residplotDataSeries;
+            globalDataSeries.plot = [plotDataSeries];
+            globalDataSeries.residplot = [residplotDataSeries];
         }
         else {
             globalDataSeries.plot.push(plotDataSeries);
             globalDataSeries.residplot.push(residplotDataSeries);
         }
 
-        console.log('initData', stage);
+      //console.log('initData', stage);
     }
     
     function updatePlots(chart, preventSetupGrid) {
-        console.log('updatePlots', stage);
+      //console.log('updatePlots', stage);
         
         var plotContainer      = $('#'      + chart);
         var residplotContainer = $('#Resid' + chart);
@@ -1400,10 +1421,10 @@ function onReadyFunction () {
         var newDataSeries = { plot: [], residplot: [] };
         var newFunctionSeries = { plot: [], residplot: [] };
         
-        console.log(plotData);
+      //console.log(plotData);
         for (var index = 0; index < plotData.length; index ++) {
-            console.log(index);
-            console.log(plotData[index]);
+          //console.log(index);
+          //console.log(plotData[index]);
             if (plotData[index].seriesType == 'data') {
                 newDataSeries.plot.push(plotData[index]);
                 newDataSeries.residplot.push(residplotData[index]);
@@ -1413,18 +1434,18 @@ function onReadyFunction () {
                 newFunctionSeries.residplot.push(residplotData[index]);            
             }
         }
-        console.log(globalDataSeries);
-        console.log(globalFunctionSeries);
-        console.log(newDataSeries);
-        console.log(newFunctionSeries);
-        console.log(globalDataSeries == newDataSeries);
+      //console.log(globalDataSeries);
+      //console.log(globalFunctionSeries);
+      //console.log(newDataSeries);
+      //console.log(newFunctionSeries);
+      //console.log(globalDataSeries == newDataSeries);
         globalDataSeries = newDataSeries;
         globalFunctionSeries = newFunctionSeries;
     }
     
     /* Initialize Flot generation, draw the chart with error bars */
     function drawChart(store, xChoice, yChoice, chart) {
-    console.log('drawChart', stage);
+  //console.log('drawChart', stage);
         switch (stage) {
             case 1:
                 initializePlots(chart);
@@ -1437,6 +1458,7 @@ function onReadyFunction () {
                 updatePlots(chart);
                 break;
         }
+  //console.log('drawChart', stage);
     }
     
     

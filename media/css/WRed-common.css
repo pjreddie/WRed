@@ -137,13 +137,16 @@
   background-image: url(/media/icons/fugue/function.png) !important;
 }
 .icon-sigma {
-  background-image: url(http://p.yusukekamiyamane.com/icons/search/fugue/icons/sum.png) !important;
+  background-image: url(/media/icons/fugue/sum.png) !important;
 }
 .icon-cross-circle {
   background-image: url(/media/icons/fugue/cross-circle.png) !important;
 }
 .icon-layer-vector {
   background-image: url(/media/icons/fugue/layer-vector.png) !important;
+}
+.icon-wand {
+  background-image: url(/media/icons/silk/wand.png) !important;
 }
 
 .icon-table-sum {
