@@ -60,9 +60,16 @@ def runcalc2(request):
     
     #calculations for the desired (h,k,l) vectors
     for i in range(3, data[0]['numrows'] + 3):
-        twotheta, theta, omega = calcIdealAngles2([data[i]['h'], data[i]['k'], data[i]['l']], N.radians(chi), N.radians(phi), UBmatrix, wavelength, stars)
-        angles = {'twotheta': twotheta, 'theta':theta, 'omega': omega,'chi':chi, 'phi': phi}
-        response.append(angles)
+        
+        inPlane = isInPlane([data[0]['h1'], data[0]['k1'], data[0]['l1']], [data[0]['h2'], data[0]['k2'], data[0]['l2']], [data[i]['h'], data[i]['k'], data[i]['l']])
+        if inPlane:
+            twotheta, theta, omega = calcIdealAngles2([data[i]['h'], data[i]['k'], data[i]['l']], N.radians(chi), N.radians(phi), UBmatrix, wavelength, stars)
+            angles = {'inPlane': inPlane, 'twotheta': twotheta, 'theta':theta, 'omega': omega,'chi':chi, 'phi': phi}
+            response.append(angles)
+            
+        else: #desired (h,k,l) doesn't lie in the scattering plane
+            errormessage = 'Error'
+            response.append(errormessage)
 
     return HttpResponse(simplejson.dumps(response))
     
