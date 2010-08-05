@@ -204,7 +204,16 @@ def secondequations(x, hp, chi, phi, wavelength,tth):
            hp[2] - 2.0/wavelength * N.sin(theta) * N.cos(omega)*N.sin(chi)]
    return outvec
     
-    
+
+def isInPlane(h1, h2, v):
+    "Checks if vector v lies in the plane formed by vectors h1 and h2 by calculating the determinate."
+    determinate = (h1[0]*h2[1]*v[2] - h1[0]*v[1]*h2[2] - h1[1]*h2[0]*v[2] + h1[1]*v[0]*h2[2] + h1[2]*h2[0]*v[1] - h1[2]*v[0]*h2[1])
+    if determinate == 0:
+        return True
+    else:
+        return False
+
+
 # ******************************* START - METHODS FOR CALCULATING Q ******************************* 
 def scalar(x1, y1, z1, x2, y2, z2, stars):
    "calculates scalar product of two vectors"
