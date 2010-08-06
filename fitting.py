@@ -151,33 +151,50 @@ def fitting_request_action(request, idNum):
             yData = N.array(dataData['y'])
             yErrData = N.array(dataData['yerr'])
 
-            print xData
-            print yData
-            print yErrData
 
+            """Find peaks in the data"""
+            kernel = 21
+            nmin, nlist, plist = findpeak4.find_npeaks(xData, yData, yErrData, kernel)
+            results = findpeak4.findpeak  (xData, yData, nmin, order=4, kernel=kernel)
+            fwhm    = findpeak4.findwidths(xData, yData, nmin, results['xpeaks'], results['indices'])
+            
+            
+            """Generate a composite function with Gaussians for every peak found"""
+            functionGroup = FunctionGroup()
+            functionGroup.data = dataData
 
-    
-            #yErrData = N.array([ 5.19615242, 3.60555128, 3.87298335, 5.47722558, 6.40312424, 4.69041576, 5.19615242, 6.08276253, 6.55743852, 7.34846923, 8.1240384 , 8.94427191, 9.32737905, 9.11043358, 8.54400375, 8.77496439, 9.53939201, 11.13552873, 12.52996409, 14.03566885, 15.77973384, 16.73320053, 13.96424004, 10.04987562, 7.68114575, 6.4807407 , 5.29150262, 6.244998 , 5.83095189, 4.89897949, 4.69041576])
-            #yData = N.array([ 27, 13, 15, 30, 41, 22, 27, 37, 43, 54, 66, 80, 87, 83, 73, 77, 91, 124, 157, 197, 249, 280, 195, 101, 59, 42, 28, 39, 34, 24, 22])
-            #xData = N.array([ 0.485, 0.486, 0.487, 0.488, 0.489, 0.49 , 0.491, 0.492, 0.493, 0.494, 0.495, 0.496, 0.497, 0.498, 0.499, 0.5 , 0.501, 0.502, 0.503, 0.504, 0.505, 0.506, 0.507, 0.508, 0.509, 0.51 , 0.511, 0.512, 0.513, 0.514, 0.515])
+            for resultsIndex in range(len(results['indices'])):
+                dataIndex = results['indices'][resultsIndex]
+                function = Gaussian()
+                functionParams = { 'peakX': xData[dataIndex], 'peakY': yData[dataIndex], 'FWHM': fwhm[resultsIndex] }
+
+                function.setFunctionParamsFromDict(functionParams)
+                functionGroup.functions.append(function)
+            
+            """And a linear background too"""
+            functionGroup.functions.append(Linear())
             
             
 
-
-
-            kernel=31
-            print 'kernel',kernel
-            nmin,nlist,plist = findpeak4.find_npeaks(xData,yData,yErrData,kernel)
-            results=findpeak4.findpeak(xData,yData,nmin,order=4,kernel=kernel)
-            fwhm=findpeak4.findwidths(xData,yData,nmin,results['xpeaks'],results['indices'])
-            print 'results'
-            print results
-            print 'widths'
-            print fwhm
-            print 
+            """Converts the parameters from a set of dictionaries to a flat list"""
+            (params, slices) = functionGroup.getFunctionsParamsAsArray()
             
+            """Uses mpfit to fit the function using the specified parameter list"""
+            functkw = { 'xData': xData, 'yData': yData, 'yErr': yErrData, 'functionGroup': functionGroup, 'slices': slices }
+            mpfitResult = mpfit(mpfitFunction, params, functkw=functkw, ftol=1e-5)
             
-            return HttpResponse('')
+            """Calculate the new function with the best fitted parameters and chi-squared"""
+            functionGroup.setFunctionsParamsFromArray(mpfitResult.params, slices)
+            finishedFit = functionGroup.createFunction(xData, yData)
+            chiSquared = sigfig(functionGroup.chisq(xData, yData, yErrData))
+            
+            """Formats the parameters and the parameter errors to send to the client"""
+            fitFunctionInfos = functionGroup.getFitFunctionInfos(mpfitResult)
+            
+            """Sends the function and parameters to the client"""
+            response = finishedFit
+            response.update({ 'functionInfos': fitFunctionInfos, 'fitInfo': { 'chisq': chiSquared }, 'dataType': 'doFit' })
+            return HttpResponse(str(response))
             
             
         elif actionID == '3':
@@ -208,41 +225,17 @@ def fitting_request_action(request, idNum):
             """Converts the parameters from a set of dictionaries to a flat list"""
             (params, slices) = functionGroup.getFunctionsParamsAsArray()
             
-            functkw = { 'xData': xData, 'yData': yData, 'yErr': yErrData, 'functionGroup': functionGroup, 'slices': slices }
             """Uses mpfit to fit the function using the specified parameter list"""
+            functkw = { 'xData': xData, 'yData': yData, 'yErr': yErrData, 'functionGroup': functionGroup, 'slices': slices }
             mpfitResult = mpfit(mpfitFunction, params, functkw=functkw, ftol=1e-5)
             
             """Calculate the new function with the best fitted parameters and chi-squared"""
             functionGroup.setFunctionsParamsFromArray(mpfitResult.params, slices)
-
             finishedFit = functionGroup.createFunction(xData, yData)
             chiSquared = sigfig(functionGroup.chisq(xData, yData, yErrData))
             
             """Formats the parameters and the parameter errors to send to the client"""
-            fitFunctionInfos = []
-            pointer = 0
-            counter = 0
-            for function in functionGroup.functions:
-                mpfitFunctionResult = dict(params=mpfitResult.params[pointer : pointer + slices[counter]],
-                                           perror=mpfitResult.perror[pointer : pointer + slices[counter]])
-                
-                # Map sigfigs
-                fitFunctionParams       = function.getFunctionParamsFromArray([sigfig(x, 6) for x in mpfitFunctionResult['params']])
-                fitFunctionParamsErr    = function.getFunctionParamsFromArray([sigfig(x, 2) for x in mpfitFunctionResult['perror']])
-                fitFunctionParamsArray  = paramsJoin(fitFunctionParams, fitFunctionParamsErr)       
-                
-                fitFunctionInfo = { 'fitFunctionParams': fitFunctionParams, 'fitFunctionParamsErr': fitFunctionParamsErr,
-                                    'fitFunctionParamsArray': fitFunctionParamsArray }
-                fitFunctionInfo.update(function.getJSON())
-                
-                fitFunctionInfos.append(fitFunctionInfo)
-                
-                pointer += slices[counter]
-                counter += 1
-            
-            print fitFunctionInfos
-            print '*****'
-            print
+            fitFunctionInfos = functionGroup.getFitFunctionInfos(mpfitResult)
             
             """Sends the function and parameters to the client"""
             response = finishedFit
@@ -306,14 +299,6 @@ def fitInstructionResponse(fitInstruction, addlParams):
 def objectToArrayPairs(d):
     """Unused"""
     return [dict(name=key, value=value) for key, value in d.iteritems()]
-
-def paramsJoin(d1, d2):
-    """Joins each parameter with its error and name as a dict"""
-    n = []
-    for (key, value) in d1.items():
-        n.append({ 'name': key, 'value': value, 'err': d2[key] })
-    return n
-
 
 # --
 

@@ -180,6 +180,36 @@ class FunctionGroup(object):
             counter += 1
         
         return functionsParams
+
+
+    def getFitFunctionInfos(self, mpfitResult):
+        params, slices = self.getFunctionsParamsAsArray()
+        fitFunctionInfos = []
+        pointer = 0
+        counter = 0
+        for function in self.functions:
+            mpfitFunctionResult = dict(params=mpfitResult.params[pointer : pointer + slices[counter]],
+                                       perror=mpfitResult.perror[pointer : pointer + slices[counter]])
+            
+            # Map sigfigs
+            fitFunctionParams       = function.getFunctionParamsFromArray([sigfig(x, 6) for x in mpfitFunctionResult['params']])
+            fitFunctionParamsErr    = function.getFunctionParamsFromArray([sigfig(x, 2) for x in mpfitFunctionResult['perror']])
+            fitFunctionParamsArray  = paramsJoin(fitFunctionParams, fitFunctionParamsErr)       
+            
+            fitFunctionInfo = { 'fitFunctionParams': fitFunctionParams, 'fitFunctionParamsErr': fitFunctionParamsErr,
+                                'fitFunctionParamsArray': fitFunctionParamsArray }
+            fitFunctionInfo.update(function.getJSON())
+            
+            fitFunctionInfos.append(fitFunctionInfo)
+            
+            pointer += slices[counter]
+            counter += 1
+        
+        print fitFunctionInfos
+        print '*****'
+        print
+        
+        return fitFunctionInfos
     
 
 class Function(object):
@@ -414,3 +444,18 @@ class LorentzianDrag(Lorentzian):
 
 def zip_(l1, l2):
     return [list(elem) for elem in zip(l1, l2)]
+    
+
+def paramsJoin(d1, d2):
+    """Joins each parameter with its error and name as a dict"""
+    n = []
+    for (key, value) in d1.items():
+        n.append({ 'name': key, 'value': value, 'err': d2[key] })
+    return n
+
+
+
+def sigfig(x, n=6):
+     if n < 1:
+         raise ValueError("number of significant digits must be >= 1")
+     return "%.*e" % (n - 1, x)

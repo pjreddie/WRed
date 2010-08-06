@@ -73,7 +73,11 @@ def findpeak(x,y,npeaks,order=4,kernel=11):
 #    
     indices = 0.5*(2*wh_cross-1);
     indices=wh_cross
-#    print 'indices',indices
+    print 'indices inside',indices
+    if len(indices)< npeaks:
+       results={}
+       results['stop']=True
+       return results
 #    
     no_width = 0;
 #    
@@ -97,17 +101,21 @@ def findpeak(x,y,npeaks,order=4,kernel=11):
         xpeaks=xinterpolater(indices)
         #print 'xpeaks',xpeaks
         #return xpeaks
-
-        for i in range(npeaks):
-            this_max=N.max(ymax)
-            max_index=N.nonzero(ymax==this_max)
-            #max_index = find(ymax==this_max);
-            if i ==0:
-                best_index = indices[max_index]
-            else:    
-                best_index =N.hstack((best_index, indices[max_index]));
-            ymax[max_index] = ymin;
-        indices = best_index;
+        
+        best_indices=N.argsort(ymax)
+        indices=indices[best_indices[:npeaks]]
+        if 0:
+          for i in range(npeaks):
+              this_max=N.max(ymax)
+              max_index=N.nonzero(ymax==this_max)[0]
+              print 'max_index',max_index
+              #max_index = find(ymax==this_max);
+              if i ==0:
+                  best_index = indices[max_index]
+              else:    
+                  best_index =N.hstack((best_index, indices[max_index]));
+              ymax[max_index] = ymin;
+          indices = best_index;
 
         #print 'indices',indices
         xsupport=range(len(x))
@@ -118,6 +126,9 @@ def findpeak(x,y,npeaks,order=4,kernel=11):
         results['xpeaks']=xpeaks
         results['indices']=indices
         results['heights']=y[indices]
+        results['stop']=False
+        
+        
         return results
 
         #xsupport=1:length(x);
@@ -249,7 +260,7 @@ def calc_prob(npeaks,amax,covariance,chimin,rangex):
     prob=prob+0.5*N.log(N.linalg.det(covariance/2))-chimin/2
     return prob
 
-#def calc_prob(
+
 
 
 def fp_gaussian(x,area,center,fwhm):
@@ -321,6 +332,8 @@ def find_npeaks(x,y,yerr,kernel,nmax=6):
     for npeaks in range(1,nmax): 
         print 'npeaks',npeaks
         results=findpeak(x,y,npeaks,kernel=kernel)
+        if results['stop']==True:
+           break
         fwhm=findwidths(x,y,npeaks,results['xpeaks'],results['indices'])
         print 'res',results['xpeaks']
         print 'fwhm',fwhm
@@ -330,12 +343,7 @@ def find_npeaks(x,y,yerr,kernel,nmax=6):
         #results['heights']=[1000,500,1000]
         #fwhm=[.1,.2,.4]
         sigma=fwhm/2.354
-        
-        print results
-        print len(results['xpeaks'])
-        print 'fwhm', len(fwhm)
-        print 'heights',len(results['heights'])
-        
+
         pb=N.concatenate((results['xpeaks'], fwhm, results['heights']*N.sqrt(2*pi*sigma**2)))
         pb=N.array(pb).flatten()
         p0=N.concatenate((p0,pb)).flatten()

@@ -639,11 +639,7 @@ function onReadyFunction () {
             allData.push(checkedDataSeriesData);
         }
 
-        conn.request({
-            url: 'fitting/' + idNum + '/',
-            method: 'POST',
-            params: { 'actionID': 4, 'actionName': 'sendData', 'allData': JSON.stringify(allData) },
-            successFunction: doFitInstruction});
+        makeFittingRequest({ 'actionID': 4, 'actionName': 'sendData', 'allData': JSON.stringify(allData) }, doFitInstruction);
         updateLegend();
     }
     
@@ -736,7 +732,7 @@ function onReadyFunction () {
     }
     
     function doPlotting (responseJSON) {
-        FunctionName = FunctionSelectStore.getById(FunctionSelect.getValue()).data.name;
+        //FunctionName = FunctionSelectStore.getById(FunctionSelect.getValue()).data.name;
         if (responseJSON.replaceIndices)
             var functionSeriesReplaceIndices = responseJSON.replaceIndices;
         
