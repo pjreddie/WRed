@@ -10,7 +10,7 @@ import scipy.interpolate as interpolate
 pi=N.pi
 from numpy.random import randn
 import scipy, scipy.optimize
-from spinwaves.utilities.mpfit.mpfit import mpfit
+from mpfit import mpfit
 
 
 def findpeak(x,y,npeaks,order=4,kernel=11):
@@ -330,6 +330,12 @@ def find_npeaks(x,y,yerr,kernel,nmax=6):
         #results['heights']=[1000,500,1000]
         #fwhm=[.1,.2,.4]
         sigma=fwhm/2.354
+        
+        print results
+        print len(results['xpeaks'])
+        print 'fwhm', len(fwhm)
+        print 'heights',len(results['heights'])
+        
         pb=N.concatenate((results['xpeaks'], fwhm, results['heights']*N.sqrt(2*pi*sigma**2)))
         pb=N.array(pb).flatten()
         p0=N.concatenate((p0,pb)).flatten()
@@ -395,6 +401,13 @@ if __name__=="__main__":
     yerr=N.sqrt(y)+2
     y += randn(len(y)) * yerr
     y=N.abs(y)
+    
+    
+    yerr = N.array([ 5.19615242, 3.60555128, 3.87298335, 5.47722558, 6.40312424, 4.69041576, 5.19615242, 6.08276253, 6.55743852, 7.34846923, 8.1240384 , 8.94427191, 9.32737905, 9.11043358, 8.54400375, 8.77496439, 9.53939201, 11.13552873, 12.52996409, 14.03566885, 15.77973384, 16.73320053, 13.96424004, 10.04987562, 7.68114575, 6.4807407 , 5.29150262, 6.244998 , 5.83095189, 4.89897949, 4.69041576])
+    y = N.array([ 27, 13, 15, 30, 41, 22, 27, 37, 43, 54, 66, 80, 87, 83, 73, 77, 91, 124, 157, 197, 249, 280, 195, 101, 59, 42, 28, 39, 34, 24, 22])
+    x = N.array([ 0.485, 0.486, 0.487, 0.488, 0.489, 0.49 , 0.491, 0.492, 0.493, 0.494, 0.495, 0.496, 0.497, 0.498, 0.499, 0.5 , 0.501, 0.502, 0.503, 0.504, 0.505, 0.506, 0.507, 0.508, 0.509, 0.51 , 0.511, 0.512, 0.513, 0.514, 0.515])
+    
+    
     
     if 0:
         pylab.plot(x,y,'s')

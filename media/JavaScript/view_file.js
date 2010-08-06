@@ -632,7 +632,19 @@ function onReadyFunction () {
         }
     }
     function autoFitSeries(button, event) {
-    
+        var allData = [];
+        for (var checkedDataIndex = 0; checkedDataIndex < globalDataSeries.plot.length; checkedDataIndex ++) {
+            var checkedDataSeries = globalDataSeries.plot[checkedDataIndex];
+            var checkedDataSeriesData = dataPointsToCols(checkedDataSeries.data);
+            allData.push(checkedDataSeriesData);
+        }
+
+        conn.request({
+            url: 'fitting/' + idNum + '/',
+            method: 'POST',
+            params: { 'actionID': 4, 'actionName': 'sendData', 'allData': JSON.stringify(allData) },
+            successFunction: doFitInstruction});
+        updateLegend();
     }
     
     function doFitInstruction(responseObject) {
