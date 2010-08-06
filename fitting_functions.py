@@ -321,12 +321,15 @@ class Linear(Function):
 
     def setFunctionParamsFromRequest(self, request):
         super(Linear, self).setFunctionParamsFromRequest(request)
-        
+
         if request.session.has_key('Y2'):
-            slope = N.divide(request.session['Y2'] - request.session['Y1'], request.session['X2'] - request.session['X1'])
-            yInter = request.session['Y1'] - request.session['X1'] * slope
-            self.functionParams.set('slope', slope)
-            self.functionParams.set('yInter', yInter)
+            self.setFunctionParamsFromTwoPoints(request.session)
+
+    def setFunctionParamsFromTwoPoints(self, twoPoints):
+        slope = N.divide(twoPoints['Y2'] - twoPoints['Y1'], twoPoints['X2'] - twoPoints['X1'])
+        yInter = twoPoints['Y1'] - twoPoints['X1'] * slope
+        self.functionParams.set('slope', slope)
+        self.functionParams.set('yInter', yInter)
 
 class LinearDrag(Linear):
     def __init__(self):

@@ -172,7 +172,10 @@ def fitting_request_action(request, idNum):
                 functionGroup.functions.append(function)
             
             """And a linear background too"""
-            functionGroup.functions.append(Linear())
+            linearBackground = Linear()
+            twoPoints = { 'X1': xData[0], 'X2': xData[-1], 'Y1': yData[0], 'Y2': yData[-1] }
+            linearBackground.setFunctionParamsFromTwoPoints(twoPoints)
+            functionGroup.functions.append(linearBackground)
             
             
 
