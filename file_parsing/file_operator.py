@@ -1,3 +1,6 @@
+#Author: Joe Redmon
+#file_operator.py
+
 from json_parser import read_standards
 import scanparser3
 import readncnr3

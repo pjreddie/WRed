@@ -289,7 +289,8 @@ def evaluate(request):
                 try:
                     eq[i] = 'Data("db/" + DataFile.objects.get(id = ' + str(int(eq[i])) + ').md5 + ".file")'
                 except ValueError:
-                    pass
+                    if eq[i] not in ['(', ')', '.add(','.detailed_balance()','.sub(', '']:
+                        return HttpResponse('Stop haxing me!')
             parsed_eq = eq[0]
             for a in eq[1:]:
                 parsed_eq += ' ' + a
