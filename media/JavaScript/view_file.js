@@ -1083,6 +1083,7 @@ function onReadyFunction () {
                 MetadataStore.loadData(metadataObj);
                 dataArray = responseJSON.data;
                 reloadData();
+                initializeData(store, xChoice.getValue(), yChoice.getValue(), true);
                 drawChart(store, xChoice.getValue(), yChoice.getValue(), 'PlotContainer');
                 loadMask.hide();
                 if (stage === 1) {
