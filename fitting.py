@@ -71,7 +71,7 @@ def fitting_request_action(request, idNum):
             if len(prevFunctions):
                 for prevFunctionInfo in prevFunctions:
                     prevFunction = getFunctionClass(prevFunctionInfo['functionID'])()
-                    prevFunction.setFunctionParamsFromDict(prevFunctionInfo['functionParams'])
+                    prevFunction.setFunctionParamsFromArrayOfDicts(prevFunctionInfo['functionParams'])
                     functionGroup.functions.append(prevFunction)
                     
             functionGroup.functions.append(function)
@@ -85,6 +85,8 @@ def fitting_request_action(request, idNum):
             
             """Sends the first fitting instruction to the client"""
             nextFitInstruction = function.fitInstructions.popleft()
+            if nextFitInstruction['dataType'] == 'askDrag':
+                nextFitInstruction.update({ 'dragMode': 'before' })
             
             response = fitInstructionResponse(nextFitInstruction, addlParams)
             response.update({ 'replaceIndices': replaceIndices })
@@ -101,28 +103,22 @@ def fitting_request_action(request, idNum):
             
             # Data Types
             if request.POST['dataType'] == 'askPoint':
-                request = defPoint(request, functionGroup)
+                request = functionGroup.defPoint(request)
             elif request.POST['dataType'] == 'askDrag':
                 """If you are in the middle of doing a drag send the updated function"""
-                request = defPoint(request, functionGroup)
-
-                function.setFunctionParamsFromRequest(request)
-                
-                # Update most recent function (maybe this is wrong)
-                functionGroup.functions[-1] = function
+                request = functionGroup.defPoint(request)
                 
                 dragFit = functionGroup.createFunction(xData, yData)
                 dragFit.update({ 'dataType': 'doingDrag', 'replaceIndices': request.session['replaceIndices'],
                                  'dragMode': str(request.POST['dragMode']) })
                 return HttpResponse(str(dragFit))
             
-            
+            """If there are no more instructions then you calculate the final function"""
             if not request.session['function'].fitInstructions:
-                """If there are no more instructions then you calculate the final function"""
-                function.setFunctionParamsFromRequest(request)
+                #function.setFunctionParamsFromRequest(request)
                 
                 # Update most recent function (maybe this is wrong)
-                functionGroup.functions[-1] = function
+                #functionGroup.functions[-1] = function
                 
                 finishedFunction = functionGroup.createFunction(xData, yData)
                 print finishedFunction
@@ -135,8 +131,8 @@ def fitting_request_action(request, idNum):
             else:
                 """Otherwise you send the next instruction"""
                 #guess width
-                #guessWidth = guess_width(xData, yData, peakX, peakY, backgroundY)
-                #guessWidth2 = guess_width2(xData, yData, peakX, peakY, backgroundY)
+                #guessWidth = guess_width(xData, yData, peakX, peakY, bkgdY)
+                #guessWidth2 = guess_width2(xData, yData, peakX, peakY, bkgdY)
                 
                 nextFitInstruction = function.fitInstructions.popleft()
                 if nextFitInstruction['dataType'] == 'askDrag':
@@ -168,7 +164,7 @@ def fitting_request_action(request, idNum):
                     functionID = int(functionInfo['functionID'])
                     functionParams = functionInfo['functionParams']
                     function = getFunctionClass(functionID)()
-                    function.setFunctionParamsFromDict(functionParams)
+                    function.setFunctionParamsFromArrayOfDicts(functionParams)
                     functionGroup.functions.append(function)
             
             """Converts the parameters from a set of dictionaries to a flat list"""
@@ -193,9 +189,9 @@ def fitting_request_action(request, idNum):
                                            perror=mpfitResult.perror[pointer : pointer + slices[counter]])
                 
                 # Map sigfigs
-                fitFunctionParams = function.getFunctionParamsFromArray(map(sigfig, mpfitFunctionResult['params']))
-                fitFunctionParamsErr = function.getFunctionParamsFromArray(map(sigfig, mpfitFunctionResult['perror']))
-                fitFunctionParamsArray = paramsJoin(fitFunctionParams, fitFunctionParamsErr)       
+                fitFunctionParams       = function.getFunctionParamsFromArray([sigfig(x, 6) for x in mpfitFunctionResult['params']])
+                fitFunctionParamsErr    = function.getFunctionParamsFromArray([sigfig(x, 2) for x in mpfitFunctionResult['perror']])
+                fitFunctionParamsArray  = paramsJoin(fitFunctionParams, fitFunctionParamsErr)       
                 
                 fitFunctionInfo = { 'fitFunctionParams': fitFunctionParams, 'fitFunctionParamsErr': fitFunctionParamsErr,
                                     'fitFunctionParamsArray': fitFunctionParamsArray }
@@ -225,7 +221,7 @@ def fitting_request_action(request, idNum):
 
 
 # --
-
+'''
 def defPoint(request, functionGroup):
     """Saves the point that the user clicks on to the session"""
     xPos = float(request.POST['xPos'])
@@ -246,7 +242,7 @@ def defDrag(request):
     request.session[request.POST['xIDend']]   = float(request.POST['xPosend'])
     request.session[request.POST['yIDend']]   = float(request.POST['yPosend'])
     return request
-
+'''
 
 
 def getFunctionClass(functionID):
@@ -305,8 +301,8 @@ def mpfitFunction(params, parinfo=None, fjac=None, xData=None, yData=None, yErr=
     
 
 
-def guess_width(x, y, peakX, peakY, backgroundY):
-    halfMax = (peakY - backgroundY) / 2.
+def guess_width(x, y, peakX, peakY, bkgdY):
+    halfMax = (peakY - bkgdY) / 2.
     print halfMax
     print
     
@@ -337,7 +333,7 @@ def guess_width(x, y, peakX, peakY, backgroundY):
     print
     return guessWidth
 
-def guess_width2(x, y, peakX, peakY, backgroundY):
+def guess_width2(x, y, peakX, peakY, bkgdY):
     stddev = N.std(x)
     print stddev
     guessWidth = 2 * N.sqrt(2 * N.log(2)) * stddev

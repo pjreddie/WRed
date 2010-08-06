@@ -1,17 +1,23 @@
 #Author: Joe Redmon
 #settings.py
-#7/15/10 - Alex Yee added in a CAHCE_BACKEND and SESSION_ENGINE to store his UB matrix
+#7/15/10 - Alex Yee modified some settings, e.g. Debug = False now, for deployment.
 
 
 # Django settings for WRed project.
 import os
 import django
+import sys
+#myfilestr=r'/tmp/err'
+#myfile=open(myfilestr,'w')
+#myfile.write('mypath',sys.path')
+#myfile.close()
+sys.path.append('/home/alex/Desktop/WRed/')
 
 DJANGO_ROOT = os.path.dirname(os.path.realpath(django.__file__))
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
+TEMPLATE_DEBUG = True  #was DEBUG, turned off for deployment
 
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),

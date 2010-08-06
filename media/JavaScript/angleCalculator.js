@@ -14,12 +14,12 @@ Ext.onReady(function () {
     myUBmatrix = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] //The variable that will hold the calculated UB matrix
 
     var baseData = [
-            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        ];
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    ];
     var baseIdealData = [
-            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        ];
+        [0.0, 0.0, 0.0, '0.0', '0.0', '0.0', '0.0', '0.0'],
+    ];
 
     // create the Data Store
     var UBInputFields = [
@@ -40,14 +40,14 @@ Ext.onReady(function () {
     
     
     var desiredFields = [
-        { name: 'h',        type: 'float'},
-        { name: 'k',        type: 'float'},
-        { name: 'l',        type: 'float'},
-        { name: 'twotheta', type: 'float'},
-        { name: 'theta',    type: 'float'},
-        { name: 'omega',    type: 'float'},
-        { name: 'chi',      type: 'float'},
-        { name: 'phi',      type: 'float'},
+        { name: 'h'},
+        { name: 'k'},
+        { name: 'l'},
+        { name: 'twotheta'},
+        { name: 'theta'},
+        { name: 'omega'},
+        { name: 'chi'},
+        { name: 'phi'},
     ] 
     var idealDataStore = new Ext.data.ArrayStore({
         autoDestroy     : false,
@@ -58,12 +58,21 @@ Ext.onReady(function () {
     
     
     // ********* START - Creating Column Models *********
+    var numberFieldEditor = new Ext.form.NumberField({
+        allowBlank: false,
+        allowDecimals: true,
+        decimalPrecision: 7
+    });
+    var textFieldEditor = new Ext.form.TextField({
+        maxLength: 11,
+    });
+
     var cm = new Ext.grid.ColumnModel({
         // specify any defaults for each column
         defaults: {
             sortable: false,
             align: 'right',
-            width: 60,
+            width: 60,     
             editor: new Ext.form.NumberField({
                 allowBlank: false,
                 allowDecimals: true,
@@ -101,43 +110,51 @@ Ext.onReady(function () {
             },
         ]
     });
-
+    
     var cm2 = new Ext.grid.ColumnModel({
         defaults: {
             sortable: false,
             align: 'right',
             width: 65,
-            editor: new Ext.form.NumberField({
+            /*editor: new Ext.form.NumberField({
                 allowBlank: false,
                 allowDecimals: true,
                 decimalPrecision: 7
-            })
+            })*/
         },
         columns: [
         {
             header: 'h',
-            dataIndex: 'h'
+            dataIndex: 'h',
+            editor: numberFieldEditor
         }, {
             header: 'k',
-            dataIndex: 'k'
+            dataIndex: 'k',
+            editor: numberFieldEditor
         }, {
             header: 'l',
-            dataIndex: 'l'
+            dataIndex: 'l',
+            editor: numberFieldEditor
         }, {
             header: '2θ',
-            dataIndex: 'twotheta'
+            dataIndex: 'twotheta',
+            editor: textFieldEditor
         }, {
             header: 'θ',
-            dataIndex: 'theta'
+            dataIndex: 'theta',
+            editor: textFieldEditor
         }, {
             header: 'ω',
-            dataIndex: 'omega'
+            dataIndex: 'omega',
+            editor: textFieldEditor
         }, {
             header: 'χ',
-            dataIndex: 'chi'
+            dataIndex: 'chi',
+            editor: textFieldEditor
         }, {
             header: 'φ',
-            dataIndex: 'phi'
+            dataIndex: 'phi',
+            editor: textFieldEditor
         },
         ]
     });
@@ -225,12 +242,12 @@ Ext.onReady(function () {
     
     function ubsuccess (responseObject) {
         stringUBmatrix = responseObject.responseText; //Receives UBmatrix as a String w/ elements separated by a ', '
-        console.log(stringUBmatrix);
+        //console.log(stringUBmatrix);
         myUBmatrix = stringUBmatrix.split(', '); //Makes a 1D array of the 9 UBmatrix values, each as a String
         for (i = 0; i < 9 ; i++){
             myUBmatrix[i] = parseFloat(myUBmatrix[i]); //Converts each String into a Float
         }
-        console.log(myUBmatrix);
+        //console.log(myUBmatrix);
         
         //displaying UB matrix values
         UB11Field.setValue(myUBmatrix[0]);
@@ -253,7 +270,7 @@ Ext.onReady(function () {
         numrows = idealDataStore.getCount(); //number of rows in the Desired Data table
         
         //IF the combobox is in the Bisecting Plane mode
-        if (myCombo.getValue() == 'Bisecting Plane'){
+        if (myCombo.getValue() == 'Bisecting'){
 
             //sending back all necessary data to calculate UB and desired angles
             params['data'].push({
@@ -337,7 +354,7 @@ Ext.onReady(function () {
     
     function successFunction(responseObject) {
         idealdata = Ext.decode(responseObject.responseText);
-        console.log(idealdata);
+        //console.log(idealdata);
         
         //Updating UB matrix display
         UB11Field.setValue(idealdata[0][0]);
@@ -354,9 +371,18 @@ Ext.onReady(function () {
         changes = ['twotheta', 'theta', 'omega', 'chi', 'phi'];
         for (var i = 0; i < idealDataStore.getCount(); i++){
             record = idealDataStore.getAt(i); 
-            for (var c in changes) {
-                fieldName = changes[c];
-                record.set(fieldName, idealdata[i+1][fieldName]);
+            if (idealdata[i+1] == 'Error') {
+                record.set('twotheta', 'Invalid');
+                record.set('theta', 'Vector!');
+                record.set('omega', 'Not in');
+                record.set('chi', 'Scattering');
+                record.set('phi', 'Plane.');
+            }
+            else{
+                for (var c in changes) {
+                    fieldName = changes[c];
+                    record.set(fieldName, idealdata[i+1][fieldName]);
+                }
             }
         }
         store.commitChanges(); //removes red mark in corner of cell that indicates an uncommited edit
@@ -525,7 +551,7 @@ Ext.onReady(function () {
  
     //Setting up the ComboBox
     var myComboStore = new Ext.data.ArrayStore({
-        data: [[1, 'Bisecting Plane'], [2, 'Scattering Plane']],
+        data: [[1, 'Bisecting'], [2, 'Scattering Plane']],
         fields: ['id', 'mode'],
         idIndex: 0
     });
@@ -540,7 +566,7 @@ Ext.onReady(function () {
         
         triggerAction:  'all', //Lets you see all drop down options when arrow is clicked
         selectOnFocus:  true,
-        value        : 'Bisecting Plane'
+        value        : 'Bisecting'
         
     });
 
@@ -989,46 +1015,53 @@ Ext.onReady(function () {
     
     
     function uploadFunction (formPanel, uploadObject) {
-        console.log(uploadObject.response); 
+        //console.log(uploadObject.response); 
         responseJSON = Ext.decode(uploadObject.response.responseText);
         data = responseJSON['data']['array'];
-        console.log(data);
+        //console.log(data);
         
-        //uploading lattice constants data
-        aField.setValue(data[0]['a']);
-        bField.setValue(data[0]['b']);
-        cField.setValue(data[0]['c']);
-        alphaField.setValue(data[0]['alpha']);
-        betaField.setValue(data[0]['beta']);
-        gammaField.setValue(data[0]['gamma']);
-        wavelengthField.setValue(data[0]['wavelength']);
-        myCombo.setValue(data[0]['mode']);
-        
-        //uploading scattering plane vectors
-        h1Field.setValue(data[0]['h1']);
-        k1Field.setValue(data[0]['k1']);
-        l1Field.setValue(data[0]['l1']);
-        h2Field.setValue(data[0]['h2']);
-        k2Field.setValue(data[0]['k2']);
-        l2Field.setValue(data[0]['l2']);
-        
-        //uploading observation data
-        newData = [
-            [data[1]['h'], data[1]['k'], data[1]['l'], data[1]['twotheta'], data[1]['theta'], data[1]['chi'], data[1]['phi']],
-            [data[2]['h'], data[2]['k'], data[2]['l'], data[2]['twotheta'], data[2]['theta'], data[2]['chi'], data[2]['phi']],
-        ];
-        store.loadData(newData);
-        
-        newIdealData = [];
-        for (i = 3; i < data.length; i++){
-            tempIdealData = [data[i]['h'], data[i]['k'], data[i]['l'], data[i]['twotheta'], data[i]['theta'], data[i]['omega'], data[i]['chi'], data[i]['phi']];
-            newIdealData.push(tempIdealData);
+        if (data[0] == null){
+            Ext.Msg.alert('Error: Please select a file.');
         }
-        idealDataStore.loadData(newIdealData);
-        console.log(newData);
-        console.log(h1Field.getValue());
-        
-        submitData(null, null); //calculates the UB matrix instead of using the saved one
+        else{
+            //uploading lattice constants data
+            aField.setValue(data[0]['a']);
+            bField.setValue(data[0]['b']);
+            cField.setValue(data[0]['c']);
+            alphaField.setValue(data[0]['alpha']);
+            betaField.setValue(data[0]['beta']);
+            gammaField.setValue(data[0]['gamma']);
+            wavelengthField.setValue(data[0]['wavelength']);
+            myCombo.setValue(data[0]['mode']);
+            
+            //uploading scattering plane vectors
+            h1Field.setValue(data[0]['h1']);
+            k1Field.setValue(data[0]['k1']);
+            l1Field.setValue(data[0]['l1']);
+            h2Field.setValue(data[0]['h2']);
+            k2Field.setValue(data[0]['k2']);
+            l2Field.setValue(data[0]['l2']);
+            
+            //uploading observation data
+            newData = [
+                [data[1]['h'], data[1]['k'], data[1]['l'], data[1]['twotheta'], data[1]['theta'], data[1]['chi'], data[1]['phi']],
+                [data[2]['h'], data[2]['k'], data[2]['l'], data[2]['twotheta'], data[2]['theta'], data[2]['chi'], data[2]['phi']],
+            ];
+            store.loadData(newData);
+            
+            newIdealData = [];
+            for (i = 3; i < data.length; i++){
+                tempIdealData = [data[i]['h'], data[i]['k'], data[i]['l'], data[i]['twotheta'], data[i]['theta'], data[i]['omega'], data[i]['chi'], data[i]['phi']];
+                newIdealData.push(tempIdealData);
+            }
+            idealDataStore.loadData(newIdealData);
+            //console.log(newData);
+            //console.log(h1Field.getValue());
+            
+            
+            
+            submitData(null, null); //calculates the UB matrix instead of using the saved one
+        }
     };
 
 
