@@ -12,8 +12,10 @@ import sys
 
 sys.path.append('/home/alex/Desktop/WRed')
 sys.path.append('/home/alex/Desktop')
+
+#change below to 'settings_production' for deployment, 'settings' for testing
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-#print 'reached'
+
 import django.core.handlers.wsgi
 
 application = django.core.handlers.wsgi.WSGIHandler()

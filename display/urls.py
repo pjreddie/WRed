@@ -34,13 +34,14 @@ urlpatterns = patterns('',
     (r'^files/fitting/(\w+)/$', fitting_request_action),
     
     #Comment one of these to use the uncommented one: edit-grid is working but no file saving/loading
-    #(r'^Alex/edit-grid/', direct_to_template, {'template': 'edit-grid.html'}),
-    (r'^Alex/angleCalculator/', direct_to_template, {'template': 'angleCalculator.html'}),
+    #(r'^(?i)Alex/edit-grid/', direct_to_template, {'template': 'edit-grid.html'}),
+    (r'^(?i)Alex/angleCalculator/', direct_to_template, {'template': 'angleCalculator.html'}),
     
-    (r'^files/calcUBmatrix/', calculateUB),
-	(r'^files/omegaZero/', runcalc1),
-    (r'^files/scatteringPlane/', runcalc2),
-    (r'^files/savingData/', makeSaveFile),
-    (r'^files/downloadingData/', download_file_angleCalc),
-    (r'^files/uploadingData/', upload_file_angleCalc),
+    (r'^(?i)files/calcUBmatrix/', calculateUB),
+	(r'^(?i)files/omegaZero/', runcalc1),
+    (r'^(?i)files/scatteringPlane/', runcalc2),
+    (r'^(?i)files/phiFixed/', runcalc3),
+    (r'^(?i)files/savingData/', makeSaveFile),
+    (r'^(?i)files/downloadingData/', download_file_angleCalc),
+    (r'^(?i)files/uploadingData/', upload_file_angleCalc),
 )

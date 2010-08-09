@@ -1,13 +1,10 @@
 '''
-Alex Yee
+Author: Alex Yee
 
 Edit History
-7/8/2010: Stared work on code. Added the star method, compliments of Dr. Ratcliff II, and completed the calcB method.
-7/9/2010: Wrote the calcUB and UBtestrun methods. Used previous experiment data to confirm the results of the calcUB method
-           Also wrote the calcIdealAngles method to calculate chi and phi for the special case when omega = 0.
-7/13/2010: Created and tested the calcIdealAngles2, which employs scipy's fsolve to solve 6 equations for phi, chi, omega1, omega2, theta1 and theta2
+    See Research Journal
 '''
-
+import sys
 import numpy as N 
 #import scipy
 #import scipy.optimize
@@ -80,9 +77,9 @@ def calcU(h1, k1, l1, h2, k2, l2, omega1, chi1, phi1, omega2, chi2, phi2, Bmatri
    t3c = h3c / N.sqrt(N.power(h3c[0], 2) + N.power(h3c[1], 2) + N.power(h3c[2], 2))
    t2c = N.cross(t3c, t1c)
    Tc = N.array([t1c, t2c, t3c]).T
-   realU=N.array([[ -5.28548868e-01,   8.65056241e-17,  -6.63562568e-16],
-                  [ -0.00000000e+00,   4.86909792e-01,   2.90030482e-16],
-                  [  0.00000000e+00,   0.00000000e+00,  -1.26048191e-01]])
+   #realU=N.array([[ -5.28548868e-01,   8.65056241e-17,  -6.63562568e-16],
+   #               [ -0.00000000e+00,   4.86909792e-01,   2.90030482e-16],
+   #               [  0.00000000e+00,   0.00000000e+00,  -1.26048191e-01]])
    
    #calculating u_phi 
    u1p = N.array([N.cos(omega1)*N.cos(chi1)*N.cos(phi1) - N.sin(omega1)*N.sin(phi1),
@@ -112,6 +109,10 @@ def calcUB (*args):
     UBmatrix = N.dot(Umatrix, args[-1])
     return UBmatrix
 
+
+
+# *********************************** START - calculations for bisecting mode  *********************************** 
+
 def calcIdealAngles(h, UBmatrix, Bmatrix, wavelength, stars):
    "Calculates the remaining angles with omega given as 0"
    "Returns (twotheta, theta, omega, chi, phi)"
@@ -132,22 +133,12 @@ def calcIdealAngles(h, UBmatrix, Bmatrix, wavelength, stars):
    #print 'phi',phi, 180+phi
    return twotheta, theta, omega, chi, phi
       
+# *********************************** END - calculations for bisecting mode  *********************************** 
 
+   
+   
+# ********************************* START - calculations for scattering plane mode  ********************************* 
 
-def calcScatteringPlane (h1, h2, UBmatrix, wavelength):
-   "Calculates the chi and phi for the scattering plane defined by h1 and h2. Used with calcIdealAngles2."
-   #Accepts two scattering plane vectors, h1 and h2, and the UB matrix
-   h1p = N.dot(UBmatrix, h1)
-   h2p = N.dot(UBmatrix, h2)
-   
-   x0 = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-   p0 = NLSP(equations, x0, args=(h1p, h2p, wavelength))
-   r0 = p0.solve('nlp:ralg')
-   chi = N.degrees(r0.xf[0]) #xf is the final array, xf[0] = chi
-   phi = N.degrees(r0.xf[1]) #                       xf[1] = phi
-   
-   return chi, phi
-   
 def calcIdealAngles2 (desiredh, chi, phi, UBmatrix, wavelength, stars):
    "Calculates the twotheta, theta, and omega values for a desired h vector. Uses chi and phi from calcScatteringPlane."
    #Accepts the desired h vector, chi, phi, the UB matrix, the wavelength, and the stars dictionary
@@ -158,16 +149,14 @@ def calcIdealAngles2 (desiredh, chi, phi, UBmatrix, wavelength, stars):
    #solutions = scipy.optimize.fsolve(equations, x0, args=(h1p, h2p, wavelength)) 
 
    q = calcq (desiredh[0], desiredh[1], desiredh[2], stars)
-   #print 'calculation WR'
-   #print 'wl',wavelength
-   #print 'q', q
+
    twotheta = 2.0 * N.arcsin(wavelength * q / 4.0 / N.pi)
     
    x0 = [0.0, 0.0]
    p = NLSP(secondequations, x0, args=(desiredhp, chi, phi, wavelength, twotheta))
    r = p.solve('nlp:ralg')
    omega = r.xf[0]
-   theta = twotheta/2.0 - omega   # ------ ALTERNATE SOLUTION FOR THETA ------
+   theta = twotheta/2.0 + omega   # ------ ALTERNATE SOLUTION FOR THETA ------
    
    
    #theta = r.xf[1]  # ------ SOLVER POTENTIALLY INACCURATE FOR THETA ------
@@ -176,16 +165,39 @@ def calcIdealAngles2 (desiredh, chi, phi, UBmatrix, wavelength, stars):
    solutions = [twotheta, theta, omega]
    return N.degrees(solutions) #% 360
    #returns an array of 3 angles [twotheta, theta, omega]
-    
-    
-def equations(x, h1p, h2p, wavelength):
+   
+   
+   
+def calcScatteringPlane (h1, h2, UBmatrix, wavelength,stars):
+   "Calculates the chi and phi for the scattering plane defined by h1 and h2. Used with calcIdealAngles2."
+   #Accepts two scattering plane vectors, h1 and h2, the UB matrix, and the wavelength
+   h1p = N.dot(UBmatrix, h1)
+   h2p = N.dot(UBmatrix, h2)
+   
+   x0 = [0.0, 0.0, 0.0, 0.0]
+   
+   q = calcq (h1[0], h1[1], h1[2], stars)
+   twotheta1 = 2.0 * N.arcsin(wavelength * q / 4.0 / N.pi)
+   q = calcq (h2[0], h2[1], h2[2], stars)
+   twotheta2 = 2.0 * N.arcsin(wavelength * q / 4.0 / N.pi)
+   
+   p0 = NLSP(scatteringEquations, x0, args=(h1p, h2p, wavelength, twotheta1, twotheta2))
+   r0 = p0.solve('nlp:ralg')
+   chi = N.degrees(r0.xf[0]) #xf is the final array, xf[0] = chi
+   phi = N.degrees(r0.xf[1]) #                       xf[1] = phi
+   
+   return chi, phi
+   
+   
+   
+def scatteringEquations(x, h1p, h2p, wavelength,tth1,tth2):
    #x vector are the intial estimates
    chi = x[0]
    phi = x[1]
-   theta1 = x[2]
-   omega1 = x[3]
-   theta2 = x[4]
-   omega2 = x[5]
+   theta1 = tth1/2
+   omega1 = x[2]
+   theta2 = tth2/2
+   omega2 = x[3]
    outvec=[h1p[0] - 2.0/wavelength * N.sin(theta1) * (N.cos(omega1)*N.cos(chi)*N.cos(phi) - N.sin(omega1)*N.sin(phi)),
            h1p[1] - 2.0/wavelength * N.sin(theta1) * (N.cos(omega1)*N.cos(chi)*N.sin(phi) + N.sin(omega1)*N.cos(phi)),
            h1p[2] - 2.0/wavelength * N.sin(theta1) * N.cos(omega1)*N.sin(chi),
@@ -193,6 +205,8 @@ def equations(x, h1p, h2p, wavelength):
            h2p[1] - 2.0/wavelength * N.sin(theta2) * (N.cos(omega2)*N.cos(chi)*N.sin(phi) + N.sin(omega2)*N.cos(phi)),
            h2p[2] - 2.0/wavelength * N.sin(theta2) * N.cos(omega2)*N.sin(chi)]  
    return outvec
+   
+   
    
 def secondequations(x, hp, chi, phi, wavelength,tth):
    #theta = x[0]
@@ -203,7 +217,44 @@ def secondequations(x, hp, chi, phi, wavelength,tth):
            hp[1] - 2.0/wavelength * N.sin(theta) * (N.cos(omega)*N.cos(chi)*N.sin(phi) + N.sin(omega)*N.cos(phi)),
            hp[2] - 2.0/wavelength * N.sin(theta) * N.cos(omega)*N.sin(chi)]
    return outvec
+
+# *********************************** END - calculations for scattering plane mode  *********************************** 
+
     
+# *********************************** START - calculations for phi fixed mode  *********************************** 
+def calcIdealAngles3 (h, UBmatrix, wavelength, phi, stars):
+   "Calculates the chi and theta for a desired vector h in the fixed phi mode."
+   #Accepts ta desired vector h, the UB matrix, the wavelength, and the fixed phi
+   hp = N.dot(UBmatrix, h)
+   q = calcq (h[0], h[1], h[2], stars)
+   twotheta = 2 * N.arcsin(wavelength * q / 4 / N.pi)
+   
+   x0 = [0.0, 0.0]
+   p0 = NLSP(phiEquations, x0, args=(hp, wavelength, phi,twotheta))
+   r0 = p0.solve('nlp:ralg')
+   
+   #r0.xf is the final array   
+   twotheta=N.degrees(twotheta)
+   chi = N.degrees(r0.xf[0])    # xf[0] = chi
+   omega = N.degrees(r0.xf[1])  # xf[1] = omega
+   theta = twotheta/2.0 + omega
+
+   
+   return twotheta, theta, omega, chi
+   
+   
+def phiEquations(x, h1p, wavelength, phi,tth):
+   #x vector are the intial estimates
+   chi = x[0]
+   omega1 = x[1]
+   theta1=tth/2
+   outvec=[h1p[0] - 2.0/wavelength * N.sin(theta1) * (N.cos(omega1)*N.cos(chi)*N.cos(phi) - N.sin(omega1)*N.sin(phi)),
+           h1p[1] - 2.0/wavelength * N.sin(theta1) * (N.cos(omega1)*N.cos(chi)*N.sin(phi) + N.sin(omega1)*N.cos(phi)),
+           h1p[2] - 2.0/wavelength * N.sin(theta1) * N.cos(omega1)*N.sin(chi)]
+          
+   return outvec
+
+# *********************************** END - calculations for phi fixed mode  *********************************** 
 
 def isInPlane(h1, h2, v):
     "Checks if vector v lies in the plane formed by vectors h1 and h2 by calculating the determinate."

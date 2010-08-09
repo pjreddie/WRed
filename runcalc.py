@@ -1,4 +1,11 @@
-import os
+'''
+Author: Alex Yee
+
+Edit History
+    See Research Journal
+'''
+
+import os,sys
 import simplejson
 import numpy as N
 import csv #(Commma Separated Values)
@@ -56,7 +63,7 @@ def runcalc2(request):
     #wavelength = float(data[0]['wavelength'])
     wavelength = data[0]['wavelength']
 
-    chi, phi = calcScatteringPlane ([data[0]['h1'], data[0]['k1'], data[0]['l1']], [data[0]['h2'], data[0]['k2'], data[0]['l2']], UBmatrix, wavelength) #calculate chi and phi (in DEGREES) for the Scattering Plane
+    chi, phi = calcScatteringPlane ([data[0]['h1'], data[0]['k1'], data[0]['l1']], [data[0]['h2'], data[0]['k2'], data[0]['l2']], UBmatrix, wavelength,stars) #calculate chi and phi (in DEGREES) for the Scattering Plane
     
     #calculations for the desired (h,k,l) vectors
     for i in range(3, data[0]['numrows'] + 3):
@@ -75,14 +82,36 @@ def runcalc2(request):
     
     
     
+def runcalc3(request):
+    "Calculations for Phi Fixed mode"
+    requestObject = simplejson.loads(request.POST.keys()[0])
+    data = requestObject['data']
+    
+    #CALCULATING THE B MATRIX, UB MATRIX, AND STARS (though not needed in this method) DICTIONARIES
+    Bmatrix, UBmatrix, stars = calculateResultsUB(data)
+    
+    response = []
+    response.append([UBmatrix[0][0], UBmatrix[0][1], UBmatrix[0][2], UBmatrix[1][0], UBmatrix[1][1], UBmatrix[1][2], UBmatrix[2][0], UBmatrix[2][1], UBmatrix[2][2]])
+    
+    #rest of the calculations
+    for i in range(3, data[0]['numrows'] + 3):
+        twotheta, theta, omega, chi = calcIdealAngles3([data[i]['h'], data[i]['k'], data[i]['l']], UBmatrix, data[0]['wavelength'], N.radians(data[0]['phi']), stars)
+        angles = {'twotheta': twotheta, 'theta':theta, 'omega': omega,'chi':chi, 'phi': data[0]['phi']}
+        response.append(angles)
+
+    return HttpResponse(simplejson.dumps(response))
+    
+    
+    
 def calculateResultsUB(data):
-    "Calculates and returns the Bmatrx, UBmatrix and stars array for use in the runcalc1 method"
+    "Calculates and returns the Bmatrx, UBmatrix and stars array for use in the runcalc# methods"
     a, b, c, alpha, beta, gamma, h1, k1, l1, twotheta1, theta1, chi1, phi1, h2, k2, l2, twotheta2, theta2, chi2, phi2 = float(data[0]['a']), float(data[0]['b']), float(data[0]['c']), float(data[0]['alpha']), float(data[0]['beta']), float(data[0]['gamma']), float(data[1]['h']), float(data[1]['k']), float(data[1]['l']), float(data[1]['twotheta']), float(data[1]['theta']), float(data[1]['chi']), float(data[1]['phi']), float(data[2]['h']), float(data[2]['k']), float(data[2]['l']), float(data[2]['twotheta']), float(data[2]['theta']), float(data[2]['chi']), float(data[2]['phi'])
     
     #data given as  2 sets of {h,k,l,2theta,theta,chi,phi} and numberFields {a, b, c, alpha, beta, gamma, wavelength}
     #UB args: (h1, k1, l1, h2, k2, l2, omega1, chi1, phi1, omega2, chi2, phi2, Bmatrix)
     omega1 = theta1 - twotheta1/2
     omega2 = theta2 - twotheta2/2
+
     
     astar, bstar, cstar, alphastar, betastar, gammastar = star(a, b, c, alpha, beta, gamma)
     starDict = {'astar': astar, 'bstar': bstar, 'cstar': cstar, 'alphastar': alphastar, 'betastar': betastar, 'gammastar': gammastar}
