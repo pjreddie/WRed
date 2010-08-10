@@ -109,6 +109,81 @@ def calcUB (*args):
     UBmatrix = N.dot(Umatrix, args[-1])
     return UBmatrix
 
+  
+# ******************************* STAR - METHODS FOR REFINING THE UB MATRIX ******************************* 
+def calcRefineUB(observations, wavelength):
+    #observations are an array of dictionaries for each observed reflection
+    
+    hvectors = []
+    Uv = []
+    
+    for i in range(0, len(hvectors)):
+        h = [observations[i]['h'], observations[i]['k'], observations[i]['l']]
+        hvectors.append(h)
+        
+        omega = N.radians(observations[i]['omega'])
+        chi = N.radians(observations[i]['chi'])
+        phi = N.radians(observations[i]['phi'])
+        twotheta = N.radians(observations[i]['twotheta'])
+        
+        u1p = N.cos(omega)*N.cos(chi)*N.cos(phi) - N.sin(omega)*N.sin(phi)
+        u2p = N.cos(omega)*N.cos(chi)*N.sin(phi) + N.sin(omega)*N.cos(phi)
+        u3p = N.cos(omega)*N.sin(chi)
+        
+        u1p = 2*N.sin(twotheta/2) / wavelength * u1p
+        u2p = 2*N.sin(twotheta/2) / wavelength * u2p
+        u3p = 2*N.sin(twotheta/2) / wavelength * u3p
+
+        Uv.append(u1p)
+        Uv.append(u2p)
+        Uv.append(u3p)
+        
+    x0 = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+   
+    p = NLSP(UBRefinementEquations, x0, args=(hvectors, Uv))
+    r = p.solve('nlp:ralg')
+   
+    a = N.degrees(r.xf[0]) 
+    b = N.degrees(r.xf[1]) 
+    c = N.degrees(r.xf[2]) 
+    d = N.degrees(r.xf[3]) 
+    e = N.degrees(r.xf[4]) 
+    f = N.degrees(r.xf[5]) 
+    UB = [[a, d, e], [d, b, f], [e, f, c]]
+   
+    return UB
+    
+    
+def UBRefinementEquations(x, h, Uv):
+   #x vector are the intial estimates
+   #UB matrix will be:
+   '''      (a d e)
+            (d b f)
+            (e f c)
+   '''
+   #h is an array of h vectors (arrays): [[h,k,l], [h,k,l],...]
+   #Uv is an array of all of the u_phi vectors' elements sequentially: [up11, up12, up13, up21,...upn1, upn2, upn3] 
+   a = x[0]
+   b = x[1]
+   c = x[2]
+   d = x[3]
+   e = x[4]
+   f = x[5]
+   UB = [[a, d, e], [d, b, f], [e, f, c]]
+   
+   outvec = []
+   
+   for i in range(0, len(h)):
+        outvec.append(N.dot(UB[0], h[i][0]) - Uv[3*i])
+        outvec.append(N.dot(UB[1], h[i][1]) - Uv[3*i + 1])
+        outvec.append(N.dot(UB[2], h[i][2]) - Uv[3*i + 2])
+        
+   return outvec
+   
+    
+  
+# ******************************* END - METHODS FOR REFINING THE UB MATRIX *******************************
+
 
 
 # *********************************** START - calculations for bisecting mode  *********************************** 
@@ -152,7 +227,7 @@ def calcIdealAngles2 (desiredh, chi, phi, UBmatrix, wavelength, stars):
 
    twotheta = 2.0 * N.arcsin(wavelength * q / 4.0 / N.pi)
     
-   x0 = [0.0, 0.0]
+   x0 = [0.0]
    p = NLSP(secondequations, x0, args=(desiredhp, chi, phi, wavelength, twotheta))
    r = p.solve('nlp:ralg')
    omega = r.xf[0]
@@ -194,10 +269,11 @@ def scatteringEquations(x, h1p, h2p, wavelength,tth1,tth2):
    #x vector are the intial estimates
    chi = x[0]
    phi = x[1]
-   theta1 = tth1/2
    omega1 = x[2]
-   theta2 = tth2/2
    omega2 = x[3]
+   theta1 = tth1/2
+   theta2 = tth2/2
+
    outvec=[h1p[0] - 2.0/wavelength * N.sin(theta1) * (N.cos(omega1)*N.cos(chi)*N.cos(phi) - N.sin(omega1)*N.sin(phi)),
            h1p[1] - 2.0/wavelength * N.sin(theta1) * (N.cos(omega1)*N.cos(chi)*N.sin(phi) + N.sin(omega1)*N.cos(phi)),
            h1p[2] - 2.0/wavelength * N.sin(theta1) * N.cos(omega1)*N.sin(chi),
@@ -293,6 +369,7 @@ def calcq(H, K, L, stars):
    return q
           
 # ******************************* END - METHODS FOR CALCULATING Q ******************************* 
+  
           
 # **************************************** UB MATRIX TESTING CODE ****************************************
   

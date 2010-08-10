@@ -38,6 +38,7 @@ urlpatterns = patterns('',
     (r'^(?i)Alex/angleCalculator/', direct_to_template, {'template': 'angleCalculator.html'}),
     
     (r'^(?i)files/calcUBmatrix/', calculateUB),
+    (r'^(?i)files/refineUBmatrix/', refineUB),
 	(r'^(?i)files/omegaZero/', runcalc1),
     (r'^(?i)files/scatteringPlane/', runcalc2),
     (r'^(?i)files/phiFixed/', runcalc3),

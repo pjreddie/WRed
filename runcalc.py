@@ -150,8 +150,21 @@ def calculateUB(request):
     #return HttpResponse(simplejson.dumps(UBmatrix)) #not working atm
     #return HttpResponse(UBmatrix)
     
+
+def refineUB(request):
+    "Calculates the refined UB matrix and returns it to the frontend"
+    requestObject = simplejson.loads(request.POST.keys()[0]) 
+    data = requestObject['data']
     
+    observations = []
+    for i in range(1, data[0]['numrows']+1):
+        observations.append(data[i])
     
+    UBmatrix = calcRefineUB(observations, data[0]['wavelength'])
+   
+    return HttpResponse([UBmatrix[0][0],', ', UBmatrix[0][1],', ', UBmatrix[0][2],', ', UBmatrix[1][0],', ', UBmatrix[1][1],', ', UBmatrix[1][2],', ', UBmatrix[2][0],', ', UBmatrix[2][1],', ', UBmatrix[2][2]])
+        
+        
     
 def makeSaveFile (request):
     "Saves the current data in a text file named 'savedata.txt', overwriting the previous text file so there is minimal data storage. Then lets user download the file."
@@ -197,6 +210,10 @@ def makeSaveFile (request):
     dataWriter.writerow([data[0]['h1'], data[0]['k1'], data[0]['l1']])
     dataWriter.writerow([data[0]['h2'], data[0]['k2'], data[0]['l2']])
     dataWriter.writerow([' '])
+
+    dataWriter.writerow(['#Fixed Phi Value'])
+    dataWriter.writerow([data[0]['phi']])
+    dataWriter.writerow([' '])
     
     dataWriter.writerow(['#Desired h k l twotheta theta omega chi phi'])
     for i in range(3, data[0]['numrows'] + 3):
@@ -221,12 +238,13 @@ def uploadInputFile (fid):
     latticenum = data.index('#a b c alpha beta gamma wavelength')
     observationsnum = data.index('#Observations h k l twotheta theta chi phi')
     scatteringnum = data.index('#Scattering Plane Vectors h k l')
+    phinum = data.index('#Fixed Phi Value')
     desirednum = data.index('#Desired h k l twotheta theta omega chi phi')
     enddesirednum = data.index('#End desired')
     
     print modenum
     
-    if (modenum < 0 or latticenum < 0 or observationsnum < 0 or scatteringnum < 0 or desirednum < 0):
+    if (modenum < 0 or latticenum < 0 or observationsnum < 0 or scatteringnum < 0 or phinum < 0 or desirednum < 0):
         #if any of the data titles aren't found, input fails
         #TODO make sure it fails here; bellow line counts as success, I think
         #return HttpResponse('failed')
@@ -246,10 +264,10 @@ def uploadInputFile (fid):
         
         sparr2 = data[scatteringnum+2].split(',')
         for x in sparr2:
-            thespvectors.append(float(x))    
+            thespvectors.append(float(x))
 
         #putting the mode data, lattice data, and scattering plane vectors into response[0]
-        response0 = {'mode': data[modenum+1], 'a': thelattice[0], 'b': thelattice[1], 'c': thelattice[2], 'alpha': thelattice[3], 'beta': thelattice[4], 'gamma': thelattice[5], 'wavelength': thelattice[6], 'h1': thespvectors[0], 'k1': thespvectors[1],'l1': thespvectors[2], 'h2': thespvectors[3], 'k2': thespvectors[4], 'l2': thespvectors[5]}
+        response0 = {'mode': data[modenum+1], 'a': thelattice[0], 'b': thelattice[1], 'c': thelattice[2], 'alpha': thelattice[3], 'beta': thelattice[4], 'gamma': thelattice[5], 'wavelength': thelattice[6], 'h1': thespvectors[0], 'k1': thespvectors[1],'l1': thespvectors[2], 'h2': thespvectors[3], 'k2': thespvectors[4], 'l2': thespvectors[5], 'phi': data[phinum+1]}
         response.append(response0)
         
         #getting observation data

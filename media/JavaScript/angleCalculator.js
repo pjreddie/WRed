@@ -173,7 +173,7 @@ Ext.onReady(function () {
         cm: cm,
         id              : 'observationEditorGrid',
         width           : 440,
-        height          : 157,
+        height          : 187,
         title           : 'Observations',
         frame           : true,
         clicksToEdit    : 1,
@@ -182,8 +182,18 @@ Ext.onReady(function () {
             forceFit : true
         },
         bbar: [{
+            text: 'Add New Row',
+            handler: addRowObservation
+        }, 
+        '-', //Shorthand for Ext.Tollbar.Separator (the " | " between buttons)
+        {
             text: 'Calculate UB Matrix',
             handler: submitData
+        },
+        '-',
+        {
+            text: 'Refine UB Matrix',
+            handler: RefineSubmitData
         }]
     });
     
@@ -200,16 +210,16 @@ Ext.onReady(function () {
             text: 'Add New Row',
             handler: addRow
         }, 
-        '-',  //Shorthand for Ext.Tollbar.Separator (the " | " between buttons)
+        '-',  
         {
-            text: 'Calculate Results',
+            text: '*** CALCULATE RESULTS ***',
             handler: calculateResults
         }]
     });
     
     // ****************** START - Defining grid button functions ****************** 
     function submitData(button, event) { 
-        //Calculates and stores the B and UB matricies when the button 'Submit' is pressed
+        //Calculates and stores the B and UB matricies when the button 'Calculate UB Matrix' is pressed
         params = {'data': [] };
 
         for (var i = 0; i < store.getCount(); i++) {
@@ -240,6 +250,32 @@ Ext.onReady(function () {
 
     };
     
+    function RefineSubmitData (button, event) { 
+        //Calculates and stores the B and UB matricies when the button 'Refine UB Matrix' is pressed
+        params = {'data': [] };
+
+        params['data'].push({
+            'wavelength': wavelengthField.getValue(),
+            'numrows'   : store.getCount()
+        });
+
+        for (var i = 0; i < store.getCount(); i++) {
+            var record = store.getAt(i)
+            params['data'].push(record.data); //adding table's input to data to be sent to backend
+        };
+        
+        conn.request({
+            url: '/WRed/files/refineUBmatrix/',
+            method: 'POST',
+            params: Ext.encode(params),
+            success: refineubsuccess,
+            failure: function () {
+                isUBcalculated = false;
+                Ext.Msg.alert('Error: Failed to calculate UB matrix');
+            }
+        });
+    };
+    
     function ubsuccess (responseObject) {
         stringUBmatrix = responseObject.responseText; //Receives UBmatrix as a String w/ elements separated by a ', '
         //console.log(stringUBmatrix);
@@ -263,6 +299,33 @@ Ext.onReady(function () {
         isUBcalculated = true;
         store.commitChanges();
     };
+    
+    function refineubsuccess (responseObject) {
+        //TODO may need to add in calculated lattice parameters
+    
+        stringUBmatrix = responseObject.responseText; //Receives UBmatrix as a String w/ elements separated by a ', '
+        //console.log(stringUBmatrix);
+        myUBmatrix = stringUBmatrix.split(', '); //Makes a 1D array of the 9 UBmatrix values, each as a String
+        for (i = 0; i < 9 ; i++){
+            myUBmatrix[i] = parseFloat(myUBmatrix[i]); //Converts each String into a Float
+        }
+        //console.log(myUBmatrix);
+        
+        //displaying UB matrix values
+        UB11Field.setValue(myUBmatrix[0]);
+        UB12Field.setValue(myUBmatrix[1]);
+        UB13Field.setValue(myUBmatrix[2]);
+        UB21Field.setValue(myUBmatrix[3]);
+        UB22Field.setValue(myUBmatrix[4]);
+        UB23Field.setValue(myUBmatrix[5]);
+        UB31Field.setValue(myUBmatrix[6]);
+        UB32Field.setValue(myUBmatrix[7]);
+        UB33Field.setValue(myUBmatrix[8]);
+
+        isUBcalculated = true;
+        store.commitChanges();
+    };
+    
     
     function calculateResults(button, event) {
         //Calculates the desired angles when the button 'Calculate Results' is pressed
@@ -347,6 +410,40 @@ Ext.onReady(function () {
                 }
             });
         }
+        else if (myCombo.getValue() == 'Phi Fixed'){
+            
+            //sending back all necessary data to calculate UB and desired angles
+            params['data'].push({
+                'a'         : aField.getValue(),
+                'b'         : bField.getValue(),
+                'c'         : cField.getValue(),
+                'alpha'     : alphaField.getValue(),
+                'beta'      : betaField.getValue(),
+                'gamma'     : gammaField.getValue(),
+                'wavelength': wavelengthField.getValue(),
+                'phi'       : phiField.getValue(),
+                'numrows'   : numrows 
+            });
+            
+            for (var i = 0; i < store.getCount(); i++) {
+                var record = store.getAt(i);
+                params['data'].push(record.data); 
+            };
+            for (var j = 0; j < numrows; j++){
+                var record = idealDataStore.getAt(j);
+                params['data'].push(record.data);
+            }
+
+            conn.request({
+                url: '/WRed/files/phiFixed/',
+                method: 'POST',
+                params: Ext.encode(params),
+                success: successFunction,
+                failure: function () {
+                    Ext.Msg.alert('Error: Failed request');
+                }
+            });
+        }
         else {
             Ext.Msg.alert('Error: Could not calculate desired angles');
         }
@@ -389,6 +486,23 @@ Ext.onReady(function () {
         idealDataStore.commitChanges();
     }
 
+    function addRowObservation() {
+        var input = observationGrid.getStore().recordType;
+        var r = new input({
+            h: 0.0,
+            k: 0.0,
+            l: 0.0,
+            twotheta: 0.0,
+            theta: 0.0,
+            omega: 0.0,
+            chi: 0.0,
+            phi: 0.0
+        });
+        observationGrid.stopEditing(); 
+        store.add(r); //adds new row to the bottom of the table (ie the last row)
+        observationGrid.startEditing(store.getCount()-1, 0); //starts editing for first cell of new row
+    };
+    
     function addRow() {
         var input = grid2.getStore().recordType;
         var r = new input({
@@ -402,8 +516,8 @@ Ext.onReady(function () {
             phi: 0.0
         });
         grid2.stopEditing(); 
-        idealDataStore.insert(0, r); //adds new row to the top of the table (ie the first row)
-        grid2.startEditing(0, 0); //starts editing for first cell of new row
+        idealDataStore.add(r); //adds new row to the bottom of the table (ie the last row)
+        grid2.startEditing(idealDataStore.getCount()-1, 0); //starts editing for first cell of new row
     };
     
     // ****************** END - Defining grid button functions ****************** 
@@ -446,7 +560,7 @@ Ext.onReady(function () {
         anchor: '-10'
     });
     var wavelengthField = new Ext.form.NumberField({
-        fieldLabel: 'Wavelength',
+        fieldLabel: 'Wavelength (λ)',
         allowBlank: true,
         decimalPrecision: 7
     });
@@ -497,78 +611,65 @@ Ext.onReady(function () {
         decimalPrecision: 7,
         anchor: '-3'
     });
-     var UB12Field = new Ext.form.NumberField({
+    var UB12Field = new Ext.form.NumberField({
         //fieldLabel: 'UB12',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
-     var UB13Field = new Ext.form.NumberField({
+    var UB13Field = new Ext.form.NumberField({
         //fieldLabel: 'UB13',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
-     var UB21Field = new Ext.form.NumberField({
+    var UB21Field = new Ext.form.NumberField({
         //fieldLabel: 'UB21',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
-     var UB22Field = new Ext.form.NumberField({
+    var UB22Field = new Ext.form.NumberField({
         //fieldLabel: 'UB22',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
-     var UB23Field = new Ext.form.NumberField({
+    var UB23Field = new Ext.form.NumberField({
         //fieldLabel: 'UB23',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
-     var UB31Field = new Ext.form.NumberField({
+    var UB31Field = new Ext.form.NumberField({
         //fieldLabel: 'UB31',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
-     var UB32Field = new Ext.form.NumberField({
+    var UB32Field = new Ext.form.NumberField({
         //fieldLabel: 'UB32',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
-     var UB33Field = new Ext.form.NumberField({
+    var UB33Field = new Ext.form.NumberField({
         //fieldLabel: 'UB33',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
     
+    //phi fixed phi field
+    var phiField = new Ext.form.NumberField({
+        fieldLabel: 'Fixed Phi (φ)',
+        allowBlank: false,
+        decimalPrecision: 7,
+        //anchor: '-10'
+    });
     
     // ********* END - Defining and assigning variables for the numberfield inputs  *********  
  
-    //Setting up the ComboBox
-    var myComboStore = new Ext.data.ArrayStore({
-        data: [[1, 'Bisecting'], [2, 'Scattering Plane']],
-        fields: ['id', 'mode'],
-        idIndex: 0
-    });
-    
-    var myCombo = new Ext.form.ComboBox ({
-        fieldLabel  : 'Select a Mode',
-        store       : myComboStore,
-        
-        displayField: 'mode',
-        typeAhead   : true,
-        mode        : 'local',
-        
-        triggerAction:  'all', //Lets you see all drop down options when arrow is clicked
-        selectOnFocus:  true,
-        value        : 'Bisecting'
-        
-    });
 
     // ********* START - Setting up lattice constants GUI  ********* 
     var topFieldset = {
@@ -670,7 +771,7 @@ Ext.onReady(function () {
 
     
     // ********* START - Setting up scattering plane h/k/l GUI  ********* 
-    var bottomFieldset = {
+    var ScatteringFieldset = {
         xtype       : 'fieldset',
         //title       : 'Scattering Plane Vectors',
         border      : false,
@@ -689,7 +790,7 @@ Ext.onReady(function () {
                     {
                         xtype       : 'container',
                         layout      : 'form',
-                        width       : 75,
+                        width       : 100,
                         labelWidth  : 15,
                         items   : [
                             h1Field
@@ -698,7 +799,7 @@ Ext.onReady(function () {
                     {
                         xtype       : 'container',
                         layout      : 'form',
-                        width       : 75,
+                        width       : 100,
                         labelWidth  : 15,
                         items       : [
                             k1Field                               
@@ -707,7 +808,7 @@ Ext.onReady(function () {
                     {
                         xtype       : 'container',
                         layout      : 'form',
-                        width       : 75,
+                        width       : 100,
                         labelWidth  : 15,
                         items       : [
                             l1Field                               
@@ -730,7 +831,7 @@ Ext.onReady(function () {
                     {
                         xtype       : 'container',
                         layout      : 'form',
-                        width       : 75,
+                        width       : 100,
                         labelWidth  : 15,
                         items   : [
                             h2Field
@@ -739,7 +840,7 @@ Ext.onReady(function () {
                     {
                         xtype       : 'container',
                         layout      : 'form',
-                        width       : 75,
+                        width       : 100,
                         labelWidth  : 15,
                         items       : [
                             k2Field                               
@@ -748,7 +849,7 @@ Ext.onReady(function () {
                     {
                         xtype       : 'container',
                         layout      : 'form',
-                        width       : 75,
+                        width       : 100,
                         labelWidth  : 15,
                         items       : [
                             l2Field                               
@@ -772,6 +873,46 @@ Ext.onReady(function () {
     };
     
     // ********* END - Setting up scattering plane h/k/l GUI  ********* 
+    
+    // ********* START - Setting up phi fixed GUI  ********* 
+    var PhiFixedFieldset = {
+        xtype       : 'fieldset',
+        border      : false,
+        defaultType : 'numberfield',
+        defaults    : {
+            allowBlank : false,
+            decimalPrecision: 10
+        },
+        items: [
+            {
+                xtype       : 'container',
+                border      : false,
+                layout      : 'column',
+                anchor      : '100%',
+                items       : [
+                    {
+                        xtype       : 'container',
+                        layout      : 'form',
+                        width       : 250,
+                        labelWidth  : 80,
+                        items   : [
+                            phiField
+                        ]
+                    },
+                    {
+                        //Buffer blank space to even out the l1 inputbox
+                        xtype       : 'container',
+                        layout      : 'form',
+                        columnWidth : 1,
+                        labelWidth  : 1
+                    }
+                ]
+            }
+        ]
+    };
+    
+    // ********* END - Setting up phi fixed GUI  ********* 
+    
     
     // ********* START - Setting up calculated UB matrix GUI  ********* 
     var UBFieldset = {
@@ -912,10 +1053,9 @@ Ext.onReady(function () {
                 xtype       : 'container',
                 border      : false,
                 width       : 230
-            } 
+            }
         ]
     };
-    
     
     // ********* END - Setting up calculated UB matrix GUI  ********* 
     
@@ -957,7 +1097,7 @@ Ext.onReady(function () {
                     })
                 }
                 else {
-                    Ext.Msg.alerg('Error: Could not upload data.');
+                    Ext.Msg.alert('Error: Could not upload data.');
                 }
             }
         }]
@@ -987,7 +1127,8 @@ Ext.onReady(function () {
             'gamma'     : gammaField.getValue(),
             'mode'      : myCombo.getValue(),
             'numrows'   : numrows,
-            'ub'        : myUBmatrix 
+            'ub'        : myUBmatrix,
+            'phi'       : phiField.getValue()
         });
         for (var i = 0; i < 2; i++) { //all the observation table's data (only 2 rows' worth)
             var record1 = store.getAt(i)
@@ -1032,7 +1173,11 @@ Ext.onReady(function () {
             betaField.setValue(data[0]['beta']);
             gammaField.setValue(data[0]['gamma']);
             wavelengthField.setValue(data[0]['wavelength']);
+            
+            //uploading comboBox (mode) information
             myCombo.setValue(data[0]['mode']);
+            valueObject = {'data': {'mode': data[0]['mode']}};
+            comboFunction(myCombo, valueObject);
             
             //uploading scattering plane vectors
             h1Field.setValue(data[0]['h1']);
@@ -1041,6 +1186,9 @@ Ext.onReady(function () {
             h2Field.setValue(data[0]['h2']);
             k2Field.setValue(data[0]['k2']);
             l2Field.setValue(data[0]['l2']);
+            
+            //uploading fixed phi value
+            phiField.setValue(data[0]['phi']);
             
             //uploading observation data
             newData = [
@@ -1057,8 +1205,7 @@ Ext.onReady(function () {
             idealDataStore.loadData(newIdealData);
             //console.log(newData);
             //console.log(h1Field.getValue());
-            
-            
+
             
             submitData(null, null); //calculates the UB matrix instead of using the saved one
         }
@@ -1067,7 +1214,90 @@ Ext.onReady(function () {
 
     // ********* END - Handling loading and saving data  *********  
     
-    //Setting up and rendering Panels
+    // ************** Setting up the ComboBox ************** 
+    var myComboStore = new Ext.data.ArrayStore({
+        data: [[1, 'Bisecting'], [2, 'Scattering Plane'], [3, 'Phi Fixed']],
+        fields: ['id', 'mode'],
+        idIndex: 0
+    });
+    
+    var myCombo = new Ext.form.ComboBox ({
+        fieldLabel  : 'Select a Mode',
+        store       : myComboStore,
+        
+        displayField: 'mode',
+        typeAhead   : true,
+        mode        : 'local',
+        
+        triggerAction:  'all', //Lets you see all drop down options when arrow is clicked
+        selectOnFocus:  true,
+        value        : 'Bisecting',
+        
+        listeners: {
+            select: {
+                fn: comboFunction
+            }
+        }
+    });
+    
+    function comboFunction (combo, value) {
+        console.log(value);
+
+        //The comboBox gave a nasty object for value, hence the value['data']['mode']
+        if (value['data']['mode'] == 'Bisecting'){
+            //If switching to 'Bisecting' mode, removes special input boxes from other modes
+            
+            southPanel.removeAll(false); //sets auto-Destroy to false
+            southPanel.setHeight(0);
+            southPanel.add(ScatteringFieldset);
+
+            southPanel.setTitle('No Mode-specific Inputs for Bisecting Mode');
+            southPanel.doLayout(); //for already rendered panels, refreshes the layout
+            
+            innerRightTopPanel.doLayout();
+        }
+        else if (value['data']['mode'] == 'Scattering Plane'){
+            //If switching to 'Scattering Plane' mode, removes other special input boxes from modes
+            //and adds the scattering plane vectors input boxes
+            
+            southPanel.removeAll(false);
+            southPanel.setHeight(91);
+            southPanel.add(ScatteringFieldset);
+
+            southPanel.setTitle('Scattering Plane Vectors');
+            southPanel.doLayout();
+            
+            innerRightTopPanel.doLayout();
+        }
+        else if (value['data']['mode'] == 'Phi Fixed'){
+            //If switching to 'Phi Fixed' mode, removes other special input boxes from modes
+            //and adds the phi fixed value input box
+            
+            southPanel.removeAll(false);
+            southPanel.setHeight(70);
+            southPanel.add(PhiFixedFieldset);
+
+            southPanel.setTitle('Fixed Phi Value');
+            southPanel.doLayout();
+            
+            innerRightTopPanel.doLayout();
+        }
+        else{
+            //Does nothing...
+            console.log('else');
+            //Ext.Msg.alert('Error: Could not save');
+        }
+    };
+
+    
+    //Setting up and rendering Panels 
+    var southPanel = new Ext.Panel ({
+        title   : 'No Mode-specific Inputs for Bisecting Mode',
+        region  : 'south',
+        margins : '0 5 0 0',
+        height  : 0,
+        id      : 'south-container'
+    });
     
     var northPanel = new Ext.Panel ({
         region      : 'north',
@@ -1078,7 +1308,7 @@ Ext.onReady(function () {
     var innerLeftTopPanel = new Ext.Panel({
         layout: 'border',
         width: 440,
-        height: 260, 
+        height: 290, 
         items: [{
             region: 'center',
             items: [observationGrid]
@@ -1090,11 +1320,13 @@ Ext.onReady(function () {
     var innerRightTopPanel = new Ext.Panel({
         layout: 'border',
         width: 350,
-        height: 260,
+        height: 290,
         border: true,
         items: [{
             title   : 'Lattice Constants',
             region  : 'center',
+            id      : 'center-component',
+            layout  : 'fit',
             margins : '0 5 0 0', //small margins to the east of box
             items   : [topFieldset]
         }, {
@@ -1103,15 +1335,11 @@ Ext.onReady(function () {
             height  : 50,
             margins : '0 5 0 0',
             items   : [myCombo]
-        }, {
-            title   : 'Scattering Plane Vectors  (Scattering Plane Mode ONLY)',
-            region  : 'south',
-            height  : 90,
-            margins : '0 5 0 0',
-            items   : [bottomFieldset]
-        }]
+        }, 
+        southPanel
+        ]
     });  
-    
+
     var TopPanel = new Ext.Panel({
         layout: 'table',
         title: 'Known Data',
