@@ -13,8 +13,10 @@ from WRed.file_parsing.file_to_json import displayfile
 
 import numpy as N
 from WRed.utilities.mpfit import mpfit
+from WRed.utilities import findpeak4 as findpeak4
 
 from fitting_functions import *
+
 
 
 def print_timing(func):
@@ -71,7 +73,7 @@ def fitting_request_action(request, idNum):
             if len(prevFunctions):
                 for prevFunctionInfo in prevFunctions:
                     prevFunction = getFunctionClass(prevFunctionInfo['functionID'])()
-                    prevFunction.setFunctionParamsFromDict(prevFunctionInfo['functionParams'])
+                    prevFunction.setFunctionParamsFromArrayOfDicts(prevFunctionInfo['functionParams'])
                     functionGroup.functions.append(prevFunction)
                     
             functionGroup.functions.append(function)
@@ -85,6 +87,8 @@ def fitting_request_action(request, idNum):
             
             """Sends the first fitting instruction to the client"""
             nextFitInstruction = function.fitInstructions.popleft()
+            if nextFitInstruction['dataType'] == 'askDrag':
+                nextFitInstruction.update({ 'dragMode': 'before' })
             
             response = fitInstructionResponse(nextFitInstruction, addlParams)
             response.update({ 'replaceIndices': replaceIndices })
@@ -101,28 +105,22 @@ def fitting_request_action(request, idNum):
             
             # Data Types
             if request.POST['dataType'] == 'askPoint':
-                request = defPoint(request, functionGroup)
+                request = functionGroup.defPoint(request)
             elif request.POST['dataType'] == 'askDrag':
                 """If you are in the middle of doing a drag send the updated function"""
-                request = defPoint(request, functionGroup)
-
-                function.setFunctionParamsFromRequest(request)
-                
-                # Update most recent function (maybe this is wrong)
-                functionGroup.functions[-1] = function
+                request = functionGroup.defPoint(request)
                 
                 dragFit = functionGroup.createFunction(xData, yData)
                 dragFit.update({ 'dataType': 'doingDrag', 'replaceIndices': request.session['replaceIndices'],
                                  'dragMode': str(request.POST['dragMode']) })
                 return HttpResponse(str(dragFit))
             
-            
+            """If there are no more instructions then you calculate the final function"""
             if not request.session['function'].fitInstructions:
-                """If there are no more instructions then you calculate the final function"""
-                function.setFunctionParamsFromRequest(request)
+                #function.setFunctionParamsFromRequest(request)
                 
                 # Update most recent function (maybe this is wrong)
-                functionGroup.functions[-1] = function
+                #functionGroup.functions[-1] = function
                 
                 finishedFunction = functionGroup.createFunction(xData, yData)
                 print finishedFunction
@@ -135,8 +133,8 @@ def fitting_request_action(request, idNum):
             else:
                 """Otherwise you send the next instruction"""
                 #guess width
-                #guessWidth = guess_width(xData, yData, peakX, peakY, backgroundY)
-                #guessWidth2 = guess_width2(xData, yData, peakX, peakY, backgroundY)
+                #guessWidth = guess_width(xData, yData, peakX, peakY, bkgdY)
+                #guessWidth2 = guess_width2(xData, yData, peakX, peakY, bkgdY)
                 
                 nextFitInstruction = function.fitInstructions.popleft()
                 if nextFitInstruction['dataType'] == 'askDrag':
@@ -145,6 +143,62 @@ def fitting_request_action(request, idNum):
                 response = fitInstructionResponse(nextFitInstruction, request.session['addlParams'])
                 response.update({ 'replaceIndices': request.session['replaceIndices'] })
                 return HttpResponse(str(response))
+            
+        elif actionID == '4':
+            allData = simplejson.loads(request.POST['allData'])
+            dataData = allData[0]
+            xData = N.array(dataData['x'])
+            yData = N.array(dataData['y'])
+            yErrData = N.array(dataData['yerr'])
+
+
+            """Find peaks in the data"""
+            kernel = 21
+            nmin, nlist, plist = findpeak4.find_npeaks(xData, yData, yErrData, kernel)
+            results = findpeak4.findpeak  (xData, yData, nmin, order=4, kernel=kernel)
+            fwhm    = findpeak4.findwidths(xData, yData, nmin, results['xpeaks'], results['indices'])
+            
+            
+            """Generate a composite function with Gaussians for every peak found"""
+            functionGroup = FunctionGroup()
+            functionGroup.data = dataData
+
+            for resultsIndex in range(len(results['indices'])):
+                dataIndex = results['indices'][resultsIndex]
+                function = Gaussian()
+                functionParams = { 'peakX': xData[dataIndex], 'peakY': yData[dataIndex], 'FWHM': fwhm[resultsIndex] }
+
+                function.setFunctionParamsFromDict(functionParams)
+                functionGroup.functions.append(function)
+            
+            """And a linear background too"""
+            linearBackground = Linear()
+            twoPoints = { 'X1': xData[0], 'X2': xData[-1], 'Y1': yData[0], 'Y2': yData[-1] }
+            linearBackground.setFunctionParamsFromTwoPoints(twoPoints)
+            functionGroup.functions.append(linearBackground)
+            
+            
+
+            """Converts the parameters from a set of dictionaries to a flat list"""
+            (params, slices) = functionGroup.getFunctionsParamsAsArray()
+            
+            """Uses mpfit to fit the function using the specified parameter list"""
+            functkw = { 'xData': xData, 'yData': yData, 'yErr': yErrData, 'functionGroup': functionGroup, 'slices': slices }
+            mpfitResult = mpfit(mpfitFunction, params, functkw=functkw, ftol=1e-5)
+            
+            """Calculate the new function with the best fitted parameters and chi-squared"""
+            functionGroup.setFunctionsParamsFromArray(mpfitResult.params, slices)
+            finishedFit = functionGroup.createFunction(xData, yData)
+            chiSquared = sigfig(functionGroup.chisq(xData, yData, yErrData))
+            
+            """Formats the parameters and the parameter errors to send to the client"""
+            fitFunctionInfos = functionGroup.getFitFunctionInfos(mpfitResult)
+            
+            """Sends the function and parameters to the client"""
+            response = finishedFit
+            response.update({ 'functionInfos': fitFunctionInfos, 'fitInfo': { 'chisq': chiSquared }, 'dataType': 'doFit' })
+            return HttpResponse(str(response))
+            
             
         elif actionID == '3':
             """This is when the fitting occurs"""
@@ -168,47 +222,23 @@ def fitting_request_action(request, idNum):
                     functionID = int(functionInfo['functionID'])
                     functionParams = functionInfo['functionParams']
                     function = getFunctionClass(functionID)()
-                    function.setFunctionParamsFromDict(functionParams)
+                    function.setFunctionParamsFromArrayOfDicts(functionParams)
                     functionGroup.functions.append(function)
             
             """Converts the parameters from a set of dictionaries to a flat list"""
             (params, slices) = functionGroup.getFunctionsParamsAsArray()
             
-            functkw = { 'xData': xData, 'yData': yData, 'yErr': yErrData, 'functionGroup': functionGroup, 'slices': slices }
             """Uses mpfit to fit the function using the specified parameter list"""
+            functkw = { 'xData': xData, 'yData': yData, 'yErr': yErrData, 'functionGroup': functionGroup, 'slices': slices }
             mpfitResult = mpfit(mpfitFunction, params, functkw=functkw, ftol=1e-5)
             
             """Calculate the new function with the best fitted parameters and chi-squared"""
             functionGroup.setFunctionsParamsFromArray(mpfitResult.params, slices)
-
             finishedFit = functionGroup.createFunction(xData, yData)
             chiSquared = sigfig(functionGroup.chisq(xData, yData, yErrData))
             
             """Formats the parameters and the parameter errors to send to the client"""
-            fitFunctionInfos = []
-            pointer = 0
-            counter = 0
-            for function in functionGroup.functions:
-                mpfitFunctionResult = dict(params=mpfitResult.params[pointer : pointer + slices[counter]],
-                                           perror=mpfitResult.perror[pointer : pointer + slices[counter]])
-                
-                # Map sigfigs
-                fitFunctionParams = function.getFunctionParamsFromArray(map(sigfig, mpfitFunctionResult['params']))
-                fitFunctionParamsErr = function.getFunctionParamsFromArray(map(sigfig, mpfitFunctionResult['perror']))
-                fitFunctionParamsArray = paramsJoin(fitFunctionParams, fitFunctionParamsErr)       
-                
-                fitFunctionInfo = { 'fitFunctionParams': fitFunctionParams, 'fitFunctionParamsErr': fitFunctionParamsErr,
-                                    'fitFunctionParamsArray': fitFunctionParamsArray }
-                fitFunctionInfo.update(function.getJSON())
-                
-                fitFunctionInfos.append(fitFunctionInfo)
-                
-                pointer += slices[counter]
-                counter += 1
-            
-            print fitFunctionInfos
-            print '*****'
-            print
+            fitFunctionInfos = functionGroup.getFitFunctionInfos(mpfitResult)
             
             """Sends the function and parameters to the client"""
             response = finishedFit
@@ -225,7 +255,7 @@ def fitting_request_action(request, idNum):
 
 
 # --
-
+'''
 def defPoint(request, functionGroup):
     """Saves the point that the user clicks on to the session"""
     xPos = float(request.POST['xPos'])
@@ -246,7 +276,7 @@ def defDrag(request):
     request.session[request.POST['xIDend']]   = float(request.POST['xPosend'])
     request.session[request.POST['yIDend']]   = float(request.POST['yPosend'])
     return request
-
+'''
 
 
 def getFunctionClass(functionID):
@@ -273,14 +303,6 @@ def objectToArrayPairs(d):
     """Unused"""
     return [dict(name=key, value=value) for key, value in d.iteritems()]
 
-def paramsJoin(d1, d2):
-    """Joins each parameter with its error and name as a dict"""
-    n = []
-    for (key, value) in d1.items():
-        n.append({ 'name': key, 'value': value, 'err': d2[key] })
-    return n
-
-
 # --
 
 # Copied straight from William
@@ -305,8 +327,8 @@ def mpfitFunction(params, parinfo=None, fjac=None, xData=None, yData=None, yErr=
     
 
 
-def guess_width(x, y, peakX, peakY, backgroundY):
-    halfMax = (peakY - backgroundY) / 2.
+def guess_width(x, y, peakX, peakY, bkgdY):
+    halfMax = (peakY - bkgdY) / 2.
     print halfMax
     print
     
@@ -337,7 +359,7 @@ def guess_width(x, y, peakX, peakY, backgroundY):
     print
     return guessWidth
 
-def guess_width2(x, y, peakX, peakY, backgroundY):
+def guess_width2(x, y, peakX, peakY, bkgdY):
     stddev = N.std(x)
     print stddev
     guessWidth = 2 * N.sqrt(2 * N.log(2)) * stddev

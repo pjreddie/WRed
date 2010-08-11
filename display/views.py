@@ -289,7 +289,27 @@ def evaluate(request):
                 try:
                     eq[i] = 'Data("db/" + DataFile.objects.get(id = ' + str(int(eq[i])) + ').md5 + ".file")'
                 except ValueError:
-                    pass
+                    print eq[i]
+                    if eq[i] not in ['(', ')', '.add(','.detailed_balance()','.sub(',').sub(',',']:
+                        if (eq[i][0] == "'" and eq[i][-1] == "'"):
+                            for s in eq[i][1:-2]:
+                                if s == "'":
+                                    return HttpResponse('Stop haxing me!')
+                        elif (eq[i][0:13] == '.scalar_mult(' and eq[i][-1] == ')'):
+                            try:
+                                float(eq[i][13:-1])
+                            except:
+                                return HttpResponse('Stop haxing me!')
+                        elif (eq[i][0:12] == '.scalar_add(' and eq[i][-1] == ')'):
+                            print eq[i][12:-1]
+                            try:
+                                float(eq[i][12:-1])
+                            except:
+                                return HttpResponse('Stop haxing me!')
+                            
+                        else:
+                            return HttpResponse('Stop haxing me!')
+            print '...................evaling..................'
             parsed_eq = eq[0]
             for a in eq[1:]:
                 parsed_eq += ' ' + a

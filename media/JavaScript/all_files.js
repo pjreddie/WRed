@@ -103,26 +103,53 @@ Ext.onReady(function() {
     });
 
 /*Menu that shows up on right click to delete a file from the database*/
+    /* Right click menu for file panel */
     var rowMenu = new Ext.menu.Menu({
-        id:'rowMenu',
-        items:  [{
-                    text: 'Delete',
-                    handler: deleteRow,
-                    icon: '/media/icons/silk/delete.png',
-                }],
-    });
-/*Sends a POST request to server to delete a file*/
-    function deleteRow(){
-        var conn = new Ext.data.Connection();
-        conn.request({
-            url: '../forms/delete/',
-            method: 'POST',
-            params: {'md5': store.getAt(rowRightClicked).get('md5')},
-            success: function(responseObject) {
+        id: 'rowMenu',
+        items: [{
+            text: 'Delete',
+            handler: deleteRow,
+            icon: '/media/icons/silk/delete.png',
             },
-            failure: function() {
+        {
+            text: 'Download',
+            handler: download,
+            icon: '/media/icons/silk/disk.png',
+            }],
+    });
+        // Opens a new window to download a file from the file panel
+    function download() {
+        if(grid.getSelectionModel().getSelections().length > 1 && jQuery.inArray(store.getAt(rowRightClicked), grid.getSelectionModel().getSelections()) >= 0){
+            ids = [];
+            for (var i = 0; i < grid.getSelectionModel().getSelections().length; ++i){
+                ids.push(grid.getSelectionModel().getSelections()[i].data['id']);
             }
-        });
+            window.open('../forms/download/batch/?ids='+Ext.encode(ids));
+
+        }else{
+            window.open('../forms/download/?id=' + store.getAt(rowRightClicked).get('id'));
+        }
+    }
+    /* Sends a POST request to server to delete a file */
+    function deleteRow() {
+            var conn = new Ext.data.Connection();
+        var ids = [];
+        if(grid.getSelectionModel().getSelections().length > 1 && jQuery.inArray(store.getAt(rowRightClicked), grid.getSelectionModel().getSelections()) >= 0){
+            for (var i = 0; i < grid.getSelectionModel().getSelections().length; ++i){
+                   ids.push(grid.getSelectionModel().getSelections()[i].data['id']);
+            }
+        }else{
+            ids = [store.getAt(rowRightClicked).get('id')];
+        }
+            conn.request({
+                url: '../forms/delete/',
+                method: 'POST',
+                params: {
+                    'ids': Ext.encode(ids),
+                },
+                success: function(responseObject){},
+                failure: function(){}
+            });
     }
 
     grid.on('rowcontextmenu', function(grid, rowIndex, e) {

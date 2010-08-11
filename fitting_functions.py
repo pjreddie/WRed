@@ -18,9 +18,11 @@ class FunctionParamGroup(object):
     def set(self, paramName, value):
         self.params[paramName].value = value
     
+    def asArray(self):
+        return self.params.values()
+    
     def __repr__(self):
-        repr = str(self.params)
-        return repr
+        return str(self.asArray())
         
 
 class FunctionParam(object):
@@ -32,7 +34,7 @@ class FunctionParam(object):
         self.lowerLimit = 0
     
     def __repr__(self):
-        return str(self.value)
+        return str(self.getJSON())
     
     def getJSON(self):
         return { 'paramName': self.paramName, 'value': self.value, 'error': self.error, 'upperLimit': self.upperLimit, 'lowerLimit': self.lowerLimit }
@@ -113,7 +115,9 @@ class FunctionGroup(object):
         
         functionY = sum(N.array(functionYs))
         functionResiduals = N.subtract(functionY, yData)
-        functionResidualData = zip_(xData, functionResiduals)
+        functionResidualsScaled = N.divide(functionResiduals, self.countFunctionParams())
+        #functionResidualData = zip_(xData, functionResiduals)
+        functionResidualData = zip_(xData, functionResidualsScaled)
 
         print
         print functionRange
@@ -128,6 +132,23 @@ class FunctionGroup(object):
         functionObj = dict(fit=functionData, resid=functionResidualData, functionInfos=functionInfos)
         return functionObj
     
+    
+    
+    def defPoint(self, request, functionIndex=-1):
+        xPos = float(request.POST['xPos'])
+        yPos = float(request.POST['yPos'])
+        
+        # We need to subtract the value from rest of the functions
+        if len(self.functions) > 1:
+            yPos -= self.getValueAtX(xPos)
+        
+        request.session[request.POST['xID']] = xPos
+        request.session[request.POST['yID']] = yPos
+        
+        # Update function at specified index, or else most recent function (functionIndex is -1)
+        self.functions[functionIndex].setFunctionParamsFromRequest(request)
+        
+        return request
     
     def getFunctionsParamsAsArray(self):
         functionsParamsArray = []
@@ -159,6 +180,36 @@ class FunctionGroup(object):
             counter += 1
         
         return functionsParams
+
+
+    def getFitFunctionInfos(self, mpfitResult):
+        params, slices = self.getFunctionsParamsAsArray()
+        fitFunctionInfos = []
+        pointer = 0
+        counter = 0
+        for function in self.functions:
+            mpfitFunctionResult = dict(params=mpfitResult.params[pointer : pointer + slices[counter]],
+                                       perror=mpfitResult.perror[pointer : pointer + slices[counter]])
+            
+            # Map sigfigs
+            fitFunctionParams       = function.getFunctionParamsFromArray([sigfig(x, 6) for x in mpfitFunctionResult['params']])
+            fitFunctionParamsErr    = function.getFunctionParamsFromArray([sigfig(x, 2) for x in mpfitFunctionResult['perror']])
+            fitFunctionParamsArray  = paramsJoin(fitFunctionParams, fitFunctionParamsErr)       
+            
+            fitFunctionInfo = { 'fitFunctionParams': fitFunctionParams, 'fitFunctionParamsErr': fitFunctionParamsErr,
+                                'fitFunctionParamsArray': fitFunctionParamsArray }
+            fitFunctionInfo.update(function.getJSON())
+            
+            fitFunctionInfos.append(fitFunctionInfo)
+            
+            pointer += slices[counter]
+            counter += 1
+        
+        print fitFunctionInfos
+        print '*****'
+        print
+        
+        return fitFunctionInfos
     
 
 class Function(object):
@@ -169,13 +220,13 @@ class Function(object):
         self.functionParams = FunctionParamGroup()
     
     def __repr__(self):
-        return str(self.functionID) + ": " + str(self.functionParams)
+        return str(self.getJSON())
         
     def function(self, Domain, Range):
         return None
     
     def getJSON(self):
-        return { 'functionID': self.functionID, 'functionName': self.functionName, 'functionParams': self.functionParams.params }
+        return { 'functionID': self.functionID, 'functionName': self.functionName, 'functionParams': self.functionParams.asArray() }
     
     def setFunctionParamsFromRequest(self, request):
         for (paramName, value) in self.functionParams.params.items():
@@ -186,6 +237,12 @@ class Function(object):
         for (paramName, value) in self.functionParams.params.items():
             if functionParamsDict.has_key(paramName):
                 self.functionParams.set(paramName, functionParamsDict[paramName])
+    
+    def setFunctionParamsFromArrayOfDicts(self, functionParamsArrayOfDicts):
+        for functionParam in functionParamsArrayOfDicts:
+            if self.functionParams.params.has_key(functionParam['paramName']):
+                self.functionParams.set(functionParam['paramName'], functionParam['value'])
+    
     
     def setFunctionParamsFromArray(self, functionParamsArray):
         functionParamsDict = self.getFunctionParamsFromArray(functionParamsArray)
@@ -246,21 +303,33 @@ class Linear(Function):
                                     { 'dataType': 'askPoint', 'xID': 'X2', 'yID': 'Y2',
                                       'messageTitle': 'Step 2', 'messageText': 'Please click on the second point' }
                                 ])
-        self.functionParams = FunctionParamGroup([ 'X1', 'Y1', 'X2', 'Y2' ])
+        self.functionParams = FunctionParamGroup([ 'slope', 'yInter' ])
 
     def function(self, Domain, Range):
-        (X1, Y1, X2, Y2) = (self.functionParams.get('X1'), self.functionParams.get('Y1'), self.functionParams.get('X2'), self.functionParams.get('Y2'))
-        if X1 is None or X2 is None:
+        (slope, yInter) = (self.functionParams.get('slope'), self.functionParams.get('yInter'))
+        
+        if slope is None or yInter is None:
             pass
         else:
-            slope = N.divide(Y2 - Y1, X2 - X1)
-            return slope * N.subtract(Domain, X1) + Y1
+            return N.multiply(slope, Domain) + yInter
     
     def getFunctionParamsAsArray(self):
-        return [ self.functionParams.get('X1'), self.functionParams.get('X2'), self.functionParams.get('Y1'), self.functionParams.get('Y2') ]
+        return [ self.functionParams.get('slope'), self.functionParams.get('yInter') ]
     
     def getFunctionParamsFromArray(self, params):
-        return { 'X1': params[0], 'X2': params[1], 'Y1': params[2], 'Y2': params[3] }
+        return { 'slope': params[0], 'yInter': params[1] }
+
+    def setFunctionParamsFromRequest(self, request):
+        super(Linear, self).setFunctionParamsFromRequest(request)
+
+        if request.session.has_key('Y2'):
+            self.setFunctionParamsFromTwoPoints(request.session)
+
+    def setFunctionParamsFromTwoPoints(self, twoPoints):
+        slope = N.divide(twoPoints['Y2'] - twoPoints['Y1'], twoPoints['X2'] - twoPoints['X1'])
+        yInter = twoPoints['Y1'] - twoPoints['X1'] * slope
+        self.functionParams.set('slope', slope)
+        self.functionParams.set('yInter', yInter)
 
 class LinearDrag(Linear):
     def __init__(self):
@@ -281,19 +350,18 @@ class Gaussian(Function):
         self.functionID = 11
         self.functionName = 'Gaussian'
         self.fitInstructions  = deque([
-                                #   { 'dataType': 'askPoint', 'xID': 'bkgdX', 'yID': 'bkgdY',
-                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the bkgd of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'peakX', 'yID': 'peakY',
                                       'messageTitle': 'Step 1', 'messageText': 'Please click on the peak of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'widthX', 'yID': 'widthY',
                                       'messageTitle': 'Step 2', 'messageText': 'Please click on the width of the data' }
                                 ])
-        self.functionParams = FunctionParamGroup([ 'peakX', 'peakY', 'bkgdY', 'FWHM' ])
+        self.functionParams = FunctionParamGroup([ 'peakX', 'peakY', 'FWHM' ])
 
     def function(self, Domain, Range):
-        (peakX, peakY, bkgdY, FWHM) = (self.functionParams.get('peakX'), self.functionParams.get('peakY'), \
-                                       self.functionParams.get('bkgdY'), self.functionParams.get('FWHM'))
-        if peakX is None or bkgdY is None or FWHM is None:
+        (peakX, peakY, FWHM) = (self.functionParams.get('peakX'), self.functionParams.get('peakY'), self.functionParams.get('FWHM'))
+        bkgdY = 0
+        
+        if peakX is None or FWHM is None:
             pass
         else:
             stdDev = FWHM / 2 / N.sqrt(2 * N.log(2))
@@ -301,10 +369,10 @@ class Gaussian(Function):
     
     def getFunctionParamsAsArray(self):
         return [ self.functionParams.get('peakX'), self.functionParams.get('peakY'),
-                 self.functionParams.get('bkgdY'), self.functionParams.get('FWHM') ]
+                 self.functionParams.get('FWHM') ]
         
     def getFunctionParamsFromArray(self, params):
-        return { 'peakX': params[0], 'peakY': params[1], 'bkgdY': params[2], 'FWHM': params[3] }
+        return { 'peakX': params[0], 'peakY': params[1], 'FWHM': params[2] }
     
     def setFunctionParamsFromRequest(self, request):
         super(Gaussian, self).setFunctionParamsFromRequest(request)
@@ -319,8 +387,6 @@ class GaussianDrag(Gaussian):
         self.functionID = 12
         self.functionName = 'Gaussian drag'
         self.fitInstructions  = deque([
-                                #   { 'dataType': 'askPoint', 'xID': 'bkgdX', 'yID': 'bkgdY',
-                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the bkgd of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'peakX', 'yID': 'peakY',
                                       'messageTitle': 'Step 1', 'messageText': 'Please click on the peak of the data' },
                                     { 'dataType': 'askDrag', 'xIDstart': 'widthYst', 'yIDstart': 'widthYst', 'xIDend': 'widthX', 'yIDend': 'widthY',
@@ -336,30 +402,28 @@ class Lorentzian(Function):
         self.functionID = 21
         self.functionName = 'Lorentzian'
         self.fitInstructions  = deque([
-                                #   { 'dataType': 'askPoint', 'xID': 'bkgdX', 'yID': 'bkgdY',
-                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the bkgd of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'peakX', 'yID': 'peakY',
                                       'messageTitle': 'Step 1', 'messageText': 'Please click on the peak of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'widthX', 'yID': 'widthY',
                                       'messageTitle': 'Step 2', 'messageText': 'Please click on the width of the data' }
                                 ])
-        self.functionParams = FunctionParamGroup([ 'peakX', 'peakY', 'bkgdY', 'FWHM' ])
+        self.functionParams = FunctionParamGroup([ 'peakX', 'peakY', 'FWHM' ])
 
     def function(self, Domain, Range):
-        (peakX, peakY, bkgdY, FWHM) = (self.functionParams.get('peakX'), self.functionParams.get('peakY'), \
-                                       self.functionParams.get('bkgdY'), self.functionParams.get('FWHM'))
-        if peakX is None or bkgdY is None or FWHM is None:
+        (peakX, peakY, FWHM) = (self.functionParams.get('peakX'), self.functionParams.get('peakY'), self.functionParams.get('FWHM'))
+        bkgdY = 0
+        
+        if peakX is None or FWHM is None:
             pass
         else:
             gamma = FWHM
             return bkgdY + (peakY - bkgdY) * N.divide(N.power(gamma, 2), N.power(N.subtract(Domain, peakX), 2) + N.power(gamma, 2))
 
     def getFunctionParamsAsArray(self):
-        return [ self.functionParams.get('peakX'), self.functionParams.get('peakY'),
-                 self.functionParams.get('bkgdY'), self.functionParams.get('FWHM') ]
+        return [ self.functionParams.get('peakX'), self.functionParams.get('peakY'), self.functionParams.get('FWHM') ]
         
     def getFunctionParamsFromArray(self, params):
-        return { 'peakX': params[0], 'peakY': params[1], 'bkgdY': params[2], 'FWHM': params[3] }
+        return { 'peakX': params[0], 'peakY': params[1], 'FWHM': params[2] }
         
     def setFunctionParamsFromRequest(self, request):
         super(Lorentzian, self).setFunctionParamsFromRequest(request)
@@ -374,8 +438,6 @@ class LorentzianDrag(Lorentzian):
         self.functionID = 22
         self.functionName = 'Lorentzian drag'
         self.fitInstructions  = deque([
-                                #   { 'dataType': 'askPoint', 'xID': 'bkgdX', 'yID': 'bkgdY',
-                                #     'messageTitle': 'Step 1', 'messageText': 'Please click on the bkgd of the data' },
                                     { 'dataType': 'askPoint', 'xID': 'peakX', 'yID': 'peakY',
                                       'messageTitle': 'Step 1', 'messageText': 'Please click on the peak of the data' },
                                     { 'dataType': 'askDrag', 'xIDstart': 'widthYst', 'yIDstart': 'widthYst', 'xIDend': 'widthX', 'yIDend': 'widthY',
@@ -383,36 +445,20 @@ class LorentzianDrag(Lorentzian):
                                 ])
 
 
-
-
-
-def getFunctionParams(functionID, request):
-    if functionID == 1 or functionID == 2:
-        functionParams = { 'X1': request.session['X1'],
-                           'Y1': request.session['Y1'],
-                           'X2': request.session['X2'],
-                           'Y2': request.session['Y2'] }
-    elif functionID == 11 or functionID == 12:
-        widthX = request.session['widthX']
-        peakX = request.session['peakX']
-        peakY = request.session['peakY']
-        bkgdY = request.session['bkgdY']
-        
-        width = 2 * N.abs(widthX - peakX)
-        stdDev = width / 2 / N.sqrt(2 * N.log(2))
-        
-        functionParams = { 'peakX': peakX, 'peakY': peakY, 'bkgdY': bkgdY, 'stdDev': stdDev }
-    elif functionID == 21 or functionID == 22:
-        widthX = request.session['widthX']
-        peakX = request.session['peakX']
-        peakY = request.session['peakY']
-        bkgdY = request.session['bkgdY']
-        
-        gamma = N.abs(widthX - peakX)
-        
-        functionParams = { 'peakX': peakX, 'peakY': peakY, 'bkgdY': bkgdY, 'gamma': gamma }
-        
-    return functionParams
-
 def zip_(l1, l2):
     return [list(elem) for elem in zip(l1, l2)]
+    
+
+def paramsJoin(d1, d2):
+    """Joins each parameter with its error and name as a dict"""
+    n = []
+    for (key, value) in d1.items():
+        n.append({ 'name': key, 'value': value, 'err': d2[key] })
+    return n
+
+
+
+def sigfig(x, n=6):
+     if n < 1:
+         raise ValueError("number of significant digits must be >= 1")
+     return "%.*e" % (n - 1, x)

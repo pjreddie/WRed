@@ -10,7 +10,7 @@ import scipy.interpolate as interpolate
 pi=N.pi
 from numpy.random import randn
 import scipy, scipy.optimize
-from spinwaves.utilities.mpfit.mpfit import mpfit
+from mpfit import mpfit
 
 
 def findpeak(x,y,npeaks,order=4,kernel=11):
@@ -73,7 +73,11 @@ def findpeak(x,y,npeaks,order=4,kernel=11):
 #    
     indices = 0.5*(2*wh_cross-1);
     indices=wh_cross
-#    print 'indices',indices
+    print 'indices inside',indices
+    if len(indices)< npeaks:
+       results={}
+       results['stop']=True
+       return results
 #    
     no_width = 0;
 #    
@@ -97,17 +101,21 @@ def findpeak(x,y,npeaks,order=4,kernel=11):
         xpeaks=xinterpolater(indices)
         #print 'xpeaks',xpeaks
         #return xpeaks
-
-        for i in range(npeaks):
-            this_max=N.max(ymax)
-            max_index=N.nonzero(ymax==this_max)
-            #max_index = find(ymax==this_max);
-            if i ==0:
-                best_index = indices[max_index]
-            else:    
-                best_index =N.hstack((best_index, indices[max_index]));
-            ymax[max_index] = ymin;
-        indices = best_index;
+        
+        best_indices=N.argsort(ymax)
+        indices=indices[best_indices[:npeaks]]
+        if 0:
+          for i in range(npeaks):
+              this_max=N.max(ymax)
+              max_index=N.nonzero(ymax==this_max)[0]
+              print 'max_index',max_index
+              #max_index = find(ymax==this_max);
+              if i ==0:
+                  best_index = indices[max_index]
+              else:    
+                  best_index =N.hstack((best_index, indices[max_index]));
+              ymax[max_index] = ymin;
+          indices = best_index;
 
         #print 'indices',indices
         xsupport=range(len(x))
@@ -118,6 +126,9 @@ def findpeak(x,y,npeaks,order=4,kernel=11):
         results['xpeaks']=xpeaks
         results['indices']=indices
         results['heights']=y[indices]
+        results['stop']=False
+        
+        
         return results
 
         #xsupport=1:length(x);
@@ -249,7 +260,7 @@ def calc_prob(npeaks,amax,covariance,chimin,rangex):
     prob=prob+0.5*N.log(N.linalg.det(covariance/2))-chimin/2
     return prob
 
-#def calc_prob(
+
 
 
 def fp_gaussian(x,area,center,fwhm):
@@ -321,6 +332,8 @@ def find_npeaks(x,y,yerr,kernel,nmax=6):
     for npeaks in range(1,nmax): 
         print 'npeaks',npeaks
         results=findpeak(x,y,npeaks,kernel=kernel)
+        if results['stop']==True:
+           break
         fwhm=findwidths(x,y,npeaks,results['xpeaks'],results['indices'])
         print 'res',results['xpeaks']
         print 'fwhm',fwhm
@@ -330,6 +343,7 @@ def find_npeaks(x,y,yerr,kernel,nmax=6):
         #results['heights']=[1000,500,1000]
         #fwhm=[.1,.2,.4]
         sigma=fwhm/2.354
+
         pb=N.concatenate((results['xpeaks'], fwhm, results['heights']*N.sqrt(2*pi*sigma**2)))
         pb=N.array(pb).flatten()
         p0=N.concatenate((p0,pb)).flatten()
@@ -395,6 +409,13 @@ if __name__=="__main__":
     yerr=N.sqrt(y)+2
     y += randn(len(y)) * yerr
     y=N.abs(y)
+    
+    
+    yerr = N.array([ 5.19615242, 3.60555128, 3.87298335, 5.47722558, 6.40312424, 4.69041576, 5.19615242, 6.08276253, 6.55743852, 7.34846923, 8.1240384 , 8.94427191, 9.32737905, 9.11043358, 8.54400375, 8.77496439, 9.53939201, 11.13552873, 12.52996409, 14.03566885, 15.77973384, 16.73320053, 13.96424004, 10.04987562, 7.68114575, 6.4807407 , 5.29150262, 6.244998 , 5.83095189, 4.89897949, 4.69041576])
+    y = N.array([ 27, 13, 15, 30, 41, 22, 27, 37, 43, 54, 66, 80, 87, 83, 73, 77, 91, 124, 157, 197, 249, 280, 195, 101, 59, 42, 28, 39, 34, 24, 22])
+    x = N.array([ 0.485, 0.486, 0.487, 0.488, 0.489, 0.49 , 0.491, 0.492, 0.493, 0.494, 0.495, 0.496, 0.497, 0.498, 0.499, 0.5 , 0.501, 0.502, 0.503, 0.504, 0.505, 0.506, 0.507, 0.508, 0.509, 0.51 , 0.511, 0.512, 0.513, 0.514, 0.515])
+    
+    
     
     if 0:
         pylab.plot(x,y,'s')
