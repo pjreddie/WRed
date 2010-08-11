@@ -21,24 +21,29 @@ from Alex.ubmatrix import *
 
 
 def runcalc1(request):
-    "Calculations for Bisecting Plane mode. Also calculates and returns the UB matrix"
-    #print request.POST
+    "Calculations for Bisecting mode."
+    
     #Strangely, data is sent as a dictionary, where all data is the key and the dictionary's value is random characters.
     #Therefore, extracting data from dictionary key
     requestObject = simplejson.loads(request.POST.keys()[0]) 
     data = requestObject['data']
     
-    #CALCULATING THE B MATRIX, UB MATRIX, AND STARS DICTIONARIES
-    Bmatrix, UBmatrix, stars = calculateResultsUB(data)
+    #CALCULATING THE B MATRIX AND STARS DICTIONARY
+    Bmatrix, stars = calculateBStar(float(data[0]['a']), float(data[0]['b']), float(data[0]['c']), float(data[0]['alpha']), float(data[0]['beta']), float(data[0]['gamma']))
+    UBmatrix = data[0]['UBmatrix']
     
+    #UBmatrix = [[-7.8482945, -2.36452161464, 4.27609208916],
+    #            [-2.36452161464,2.3884179, 12.3436137561],
+    #            [4.27609208916, 12.3436137561, 4.5555376]]
+    #[[-7.8482945, -2.36452161464, 4.27609208916], [-2.36452161464,2.3884179, 12.3436137561],[4.27609208916, 12.3436137561, 4.5555376]]
+    #[[-0.136978579681,-0.04126868741,0.0746318860743],[-0.04126868741,0.0416857556556,0.215436701639],[0.0746318860743,0.215436701639, 0.0795091311514]]
     response = []
-    response.append([UBmatrix[0][0], UBmatrix[0][1], UBmatrix[0][2], UBmatrix[1][0], UBmatrix[1][1], UBmatrix[1][2], UBmatrix[2][0], UBmatrix[2][1], UBmatrix[2][2]])
     
     #wavelength was a string for some reason...
     wavelength = data[0]['wavelength']
     
     #rest of the calculations
-    for i in range(3, data[0]['numrows'] + 3):
+    for i in range(1, len(data)):
         twotheta, theta, omega, chi, phi = calcIdealAngles([data[i]['h'], data[i]['k'], data[i]['l']], UBmatrix, Bmatrix, wavelength, stars)
         angles = {'twotheta': twotheta, 'theta':theta, 'omega': omega,'chi':chi, 'phi': phi}
         response.append(angles)
@@ -48,16 +53,15 @@ def runcalc1(request):
 
 
 def runcalc2(request):
-    "Calculations for scattering plane mode"
+    "Calculations for Scattering Plane mode"
     requestObject = simplejson.loads(request.POST.keys()[0])
     data = requestObject['data']
     
-    #CALCULATING THE B MATRIX, UB MATRIX, AND STARS (though not needed in this method) DICTIONARIES
-    Bmatrix, UBmatrix, stars = calculateResultsUB(data)
+    #CALCULATING THE B MATRIX AND STARS DICTIONARY
+    Bmatrix, stars = calculateBStar(float(data[0]['a']), float(data[0]['b']), float(data[0]['c']), float(data[0]['alpha']), float(data[0]['beta']), float(data[0]['gamma']))
+    UBmatrix = data[0]['UBmatrix']
     
-    response = []
-    response.append([UBmatrix[0][0], UBmatrix[0][1], UBmatrix[0][2], UBmatrix[1][0], UBmatrix[1][1], UBmatrix[1][2], UBmatrix[2][0], UBmatrix[2][1], UBmatrix[2][2]])
-    
+    response = []    
 
     #wavelength was a string for some reason...
     #wavelength = float(data[0]['wavelength'])
@@ -66,7 +70,7 @@ def runcalc2(request):
     chi, phi = calcScatteringPlane ([data[0]['h1'], data[0]['k1'], data[0]['l1']], [data[0]['h2'], data[0]['k2'], data[0]['l2']], UBmatrix, wavelength,stars) #calculate chi and phi (in DEGREES) for the Scattering Plane
     
     #calculations for the desired (h,k,l) vectors
-    for i in range(3, data[0]['numrows'] + 3):
+    for i in range(1, len(data)):
         
         inPlane = isInPlane([data[0]['h1'], data[0]['k1'], data[0]['l1']], [data[0]['h2'], data[0]['k2'], data[0]['l2']], [data[i]['h'], data[i]['k'], data[i]['l']])
         if inPlane:
@@ -87,14 +91,14 @@ def runcalc3(request):
     requestObject = simplejson.loads(request.POST.keys()[0])
     data = requestObject['data']
     
-    #CALCULATING THE B MATRIX, UB MATRIX, AND STARS (though not needed in this method) DICTIONARIES
-    Bmatrix, UBmatrix, stars = calculateResultsUB(data)
+    #CALCULATING THE B MATRIX AND STARS DICTIONARY
+    Bmatrix, stars = calculateBStar(float(data[0]['a']), float(data[0]['b']), float(data[0]['c']), float(data[0]['alpha']), float(data[0]['beta']), float(data[0]['gamma']))
+    UBmatrix = data[0]['UBmatrix']
     
     response = []
-    response.append([UBmatrix[0][0], UBmatrix[0][1], UBmatrix[0][2], UBmatrix[1][0], UBmatrix[1][1], UBmatrix[1][2], UBmatrix[2][0], UBmatrix[2][1], UBmatrix[2][2]])
     
     #rest of the calculations
-    for i in range(3, data[0]['numrows'] + 3):
+    for i in range(1, len(data)):
         twotheta, theta, omega, chi = calcIdealAngles3([data[i]['h'], data[i]['k'], data[i]['l']], UBmatrix, data[0]['wavelength'], N.radians(data[0]['phi']), stars)
         angles = {'twotheta': twotheta, 'theta':theta, 'omega': omega,'chi':chi, 'phi': data[0]['phi']}
         response.append(angles)
@@ -104,7 +108,7 @@ def runcalc3(request):
     
     
 def calculateResultsUB(data):
-    "Calculates and returns the Bmatrx, UBmatrix and stars array for use in the runcalc# methods"
+    "Calculates and returns the Bmatrx, UBmatrix and stars array. Used to use in the runcalc# methods"
     a, b, c, alpha, beta, gamma, h1, k1, l1, twotheta1, theta1, chi1, phi1, h2, k2, l2, twotheta2, theta2, chi2, phi2 = float(data[0]['a']), float(data[0]['b']), float(data[0]['c']), float(data[0]['alpha']), float(data[0]['beta']), float(data[0]['gamma']), float(data[1]['h']), float(data[1]['k']), float(data[1]['l']), float(data[1]['twotheta']), float(data[1]['theta']), float(data[1]['chi']), float(data[1]['phi']), float(data[2]['h']), float(data[2]['k']), float(data[2]['l']), float(data[2]['twotheta']), float(data[2]['theta']), float(data[2]['chi']), float(data[2]['phi'])
     
     #data given as  2 sets of {h,k,l,2theta,theta,chi,phi} and numberFields {a, b, c, alpha, beta, gamma, wavelength}
@@ -121,6 +125,15 @@ def calculateResultsUB(data):
 
     return Bmatrix, UBmatrix, starDict
      
+     
+def calculateBStar (a, b, c, alpha, beta, gamma): 
+    
+    astar, bstar, cstar, alphastar, betastar, gammastar = star(a, b, c, alpha, beta, gamma)
+    starDict = {'astar': astar, 'bstar': bstar, 'cstar': cstar, 'alphastar': alphastar, 'betastar': betastar, 'gammastar': gammastar}
+    
+    Bmatrix = calcB(astar,bstar,cstar,alphastar,betastar,gammastar,c, alpha)
+    
+    return Bmatrix, starDict
     
     
 def calculateUB(request):
@@ -157,7 +170,7 @@ def refineUB(request):
     data = requestObject['data']
     
     observations = []
-    for i in range(1, data[0]['numrows']+1):
+    for i in range(1, len(data)):
         observations.append(data[i])
     
     UBmatrix = calcRefineUB(observations, data[0]['wavelength'])
@@ -186,7 +199,7 @@ def makeSaveFile (request):
     dataWriter.writerow(['#Data input file for angleCalculator.'])
     #dataWriter.writerow(['#File downloaded from angleCalculator: '])
     #dataWriter.writerow([theDate])
-    dataWriter.writerow(['#WARNING: editing this file may result in a loss of data when loaded or complete failure to load.'])
+    dataWriter.writerow(['#WARNING: editing this file may result in a loss of data when loaded or a complete failure to load.'])
     dataWriter.writerow([' '])
     
     dataWriter.writerow(['#Mode'])
@@ -198,12 +211,14 @@ def makeSaveFile (request):
     dataWriter.writerow([' '])
     
     dataWriter.writerow(['#Observations h k l twotheta theta chi phi'])
-    dataWriter.writerow([data[1]['h'], data[1]['k'], data[1]['l'], data[1]['twotheta'], data[1]['theta'], data[1]['chi'], data[1]['phi']])
-    dataWriter.writerow([data[2]['h'], data[2]['k'], data[2]['l'], data[2]['twotheta'], data[2]['theta'], data[2]['chi'], data[2]['phi']])
+    for i in range(1, data[0]['numrows']):
+        dataWriter.writerow([data[i]['h'], data[i]['k'], data[i]['l'], data[i]['twotheta'], data[i]['theta'], data[i]['chi'], data[i]['phi']])
+    dataWriter.writerow(['#End observations'])
     dataWriter.writerow([' '])
     
     dataWriter.writerow(['#UBmatrix'])
     dataWriter.writerow([data[0]['ub'][0], data[0]['ub'][1], data[0]['ub'][2], data[0]['ub'][3], data[0]['ub'][4], data[0]['ub'][5], data[0]['ub'][6], data[0]['ub'][7], data[0]['ub'][8]])
+    dataWriter.writerow([data[0]['isUBcalculated']])
     dataWriter.writerow([' '])
     
     dataWriter.writerow(['#Scattering Plane Vectors h k l'])
@@ -216,7 +231,7 @@ def makeSaveFile (request):
     dataWriter.writerow([' '])
     
     dataWriter.writerow(['#Desired h k l twotheta theta omega chi phi'])
-    for i in range(3, data[0]['numrows'] + 3):
+    for i in range(data[0]['numrows']+1, len(data)):
         dataWriter.writerow([data[i]['h'], data[i]['k'], data[i]['l'], data[i]['twotheta'], data[i]['theta'], data[i]['omega'], data[i]['chi'], data[i]['phi']])
     dataWriter.writerow(['#End desired'])
     
@@ -237,14 +252,16 @@ def uploadInputFile (fid):
     modenum = data.index('#Mode')  
     latticenum = data.index('#a b c alpha beta gamma wavelength')
     observationsnum = data.index('#Observations h k l twotheta theta chi phi')
+    endobservationsnum = data.index('#End observations')
     scatteringnum = data.index('#Scattering Plane Vectors h k l')
     phinum = data.index('#Fixed Phi Value')
     desirednum = data.index('#Desired h k l twotheta theta omega chi phi')
     enddesirednum = data.index('#End desired')
+    ubnum = data.index('#UBmatrix')
     
     print modenum
     
-    if (modenum < 0 or latticenum < 0 or observationsnum < 0 or scatteringnum < 0 or phinum < 0 or desirednum < 0):
+    if (modenum < 0 or latticenum < 0 or observationsnum < 0 or scatteringnum < 0 or phinum < 0 or desirednum < 0 or ubnum < 0):
         #if any of the data titles aren't found, input fails
         #TODO make sure it fails here; bellow line counts as success, I think
         #return HttpResponse('failed')
@@ -265,27 +282,26 @@ def uploadInputFile (fid):
         sparr2 = data[scatteringnum+2].split(',')
         for x in sparr2:
             thespvectors.append(float(x))
+            
+        #getting the ubmatrix and how it was calculated
+        isUBcalculated = data[ubnum+1]
+        ubarr = data[ubnum+2].split(',')
 
-        #putting the mode data, lattice data, and scattering plane vectors into response[0]
-        response0 = {'mode': data[modenum+1], 'a': thelattice[0], 'b': thelattice[1], 'c': thelattice[2], 'alpha': thelattice[3], 'beta': thelattice[4], 'gamma': thelattice[5], 'wavelength': thelattice[6], 'h1': thespvectors[0], 'k1': thespvectors[1],'l1': thespvectors[2], 'h2': thespvectors[3], 'k2': thespvectors[4], 'l2': thespvectors[5], 'phi': data[phinum+1]}
+        #putting the mode data, lattice data, scattering plane vectors, fixed phi and ubmatrix into response[0]
+        response0 = {'mode': data[modenum+1], 'a': thelattice[0], 'b': thelattice[1], 'c': thelattice[2], 'alpha': thelattice[3], 'beta': thelattice[4], 'gamma': thelattice[5], 'wavelength': thelattice[6], 'h1': thespvectors[0], 'k1': thespvectors[1],'l1': thespvectors[2], 'h2': thespvectors[3], 'k2': thespvectors[4], 'l2': thespvectors[5], 'phi': data[phinum+1], 'isUBcalculated': isUBcalculated, 'UBmatrix': ubarr}
         response.append(response0)
         
         #getting observation data
-        theobservations = []
-        obsarr1 = data[observationsnum+1].split(',')
-        for x in obsarr1:
-            theobservations.append(float(x)) #indicies 0-6
+        for i in range(observationsnum+1, endobservationsnum):
+            obsarr = data[i].split(',')
+            theobservations = [] #going to be re-filled for each new row of data
             
-        obsarr2 = data[observationsnum+2].split(',')
-        for x in obsarr2:
-            theobservations.append(float(x)) #indicies 7-13
+            for x in obsarr:
+                theobservations.append(float(x))
             
-        response1 = {'h': theobservations[0], 'k': theobservations[1], 'l': theobservations[2], 'twotheta': theobservations[3], 'theta': theobservations[4], 'chi': theobservations[5], 'phi': theobservations[6]}
-        response.append(response1)
-        
-        response2 = {'h': theobservations[7], 'k': theobservations[8], 'l': theobservations[9], 'twotheta': theobservations[10], 'theta': theobservations[11], 'chi': theobservations[12], 'phi': theobservations[13]}
-        response.append(response2)
-        
+            obsresponse = {'h': theobservations[0], 'k': theobservations[1], 'l': theobservations[2], 'twotheta': theobservations[3], 'theta': theobservations[4], 'chi': theobservations[5], 'phi': theobservations[6]}
+            response.append(obsresponse)
+
         #getting the ideal data
         for i in range(desirednum+1, enddesirednum):
             idealarr = data[i].split(',')

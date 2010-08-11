@@ -117,38 +117,38 @@ def calcRefineUB(observations, wavelength):
     hvectors = []
     Uv = []
     
-    for i in range(0, len(hvectors)):
+    for i in range(0, len(observations)):
         h = [observations[i]['h'], observations[i]['k'], observations[i]['l']]
         hvectors.append(h)
         
-        omega = N.radians(observations[i]['omega'])
+        theta = N.radians(observations[i]['theta'])
         chi = N.radians(observations[i]['chi'])
         phi = N.radians(observations[i]['phi'])
         twotheta = N.radians(observations[i]['twotheta'])
+        omega = theta - twotheta/2.0
         
         u1p = N.cos(omega)*N.cos(chi)*N.cos(phi) - N.sin(omega)*N.sin(phi)
         u2p = N.cos(omega)*N.cos(chi)*N.sin(phi) + N.sin(omega)*N.cos(phi)
         u3p = N.cos(omega)*N.sin(chi)
         
-        u1p = 2*N.sin(twotheta/2) / wavelength * u1p
-        u2p = 2*N.sin(twotheta/2) / wavelength * u2p
-        u3p = 2*N.sin(twotheta/2) / wavelength * u3p
+        uv1p = 2.0*N.sin(twotheta/2) / wavelength * u1p
+        uv2p = 2.0*N.sin(twotheta/2) / wavelength * u2p
+        uv3p = 2.0*N.sin(twotheta/2) / wavelength * u3p
 
-        Uv.append(u1p)
-        Uv.append(u2p)
-        Uv.append(u3p)
+        Uv.append(uv1p)
+        Uv.append(uv2p)
+        Uv.append(uv3p)
         
     x0 = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-   
     p = NLSP(UBRefinementEquations, x0, args=(hvectors, Uv))
     r = p.solve('nlp:ralg')
-   
-    a = N.degrees(r.xf[0]) 
-    b = N.degrees(r.xf[1]) 
-    c = N.degrees(r.xf[2]) 
-    d = N.degrees(r.xf[3]) 
-    e = N.degrees(r.xf[4]) 
-    f = N.degrees(r.xf[5]) 
+
+    a = r.xf[0]
+    b = r.xf[1]
+    c = r.xf[2]
+    d = r.xf[3]
+    e = r.xf[4]
+    f = r.xf[5]
     UB = [[a, d, e], [d, b, f], [e, f, c]]
    
     return UB
@@ -174,9 +174,11 @@ def UBRefinementEquations(x, h, Uv):
    outvec = []
    
    for i in range(0, len(h)):
-        outvec.append(N.dot(UB[0], h[i][0]) - Uv[3*i])
-        outvec.append(N.dot(UB[1], h[i][1]) - Uv[3*i + 1])
-        outvec.append(N.dot(UB[2], h[i][2]) - Uv[3*i + 2])
+        #sys.stderr.write('i %d\n'%(i,))
+        #sys.stdout.write('i %d\n'%(i,))
+        outvec.append(N.dot(UB[0], h[i]) - Uv[3*i])
+        outvec.append(N.dot(UB[1], h[i]) - Uv[3*i + 1])
+        outvec.append(N.dot(UB[2], h[i]) - Uv[3*i + 2])   
         
    return outvec
    

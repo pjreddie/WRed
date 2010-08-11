@@ -10,7 +10,8 @@
 
 Ext.onReady(function () {
     var conn = new Ext.data.Connection();
-    var isUBcalculated = false;     //Tells whether UB matrix has been calculated
+    var isUBcalculated = 'no';     //Tells whether UB matrix has been calculated
+                                   //either: 'no', 'yes', or 'refined'
     myUBmatrix = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] //The variable that will hold the calculated UB matrix
 
     var baseData = [
@@ -186,6 +187,11 @@ Ext.onReady(function () {
             handler: addRowObservation
         }, 
         '-', //Shorthand for Ext.Tollbar.Separator (the " | " between buttons)
+        /*{
+            text: 'Remove Selected Row',
+            handler: removeRowObservation
+        },
+        '-',*/
         {
             text: 'Calculate UB Matrix',
             handler: submitData
@@ -221,10 +227,11 @@ Ext.onReady(function () {
     function submitData(button, event) { 
         //Calculates and stores the B and UB matricies when the button 'Calculate UB Matrix' is pressed
         params = {'data': [] };
-
-        for (var i = 0; i < store.getCount(); i++) {
+        
+        //only sends the first two row's of observations
+        for (var i = 0; i < 2; i++) {
             var record = store.getAt(i)
-            params['data'].push(record.data); //adding table's input to data to be sent to backend
+            params['data'].push(record.data); 
         };
         
         params['data'].push({
@@ -242,8 +249,7 @@ Ext.onReady(function () {
             params: Ext.encode(params),
             success: ubsuccess,
             failure: function () {
-                isUBcalculated = false;
-                //southPanel.setTitle('UB Calculated: ' + isUBcalculated);
+                isUBcalculated = 'no';
                 Ext.Msg.alert('Error: Failed to calculate UB matrix');
             }
         });
@@ -255,13 +261,16 @@ Ext.onReady(function () {
         params = {'data': [] };
 
         params['data'].push({
-            'wavelength': wavelengthField.getValue(),
-            'numrows'   : store.getCount()
+            'wavelength': wavelengthField.getValue()
         });
 
         for (var i = 0; i < store.getCount(); i++) {
-            var record = store.getAt(i)
-            params['data'].push(record.data); //adding table's input to data to be sent to backend
+            var record = store.getAt(i)            
+            //there will never be a (0,0,0) h,k,l vector so don't push that row
+            if (record.data['h'] != 0 || record.data['k'] != 0 || record.data['l'] != 0){   
+                params['data'].push(record.data); //adding table's input to data to be sent to backend
+                console.log(record.data);
+            }
         };
         
         conn.request({
@@ -270,7 +279,7 @@ Ext.onReady(function () {
             params: Ext.encode(params),
             success: refineubsuccess,
             failure: function () {
-                isUBcalculated = false;
+                isUBcalculated = 'no';
                 Ext.Msg.alert('Error: Failed to calculate UB matrix');
             }
         });
@@ -278,12 +287,10 @@ Ext.onReady(function () {
     
     function ubsuccess (responseObject) {
         stringUBmatrix = responseObject.responseText; //Receives UBmatrix as a String w/ elements separated by a ', '
-        //console.log(stringUBmatrix);
         myUBmatrix = stringUBmatrix.split(', '); //Makes a 1D array of the 9 UBmatrix values, each as a String
         for (i = 0; i < 9 ; i++){
             myUBmatrix[i] = parseFloat(myUBmatrix[i]); //Converts each String into a Float
         }
-        //console.log(myUBmatrix);
         
         //displaying UB matrix values
         UB11Field.setValue(myUBmatrix[0]);
@@ -296,20 +303,19 @@ Ext.onReady(function () {
         UB32Field.setValue(myUBmatrix[7]);
         UB33Field.setValue(myUBmatrix[8]);
 
-        isUBcalculated = true;
-        store.commitChanges();
+        isUBcalculated = 'yes';
+        store.commitChanges(); //removes red mark in corner of cell that indicates an uncommited edit
     };
     
+
     function refineubsuccess (responseObject) {
         //TODO may need to add in calculated lattice parameters
     
         stringUBmatrix = responseObject.responseText; //Receives UBmatrix as a String w/ elements separated by a ', '
-        //console.log(stringUBmatrix);
         myUBmatrix = stringUBmatrix.split(', '); //Makes a 1D array of the 9 UBmatrix values, each as a String
         for (i = 0; i < 9 ; i++){
             myUBmatrix[i] = parseFloat(myUBmatrix[i]); //Converts each String into a Float
         }
-        //console.log(myUBmatrix);
         
         //displaying UB matrix values
         UB11Field.setValue(myUBmatrix[0]);
@@ -322,15 +328,18 @@ Ext.onReady(function () {
         UB32Field.setValue(myUBmatrix[7]);
         UB33Field.setValue(myUBmatrix[8]);
 
-        isUBcalculated = true;
-        store.commitChanges();
+        isUBcalculated = 'refined';
+        store.commitChanges(); 
     };
     
     
     function calculateResults(button, event) {
         //Calculates the desired angles when the button 'Calculate Results' is pressed
         params = {'data': [] };
-        numrows = idealDataStore.getCount(); //number of rows in the Desired Data table
+        
+        UBmatrix = [[UB11Field.getValue(), UB12Field.getValue(), UB13Field.getValue()],
+                    [UB21Field.getValue(), UB22Field.getValue(), UB23Field.getValue()],
+                    [UB31Field.getValue(), UB32Field.getValue(), UB33Field.getValue()]]
         
         //IF the combobox is in the Bisecting Plane mode
         if (myCombo.getValue() == 'Bisecting'){
@@ -344,28 +353,22 @@ Ext.onReady(function () {
                 'beta'      : betaField.getValue(),
                 'gamma'     : gammaField.getValue(),
                 'wavelength': wavelengthField.getValue(),
-                'numrows'   : numrows 
+                'UBmatrix'  : UBmatrix
             }); 
-            
-            for (var i = 0; i < store.getCount(); i++) {
-                //gets all the data from the Observation table
-                var record = store.getAt(i)
-                params['data'].push(record.data); 
-            };
-            
-            for (var j = 0; j < numrows; j++){
+
+            for (var j = 0; j < idealDataStore.getCount(); j++){
                 //gets all the data from the Desired Data table
-                var record = idealDataStore.getAt(j)
+                var record = idealDataStore.getAt(j);
                 params['data'].push(record.data);
             }  
                 
-             conn.request({
+            conn.request({
                 url: '/WRed/files/omegaZero/',
                 method: 'POST',
                 params: Ext.encode(params),
                 success: successFunction,
                 failure: function () {
-                    Ext.Msg.alert('Error: Failed request');
+                    Ext.Msg.alert('Error: Failed calculation for Bisecting mode');
                 }
             });
         }
@@ -388,14 +391,10 @@ Ext.onReady(function () {
                 'h2'        : h2Field.getValue(),
                 'k2'        : k2Field.getValue(),
                 'l2'        : l2Field.getValue(),
-                'numrows'   : numrows 
+                'UBmatrix'  : UBmatrix
             });
-            
-            for (var i = 0; i < store.getCount(); i++) {
-                var record = store.getAt(i)
-                params['data'].push(record.data); 
-            };
-            for (var j = 0; j < numrows; j++){
+
+            for (var j = 0; j < idealDataStore.getCount(); j++){
                 var record = idealDataStore.getAt(j)
                 params['data'].push(record.data);
             }
@@ -406,7 +405,7 @@ Ext.onReady(function () {
                 params: Ext.encode(params),
                 success: successFunction,
                 failure: function () {
-                    Ext.Msg.alert('Error: Failed request');
+                    Ext.Msg.alert('Error: Failed calculation for Scattering Plane mode');
                 }
             });
         }
@@ -422,14 +421,10 @@ Ext.onReady(function () {
                 'gamma'     : gammaField.getValue(),
                 'wavelength': wavelengthField.getValue(),
                 'phi'       : phiField.getValue(),
-                'numrows'   : numrows 
+                'UBmatrix'  : UBmatrix
             });
             
-            for (var i = 0; i < store.getCount(); i++) {
-                var record = store.getAt(i);
-                params['data'].push(record.data); 
-            };
-            for (var j = 0; j < numrows; j++){
+            for (var j = 0; j < idealDataStore.getCount(); j++){
                 var record = idealDataStore.getAt(j);
                 params['data'].push(record.data);
             }
@@ -440,35 +435,24 @@ Ext.onReady(function () {
                 params: Ext.encode(params),
                 success: successFunction,
                 failure: function () {
-                    Ext.Msg.alert('Error: Failed request');
+                    Ext.Msg.alert('Error: Failed calculation for Phi Fixed mode');
                 }
             });
         }
         else {
-            Ext.Msg.alert('Error: Could not calculate desired angles');
+            Ext.Msg.alert('Error: Please select a valid calculation mode');
         }
     };
     
     function successFunction(responseObject) {
         idealdata = Ext.decode(responseObject.responseText);
-        //console.log(idealdata);
-        
-        //Updating UB matrix display
-        UB11Field.setValue(idealdata[0][0]);
-        UB12Field.setValue(idealdata[0][1]);
-        UB13Field.setValue(idealdata[0][2]);
-        UB21Field.setValue(idealdata[0][3]);
-        UB22Field.setValue(idealdata[0][4]);
-        UB23Field.setValue(idealdata[0][5]);
-        UB31Field.setValue(idealdata[0][6]);
-        UB32Field.setValue(idealdata[0][7]);
-        UB33Field.setValue(idealdata[0][8]);
         
         //Updating desired data table
         changes = ['twotheta', 'theta', 'omega', 'chi', 'phi'];
         for (var i = 0; i < idealDataStore.getCount(); i++){
             record = idealDataStore.getAt(i); 
-            if (idealdata[i+1] == 'Error') {
+            if (idealdata[i] == 'Error') {
+                //setting up the error message
                 record.set('twotheta', 'Invalid');
                 record.set('theta', 'Vector!');
                 record.set('omega', 'Not in');
@@ -478,14 +462,19 @@ Ext.onReady(function () {
             else{
                 for (var c in changes) {
                     fieldName = changes[c];
-                    record.set(fieldName, idealdata[i+1][fieldName]);
+                    record.set(fieldName, idealdata[i][fieldName]);
                 }
             }
         }
-        store.commitChanges(); //removes red mark in corner of cell that indicates an uncommited edit
+        
         idealDataStore.commitChanges();
     }
-
+    
+    /*function removeRowObservation() {
+        observationGrid.stopEditing()
+        observationGrid.
+    };*/
+    
     function addRowObservation() {
         var input = observationGrid.getStore().recordType;
         var r = new input({
@@ -606,55 +595,46 @@ Ext.onReady(function () {
     
     //UB matrix numberfields:
     var UB11Field = new Ext.form.NumberField({
-        //fieldLabel: 'UB11',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
     var UB12Field = new Ext.form.NumberField({
-        //fieldLabel: 'UB12',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
     var UB13Field = new Ext.form.NumberField({
-        //fieldLabel: 'UB13',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
     var UB21Field = new Ext.form.NumberField({
-        //fieldLabel: 'UB21',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
     var UB22Field = new Ext.form.NumberField({
-        //fieldLabel: 'UB22',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
     var UB23Field = new Ext.form.NumberField({
-        //fieldLabel: 'UB23',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
     var UB31Field = new Ext.form.NumberField({
-        //fieldLabel: 'UB31',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
     var UB32Field = new Ext.form.NumberField({
-        //fieldLabel: 'UB32',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
     });
     var UB33Field = new Ext.form.NumberField({
-        //fieldLabel: 'UB33',
         allowBlank: true,
         decimalPrecision: 7,
         anchor: '-3'
@@ -665,7 +645,6 @@ Ext.onReady(function () {
         fieldLabel: 'Fixed Phi (φ)',
         allowBlank: false,
         decimalPrecision: 7,
-        //anchor: '-10'
     });
     
     // ********* END - Defining and assigning variables for the numberfield inputs  *********  
@@ -674,7 +653,6 @@ Ext.onReady(function () {
     // ********* START - Setting up lattice constants GUI  ********* 
     var topFieldset = {
         xtype       : 'fieldset',
-        //title       : 'Lattice Constants',
         border      : false,
         defaultType : 'numberfield',
         defaults    : {
@@ -773,7 +751,6 @@ Ext.onReady(function () {
     // ********* START - Setting up scattering plane h/k/l GUI  ********* 
     var ScatteringFieldset = {
         xtype       : 'fieldset',
-        //title       : 'Scattering Plane Vectors',
         border      : false,
         defaultType : 'numberfield',
         defaults    : {
@@ -900,7 +877,7 @@ Ext.onReady(function () {
                         ]
                     },
                     {
-                        //Buffer blank space to even out the l1 inputbox
+                        //Buffer blank space to even out the phi inputbox
                         xtype       : 'container',
                         layout      : 'form',
                         columnWidth : 1,
@@ -1049,7 +1026,7 @@ Ext.onReady(function () {
                 ]
             },
             {
-                //empty container to allow horizontal inputboxes for h,k,l
+                //empty container to allow a 3x3 arrangement of numberfields for the UB matrix
                 xtype       : 'container',
                 border      : false,
                 width       : 230
@@ -1105,11 +1082,8 @@ Ext.onReady(function () {
     
     function saveFunction() {
         //Writes data to a textfile for user to download
-        //ubmatrix = Ext.decode(responseObject.responseText);
-        //console.log(ubmatrix);
         
         params = {'data': [] };
-        numrows = idealDataStore.getCount(); //number of rows in desired results table
 
         params['data'].push({
             'h1'        : h1Field.getValue(), //h, k, ls are the scattering plane vectors
@@ -1126,15 +1100,16 @@ Ext.onReady(function () {
             'beta'      : betaField.getValue(),
             'gamma'     : gammaField.getValue(),
             'mode'      : myCombo.getValue(),
-            'numrows'   : numrows,
+            'numrows'   : store.getCount(),
             'ub'        : myUBmatrix,
-            'phi'       : phiField.getValue()
+            'phi'       : phiField.getValue(),
+            'isUBcalculated': isUBcalculated
         });
-        for (var i = 0; i < 2; i++) { //all the observation table's data (only 2 rows' worth)
+        for (var i = 0; i < store.getCount(); i++) { //all the observation table's data 
             var record1 = store.getAt(i)
             params['data'].push(record1.data); 
         }; 
-        for (var j = 0; j < numrows; j++){ //all the desired results table's data
+        for (var j = 0; j < idealDataStore.getCount(); j++){ //all the desired results table's data
             var record2 = idealDataStore.getAt(j)
             params['data'].push(record2.data);
         }  
@@ -1156,10 +1131,8 @@ Ext.onReady(function () {
     
     
     function uploadFunction (formPanel, uploadObject) {
-        //console.log(uploadObject.response); 
         responseJSON = Ext.decode(uploadObject.response.responseText);
         data = responseJSON['data']['array'];
-        //console.log(data);
         
         if (data[0] == null){
             Ext.Msg.alert('Error: Please select a file.');
@@ -1190,24 +1163,39 @@ Ext.onReady(function () {
             //uploading fixed phi value
             phiField.setValue(data[0]['phi']);
             
-            //uploading observation data
-            newData = [
-                [data[1]['h'], data[1]['k'], data[1]['l'], data[1]['twotheta'], data[1]['theta'], data[1]['chi'], data[1]['phi']],
-                [data[2]['h'], data[2]['k'], data[2]['l'], data[2]['twotheta'], data[2]['theta'], data[2]['chi'], data[2]['phi']],
-            ];
-            store.loadData(newData);
-            
+            //uploading observation data and ideal data
+            newData = [];
             newIdealData = [];
-            for (i = 3; i < data.length; i++){
-                tempIdealData = [data[i]['h'], data[i]['k'], data[i]['l'], data[i]['twotheta'], data[i]['theta'], data[i]['omega'], data[i]['chi'], data[i]['phi']];
-                newIdealData.push(tempIdealData);
+            for (i = 1; i < data.length; i++){
+                if (data[i]['omega'] == null){ //omega = null if it's observation data
+                    tempData = [data[i]['h'], data[i]['k'], data[i]['l'], data[i]['twotheta'], data[i]['theta'], data[i]['chi'], data[i]['phi']];
+                    
+                    newData.push(tempData);
+                }
+                else {
+                    tempIdealData = [data[i]['h'], data[i]['k'], data[i]['l'], data[i]['twotheta'], data[i]     ['theta'], data[i]['omega'], data[i]['chi'], data[i]['phi']];
+                    
+                    newIdealData.push(tempIdealData);
+                }
             }
+                
+            store.loadData(newData);
             idealDataStore.loadData(newIdealData);
-            //console.log(newData);
-            //console.log(h1Field.getValue());
-
             
-            submitData(null, null); //calculates the UB matrix instead of using the saved one
+            isUBcalculated = data[0]['isUBcalculated'];
+            myUBmatrix = data[0]['UBmatrix']
+
+            UB11Field.setValue(myUBmatrix[0]);
+            UB12Field.setValue(myUBmatrix[1]);
+            UB13Field.setValue(myUBmatrix[2]);
+            UB21Field.setValue(myUBmatrix[3]);
+            UB22Field.setValue(myUBmatrix[4]);
+            UB23Field.setValue(myUBmatrix[5]);
+            UB31Field.setValue(myUBmatrix[6]);
+            UB32Field.setValue(myUBmatrix[7]);
+            UB33Field.setValue(myUBmatrix[8]);
+            
+            console.log(isUBcalculated);
         }
     };
 
@@ -1241,8 +1229,6 @@ Ext.onReady(function () {
     });
     
     function comboFunction (combo, value) {
-        console.log(value);
-
         //The comboBox gave a nasty object for value, hence the value['data']['mode']
         if (value['data']['mode'] == 'Bisecting'){
             //If switching to 'Bisecting' mode, removes special input boxes from other modes
