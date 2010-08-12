@@ -208,24 +208,18 @@ def UBRefinementEquations(x, h, Uv):
 # **************************** START - METHOD FOR OBTAINING LATTICE PARAMETERS FROM UB ****************************
 def calculateLatticeParameters(UBmatrix):
 
-    sys.stderr.write('i %d %d %3.4f\n'%(UBmatrix.shape[0],UBmatrix.shape[1],UBmatrix[0,0]))
-
     G = N.linalg.inv(N.dot(UBmatrix.T, UBmatrix))
-    sys.stderr.write('inverted\n')
     
     abc = N.sqrt(N.diag(G))
     a = abc[0]
     b = abc[1]
     c = abc[2]
-    sys.stderr.write('a b c %3.4f %3.4f %3.4f\n'%(a,b,c))
     
     alpha = N.degrees(N.arccos(G[1, 2]/b/c))
     beta = N.degrees(N.arccos(G[0, 2]/a/c))
     gamma = N.degrees(N.arccos(G[0, 1]/a/b))
     
     latticeParameters = {'a': a, 'b': b, 'c': c, 'alpha': alpha, 'beta': beta, 'gamma': gamma}
-    print 'hi'
-    print latticeParameters
     return latticeParameters
 # **************************** END - METHOD FOR OBTAINING LATTICE PARAMETERS FROM UB ****************************
 
