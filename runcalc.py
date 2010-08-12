@@ -37,6 +37,8 @@ def runcalc1(request):
     #            [4.27609208916, 12.3436137561, 4.5555376]]
     #[[-7.8482945, -2.36452161464, 4.27609208916], [-2.36452161464,2.3884179, 12.3436137561],[4.27609208916, 12.3436137561, 4.5555376]]
     #[[-0.136978579681,-0.04126868741,0.0746318860743],[-0.04126868741,0.0416857556556,0.215436701639],[0.0746318860743,0.215436701639, 0.0795091311514]]
+    #[[-0.135210153654,0.137608011145,-0.167996915619],[-0.112847383488,0.124557744782,0.19284996746],[0.185537117585,0.176039909628,-0.00513162303185]]
+    
     response = []
     
     #wavelength was a string for some reason...
@@ -127,12 +129,9 @@ def calculateResultsUB(data):
      
      
 def calculateBStar (a, b, c, alpha, beta, gamma): 
-    
     astar, bstar, cstar, alphastar, betastar, gammastar = star(a, b, c, alpha, beta, gamma)
     starDict = {'astar': astar, 'bstar': bstar, 'cstar': cstar, 'alphastar': alphastar, 'betastar': betastar, 'gammastar': gammastar}
-    
     Bmatrix = calcB(astar,bstar,cstar,alphastar,betastar,gammastar,c, alpha)
-    
     return Bmatrix, starDict
     
     
@@ -178,6 +177,13 @@ def refineUB(request):
     return HttpResponse([UBmatrix[0][0],', ', UBmatrix[0][1],', ', UBmatrix[0][2],', ', UBmatrix[1][0],', ', UBmatrix[1][1],', ', UBmatrix[1][2],', ', UBmatrix[2][0],', ', UBmatrix[2][1],', ', UBmatrix[2][2]])
         
         
+def getLatticeParameters (request):
+    requestObject = simplejson.loads(request.POST.keys()[0]) 
+    UBmatrix = requestObject['UBmatrix']
+    UBmatrix = N.array(UBmatrix).reshape((3,3)) #converting into 3x3
+    paramsDict = calculateLatticeParameters(UBmatrix)
+    return HttpResponse([paramsDict])
+    
     
 def makeSaveFile (request):
     "Saves the current data in a text file named 'savedata.txt', overwriting the previous text file so there is minimal data storage. Then lets user download the file."

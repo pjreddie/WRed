@@ -1,5 +1,5 @@
 import numpy
-import pylab
+#import pylab
 def savitzky_golay(data, kernel = 11, order = 4,deriv=0):
     """
         applies a Savitzky-Golay filter

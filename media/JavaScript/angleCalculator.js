@@ -12,6 +12,145 @@ Ext.onReady(function () {
     var conn = new Ext.data.Connection();
     var isUBcalculated = 'no';     //Tells whether UB matrix has been calculated
                                    //either: 'no', 'yes', or 'refined'
+                                   
+// ********* START - Defining and assigning variables for the numberfield inputs  *********
+    var aField = new Ext.form.NumberField({
+        fieldLabel: 'a',
+        allowBlank: false,
+        decimalPrecision: 7,
+        anchor: '-10'
+    });
+    var bField = new Ext.form.NumberField({
+        fieldLabel: 'b',
+        allowBlank: false,
+        decimalPrecision: 7,
+        anchor: '-10'
+    });
+    var cField = new Ext.form.NumberField({
+        fieldLabel: 'c',
+        allowBlank: false,
+        decimalPrecision: 7,
+        anchor: '-10'
+    });
+    var alphaField = new Ext.form.NumberField({
+        fieldLabel: 'α',
+        allowBlank: false,
+        decimalPrecision: 7,
+        anchor: '-10'
+    });
+    var betaField = new Ext.form.NumberField({
+        fieldLabel: 'β',
+        allowBlank: false,
+        decimalPrecision: 7,
+        anchor: '-10'
+    });
+    var gammaField = new Ext.form.NumberField({
+        fieldLabel: 'γ',
+        allowBlank: false,
+        decimalPrecision: 7,
+        anchor: '-10'
+    });
+    var wavelengthField = new Ext.form.NumberField({
+        fieldLabel: 'Wavelength (λ)',
+        allowBlank: true,
+        decimalPrecision: 7
+    });
+    
+    
+    //scattering plane h, k, l numberfields:
+    var h1Field = new Ext.form.NumberField({
+        fieldLabel: 'h1',
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-10'
+    });
+    var k1Field = new Ext.form.NumberField({
+        fieldLabel: 'k1',
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-10'
+    });
+    var l1Field = new Ext.form.NumberField({
+        fieldLabel: 'l1',
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-10'
+    });
+    var h2Field = new Ext.form.NumberField({
+        fieldLabel: 'h2',
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-10'
+    });
+    var k2Field = new Ext.form.NumberField({
+        fieldLabel: 'k2',
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-10'
+    });
+    var l2Field = new Ext.form.NumberField({
+        fieldLabel: 'l2',
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-10'
+    });
+    
+    //UB matrix numberfields:
+    var UB11Field = new Ext.form.NumberField({
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+    var UB12Field = new Ext.form.NumberField({
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+    var UB13Field = new Ext.form.NumberField({
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+    var UB21Field = new Ext.form.NumberField({
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+    var UB22Field = new Ext.form.NumberField({
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+    var UB23Field = new Ext.form.NumberField({
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+    var UB31Field = new Ext.form.NumberField({
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+    var UB32Field = new Ext.form.NumberField({
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+    var UB33Field = new Ext.form.NumberField({
+        allowBlank: true,
+        decimalPrecision: 7,
+        anchor: '-3'
+    });
+    
+    //phi fixed phi field
+    var phiField = new Ext.form.NumberField({
+        fieldLabel: 'Fixed Phi (φ)',
+        allowBlank: false,
+        decimalPrecision: 7,
+    });
+    
+    // ********* END - Defining and assigning variables for the numberfield inputs  *********  
+                                   
     myUBmatrix = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] //The variable that will hold the calculated UB matrix
 
     var baseData = [
@@ -187,11 +326,6 @@ Ext.onReady(function () {
             handler: addRowObservation
         }, 
         '-', //Shorthand for Ext.Tollbar.Separator (the " | " between buttons)
-        /*{
-            text: 'Remove Selected Row',
-            handler: removeRowObservation
-        },
-        '-',*/
         {
             text: 'Calculate UB Matrix',
             handler: submitData
@@ -200,7 +334,13 @@ Ext.onReady(function () {
         {
             text: 'Refine UB Matrix',
             handler: RefineSubmitData
+        },
+        '-',
+        {
+            text: 'Evaluate Lattice',
+            handler: getLattice
         }]
+        
     });
     
     var grid2 = new Ext.grid.EditorGridPanel({
@@ -269,7 +409,6 @@ Ext.onReady(function () {
             //there will never be a (0,0,0) h,k,l vector so don't push that row
             if (record.data['h'] != 0 || record.data['k'] != 0 || record.data['l'] != 0){   
                 params['data'].push(record.data); //adding table's input to data to be sent to backend
-                console.log(record.data);
             }
         };
         
@@ -337,10 +476,6 @@ Ext.onReady(function () {
         //Calculates the desired angles when the button 'Calculate Results' is pressed
         params = {'data': [] };
         
-        UBmatrix = [[UB11Field.getValue(), UB12Field.getValue(), UB13Field.getValue()],
-                    [UB21Field.getValue(), UB22Field.getValue(), UB23Field.getValue()],
-                    [UB31Field.getValue(), UB32Field.getValue(), UB33Field.getValue()]]
-        
         //IF the combobox is in the Bisecting Plane mode
         if (myCombo.getValue() == 'Bisecting'){
 
@@ -353,7 +488,7 @@ Ext.onReady(function () {
                 'beta'      : betaField.getValue(),
                 'gamma'     : gammaField.getValue(),
                 'wavelength': wavelengthField.getValue(),
-                'UBmatrix'  : UBmatrix
+                'UBmatrix'  : myUBmatrix
             }); 
 
             for (var j = 0; j < idealDataStore.getCount(); j++){
@@ -469,11 +604,7 @@ Ext.onReady(function () {
         
         idealDataStore.commitChanges();
     }
-    
-    /*function removeRowObservation() {
-        observationGrid.stopEditing()
-        observationGrid.
-    };*/
+
     
     function addRowObservation() {
         var input = observationGrid.getStore().recordType;
@@ -509,146 +640,37 @@ Ext.onReady(function () {
         grid2.startEditing(idealDataStore.getCount()-1, 0); //starts editing for first cell of new row
     };
     
+    function getLattice() {
+        //With a calculated UB matrix, the lattice parameters can be calculated
+        
+        params = {'UBmatrix': myUBmatrix};
+
+        conn.request({
+            url: '/WRed/files/latticeParameters/',
+            method: 'POST',
+            params: Ext.encode(params),
+            success: displayLattice,
+            failure: function () {
+                Ext.Msg.alert('Error: Could not calculate the lattice parameters from the UB matrix');
+            }
+        });
+    };
+    
+    function displayLattice (responseObject){
+        //console.log(responseObject);
+        lattice = Ext.decode(responseObject.responseText);
+        //console.log(lattice);
+        
+        aField.setValue(lattice['a']);
+        bField.setValue(lattice['b']);
+        cField.setValue(lattice['c']);
+        alphaField.setValue(lattice['alpha']);
+        betaField.setValue(lattice['beta']);
+        gammaField.setValue(lattice['gamma']);
+    }
+    
     // ****************** END - Defining grid button functions ****************** 
    
-    // ********* START - Defining and assigning variables for the numberfield inputs  *********
-    var aField = new Ext.form.NumberField({
-        fieldLabel: 'a',
-        allowBlank: false,
-        decimalPrecision: 7,
-        anchor: '-10'
-    });
-    var bField = new Ext.form.NumberField({
-        fieldLabel: 'b',
-        allowBlank: false,
-        decimalPrecision: 7,
-        anchor: '-10'
-    });
-    var cField = new Ext.form.NumberField({
-        fieldLabel: 'c',
-        allowBlank: false,
-        decimalPrecision: 7,
-        anchor: '-10'
-    });
-    var alphaField = new Ext.form.NumberField({
-        fieldLabel: 'α',
-        allowBlank: false,
-        decimalPrecision: 7,
-        anchor: '-10'
-    });
-    var betaField = new Ext.form.NumberField({
-        fieldLabel: 'β',
-        allowBlank: false,
-        decimalPrecision: 7,
-        anchor: '-10'
-    });
-    var gammaField = new Ext.form.NumberField({
-        fieldLabel: 'γ',
-        allowBlank: false,
-        decimalPrecision: 7,
-        anchor: '-10'
-    });
-    var wavelengthField = new Ext.form.NumberField({
-        fieldLabel: 'Wavelength (λ)',
-        allowBlank: true,
-        decimalPrecision: 7
-    });
-    
-    
-    //scattering plane h, k, l numberfields:
-    var h1Field = new Ext.form.NumberField({
-        fieldLabel: 'h1',
-        allowBlank: true,
-        decimalPrecision: 7,
-        anchor: '-10'
-    });
-    var k1Field = new Ext.form.NumberField({
-        fieldLabel: 'k1',
-        allowBlank: true,
-        decimalPrecision: 7,
-        anchor: '-10'
-    });
-    var l1Field = new Ext.form.NumberField({
-        fieldLabel: 'l1',
-        allowBlank: true,
-        decimalPrecision: 7,
-        anchor: '-10'
-    });
-    var h2Field = new Ext.form.NumberField({
-        fieldLabel: 'h2',
-        allowBlank: true,
-        decimalPrecision: 7,
-        anchor: '-10'
-    });
-    var k2Field = new Ext.form.NumberField({
-        fieldLabel: 'k2',
-        allowBlank: true,
-        decimalPrecision: 7,
-        anchor: '-10'
-    });
-    var l2Field = new Ext.form.NumberField({
-        fieldLabel: 'l2',
-        allowBlank: true,
-        decimalPrecision: 7,
-        anchor: '-10'
-    });
-    
-    //UB matrix numberfields:
-    var UB11Field = new Ext.form.NumberField({
-        allowBlank: true,
-        decimalPrecision: 7,
-        anchor: '-3'
-    });
-    var UB12Field = new Ext.form.NumberField({
-        allowBlank: true,
-        decimalPrecision: 7,
-        anchor: '-3'
-    });
-    var UB13Field = new Ext.form.NumberField({
-        allowBlank: true,
-        decimalPrecision: 7,
-        anchor: '-3'
-    });
-    var UB21Field = new Ext.form.NumberField({
-        allowBlank: true,
-        decimalPrecision: 7,
-        anchor: '-3'
-    });
-    var UB22Field = new Ext.form.NumberField({
-        allowBlank: true,
-        decimalPrecision: 7,
-        anchor: '-3'
-    });
-    var UB23Field = new Ext.form.NumberField({
-        allowBlank: true,
-        decimalPrecision: 7,
-        anchor: '-3'
-    });
-    var UB31Field = new Ext.form.NumberField({
-        allowBlank: true,
-        decimalPrecision: 7,
-        anchor: '-3'
-    });
-    var UB32Field = new Ext.form.NumberField({
-        allowBlank: true,
-        decimalPrecision: 7,
-        anchor: '-3'
-    });
-    var UB33Field = new Ext.form.NumberField({
-        allowBlank: true,
-        decimalPrecision: 7,
-        anchor: '-3'
-    });
-    
-    //phi fixed phi field
-    var phiField = new Ext.form.NumberField({
-        fieldLabel: 'Fixed Phi (φ)',
-        allowBlank: false,
-        decimalPrecision: 7,
-    });
-    
-    // ********* END - Defining and assigning variables for the numberfield inputs  *********  
- 
 
     // ********* START - Setting up lattice constants GUI  ********* 
     var topFieldset = {
@@ -1309,7 +1331,7 @@ Ext.onReady(function () {
         height: 290,
         border: true,
         items: [{
-            title   : 'Lattice Constants',
+            title   : 'Lattice Parameters',
             region  : 'center',
             id      : 'center-component',
             layout  : 'fit',

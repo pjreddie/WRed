@@ -1,7 +1,7 @@
 import numpy as N
 #import matplotlib
 #matplotlib.use('WXAgg')
-import pylab
+#import pylab
 
 #from matplotlib.figure import Figure
 from sgolay import savitzky_golay as savitzky_golay

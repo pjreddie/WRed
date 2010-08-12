@@ -121,6 +121,16 @@ def calcRefineUB(observations, wavelength):
         h = [observations[i]['h'], observations[i]['k'], observations[i]['l']]
         hvectors.append(h)
         
+        '''
+        sys.stderr.write('i %3.4f \n'%(observations[i]['h'],))
+        sys.stderr.write('i %3.4f \n'%(observations[i]['k'],))
+        sys.stderr.write('i %3.4f \n'%(observations[i]['l'],))
+        sys.stderr.write('i %3.4f \n'%(observations[i]['twotheta'],))
+        sys.stderr.write('i %3.4f \n'%(observations[i]['theta'],))
+        sys.stderr.write('i %3.4f \n'%(observations[i]['chi'],))
+        sys.stderr.write('i %3.4f \n'%(observations[i]['phi'],))
+        '''
+        
         theta = N.radians(observations[i]['theta'])
         chi = N.radians(observations[i]['chi'])
         phi = N.radians(observations[i]['phi'])
@@ -139,7 +149,7 @@ def calcRefineUB(observations, wavelength):
         Uv.append(uv2p)
         Uv.append(uv3p)
         
-    x0 = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    x0 = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
     p = NLSP(UBRefinementEquations, x0, args=(hvectors, Uv))
     r = p.solve('nlp:ralg')
 
@@ -149,8 +159,12 @@ def calcRefineUB(observations, wavelength):
     d = r.xf[3]
     e = r.xf[4]
     f = r.xf[5]
-    UB = [[a, d, e], [d, b, f], [e, f, c]]
-   
+    g = r.xf[6]
+    h = r.xf[7]
+    j = r.xf[8]
+
+    UB = [[a, b, c], [d, e, f], [g, h, j]]
+
     return UB
     
     
@@ -169,7 +183,11 @@ def UBRefinementEquations(x, h, Uv):
    d = x[3]
    e = x[4]
    f = x[5]
-   UB = [[a, d, e], [d, b, f], [e, f, c]]
+   g = x[6]
+   j = x[7]
+   k = x[8]
+
+   UB = [[a, b, c], [d, e, f], [g, j, k]]
    
    outvec = []
    
@@ -186,6 +204,30 @@ def UBRefinementEquations(x, h, Uv):
   
 # ******************************* END - METHODS FOR REFINING THE UB MATRIX *******************************
 
+
+# **************************** START - METHOD FOR OBTAINING LATTICE PARAMETERS FROM UB ****************************
+def calculateLatticeParameters(UBmatrix):
+
+    sys.stderr.write('i %d %d %3.4f\n'%(UBmatrix.shape[0],UBmatrix.shape[1],UBmatrix[0,0]))
+
+    G = N.linalg.inv(N.dot(UBmatrix.T, UBmatrix))
+    sys.stderr.write('inverted\n')
+    
+    abc = N.sqrt(N.diag(G))
+    a = abc[0]
+    b = abc[1]
+    c = abc[2]
+    sys.stderr.write('a b c %3.4f %3.4f %3.4f\n'%(a,b,c))
+    
+    alpha = N.degrees(N.arccos(G[1, 2]/b/c))
+    beta = N.degrees(N.arccos(G[0, 2]/a/c))
+    gamma = N.degrees(N.arccos(G[0, 1]/a/b))
+    
+    latticeParameters = {'a': a, 'b': b, 'c': c, 'alpha': alpha, 'beta': beta, 'gamma': gamma}
+    print 'hi'
+    print latticeParameters
+    return latticeParameters
+# **************************** END - METHOD FOR OBTAINING LATTICE PARAMETERS FROM UB ****************************
 
 
 # *********************************** START - calculations for bisecting mode  *********************************** 
