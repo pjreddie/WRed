@@ -1473,13 +1473,68 @@ Ext.onReady(function () {
                     '8) If you selected Scattering Plane mode, enter the (h, k, l) indices for the two vectors that define the Scattering Plane' + '<br/>' +
                     '9) Click on the "*** Calculate Results ***" button to calculate the angles for the desired indices' + '<br/>' +
                     '10) You may change values and repeat the calculations as frequently as desired' + '<br/><br/><br/> </P> <h3>' +
+                    
                     'Saving Data' + '</h3> <br/> <P>' +
                     'To save your data, you must download a textfile of your data by clicking the "Save & Download Data" button. This file will be downloaded to your designated download directory, or will prompt you for a download location, depending on browser settings.' + '<br/><br/>' +
-                    'WARNING: Editing the saved file may result in a loss of data or failure to upload.' + '<br/><br/><br/></P> <h3>' +    
+                    'WARNING: Editing the saved file may result in a loss of data or failure to upload. See "Alternate Saving/Loading Usage" for more details.' + '<br/><br/><br/> </P> <h3>' +
+                    
                     'Loading Data' + '</h3> <br/> <P>' +
                     '1) Click the "Browse" button' + '<br/>' +
-                    '2) Select your data file' + '<br/>' + 
-                    '3) Click the "Load Data" button' + '<br/><br/> </P>'        
+                    '2) Select your data textfile' + '<br/>' + 
+                    '3) Click the "Load Data" button' + '<br/><br/><br/></P> <h3>' +
+                    
+                    'Alternate Saving/Loading Usage' + '</h3> <br/> <P>' +
+                    'Due to the nature of the loading and saving mechanisms, data may be entered by directly editing a textfile and loading it into the program (loading instructions above). There are 9 essential lines of text that must be located within your file for it to load. 7 are data headers, telling the order to put the data in, which are immediately followed by the appropriate data, separated by commas, on the following line(s). If you have no data for a specific header, leave the subsequent line blank. These headers are (without the quotes):' + '<br/>' + 
+                    '&nbsp;&nbsp; "#Mode"' + '<br/>' + 
+                    '&nbsp;&nbsp; "#a b c alpha beta gamma wavelength"' + '<br/>' + 
+                    '&nbsp;&nbsp; "#Observations h k l twotheta theta chi phi"' + '<br/>' + 
+                    '&nbsp;&nbsp; "#Scattering Plane Vectors h k l"' + '<br/>' + 
+                    '&nbsp;&nbsp; "#Fixed Phi Value"' + '<br/>' + 
+                    '&nbsp;&nbsp; "#Desired h k l twotheta theta omega chi phi"' + '<br/>' + 
+                    '&nbsp;&nbsp; "#UBmatrix"' + '<br/><br/>' + 
+                    'Uniquely, the line following "#UBmatrix" should be one of three options:' + '<br/>' +
+                    '&nbsp;&nbsp; "no" --------- UBmatrix is not calculated.' + '<br/>' + 
+                    '&nbsp;&nbsp; "yes" -------- UB matrix is calculated. Its 9 values should be on the next line.' + '<br/>' + 
+                    '&nbsp;&nbsp; "refined" -- UB matrix is refined. Its 9 values should be on the next line.' + '<br/><br/>' + 
+                    'Furthermore, there is no limit to the amount of observaitons or desired results data. Consequently, they require an ending statement that immediately follows the last line of observations or desired results. These final 2 essential lines are:' + '<br/>' +  
+                    '&nbsp;&nbsp; "#End observations"' + '<br/>' + 
+                    '&nbsp;&nbsp; "#End desired"' + '<br/><br/>' +
+                    'For example, a data textfile may look like this (shown in blue below). Note that header ordering and spaces are optional:' + '<br/><br/> </P> <P style="color:blue">' +
+                    //START OF FILE  
+                    '#Mode' + '<br/>' + 
+                    'Scattering Plane' + '<br/><br/>' + 
+                     
+                    '#a b c alpha beta gamma wavelength' + '<br/>' + 
+                    '3.9091056,3.9091018,3.9091019,89.9999575,90.0001171,90.0000603,2.35916' + '<br/><br/>' + 
+                     
+                    '#Observations h k l twotheta theta chi phi' + '<br/>' + 
+                    '1,1,0,50.522,25.261,88.1065,78.428' + '<br/>' + 
+                    '0,0,1,35.1257,17.5628,-178.8505,-48.94' + '<br/>' + 
+                    '0,1,0,35.1257,17.5628,43.4843,42.1502' + '<br/>' + 
+                    '1,0,0,35.1257,17.5628,133.5075,39.8488' + '<br/>' + 
+                    '1,1,1,63.0205,31.5102,126.441,-51.0087' + '<br/>' + 
+                    '2,1,1,95.3162,47.658,120.124,-16.956' + '<br/>' + 
+                    '#End observations' + '<br/><br/>' + 
+                     
+                    '#UBmatrix' + '<br/>' + 
+                    'refined ' + '<br/>' + 
+                    '-0.135209723313,0.13760748667,-0.16799695155,-0.112847227161,0.124557757337,0.192849947079,0.18553738062,0.176039655796,-0.00513161157565'+ '<br/><br/>' + 
+                     
+                    '#Scattering Plane Vectors h k l' + '<br/>' + 
+                    '1,0,0' + '<br/>' + 
+                    '0,1,1' + '<br/><br/>' + 
+                     
+                    '#Fixed Phi Value' + '<br/>' + 
+                    '236' + '<br/><br/>' + 
+                     
+                    '#Desired h k l twotheta theta omega chi phi' + '<br/>' + 
+                    '1,1,-1,Invalid,Vector!,Not in,Scattering,Plane.' + '<br/>' + 
+                    '1,1,1,63.0204001841,53.1674731954,21.6572731033,120.051971519,-12.5966659616' + '<br/>' + 
+                    '1,1,2,0,0,0,0,0' + '<br/>' + 
+                    '#End desired' + '<br/><br/></P>' +
+                    //END OF FILE
+                    'In terms of usability, the desired h,k,l may be input with 0 for their angle values (as shown in the last line of the desired input). These angles can then be computed by loading in your data file and using the calculator.' 
+                    
             }
         ]
         //plugins: new Ext.ux.TabCloseMenu()
