@@ -2,6 +2,9 @@
  * Author: Alex Yee
  *
  * This is the frontend for the UB matrix calculator web-app.
+ * 
+ * Highlighting table rows helped by:
+ *   http://www.sencha.com/forum/showthread.php?4909-Check-Box-Row-Selection-Model&p=25831
  */
 
 Ext.onReady(function () {
@@ -170,7 +173,8 @@ Ext.onReady(function () {
     var store = new Ext.data.ArrayStore({
         autodestroy     : false,
         storeId         : 'UBInputStore',
-        fields          : UBInputFields
+        fields          : UBInputFields,
+        pruneModifiedRecords: true
     });
     store.loadData(baseData);
     
@@ -188,7 +192,8 @@ Ext.onReady(function () {
     var idealDataStore = new Ext.data.ArrayStore({
         autoDestroy     : false,
         storeId         : 'desiredStore',
-        fields          : desiredFields
+        fields          : desiredFields,
+        pruneModifiedRecords: true
     });
     idealDataStore.loadData(baseIdealData);
     
@@ -201,6 +206,19 @@ Ext.onReady(function () {
     });
     var textFieldEditor = new Ext.form.TextField({
         maxLength: 11,
+    });
+    
+    //creating the checkbox selection model
+    checkBoxRowSelectionModel = function(config) {
+        checkBoxRowSelectionModel.superclass.constructor.call(this, config);
+    }
+    Ext.extend(checkBoxRowSelectionModel , Ext.grid.RowSelectionModel, {
+	    initEvents : function(){
+            var view = this.grid.view;
+            view.on("refresh", this.onRefresh, this);
+            view.on("rowupdated", this.onRowUpdated, this);
+            view.on("rowremoved", this.onRemove, this);
+        }	
     });
 
     var cm = new Ext.grid.ColumnModel({
@@ -251,25 +269,28 @@ Ext.onReady(function () {
         defaults: {
             sortable: false,
             align: 'right',
-            width: 65,
-            /*editor: new Ext.form.NumberField({
-                allowBlank: false,
-                allowDecimals: true,
-                decimalPrecision: 7
-            })*/
+            width: 65
         },
         columns: [
         {
+            header: "",
+            dataIndex: 'mycheckbox',
+            width: 25,
+            renderer: renderCheckBox          
+        }, {
             header: 'h',
             dataIndex: 'h',
+            width: 55,
             editor: numberFieldEditor
         }, {
             header: 'k',
             dataIndex: 'k',
+            width: 55,
             editor: numberFieldEditor
         }, {
             header: 'l',
             dataIndex: 'l',
+            width: 55,
             editor: numberFieldEditor
         }, {
             header: '2θ',
@@ -291,17 +312,18 @@ Ext.onReady(function () {
             header: 'φ',
             dataIndex: 'phi',
             editor: textFieldEditor
-        },
+        }
         ]
     });
     
     //Setting the calculated angle values to uneditable
-    cm2.setEditable(3, false);
     cm2.setEditable(4, false);
     cm2.setEditable(5, false);
     cm2.setEditable(6, false);
     cm2.setEditable(7, false);
+    cm2.setEditable(8, false);
     // ********* END - Creating Column Models *********
+    
     
     // create the editor grids
     var observationGrid = new Ext.grid.EditorGridPanel({
@@ -347,6 +369,7 @@ Ext.onReady(function () {
     var grid2 = new Ext.grid.EditorGridPanel({
         store: idealDataStore,
         cm: cm2,
+        selModel: new checkBoxRowSelectionModel (),
         width: 539,
         height: 200,
         title: 'Desired Results',
@@ -357,12 +380,71 @@ Ext.onReady(function () {
             text: 'Add New Row',
             handler: addRow
         }, 
-        '-',  
+        '-',
+        {
+            text: 'Remove Selected Rows',
+            handler: removeRow
+        }, 
+        '-',    
         {
             text: '*** CALCULATE RESULTS ***',
             handler: calculateResults
         }]
     });
+    
+    //create a template for a checkbox 
+    var tplCB = new Ext.Template( '<input name="checkbox" type="checkbox" {checked}>');
+    tplCB.compile();
+	
+    function renderCheckBox (v, p, record) {
+	    var chk = '';
+	    if (grid2.selModel.isIdSelected(v))
+	    {
+		    chk = 'checked'; 
+	    }	
+	    return tplCB.applyTemplate({checked: chk});
+    }
+    
+    grid2.on("rowclick", rowClick);
+
+    //If row's checkbox is chcked, highlight (select) the row.
+    function rowClick(grid, rowID, event){
+	    var x = event.getTarget();
+	    if (x.name == "checkbox"){
+		    if (x.checked){
+			    x.checked = true;
+			    grid.selModel.selectRow(rowID, true, false);
+			    return false;			
+		    }
+		    else
+		    {
+			    x.checked = false;
+			    grid.selModel.deselectRow(rowID, false, false);
+		    }
+	    } 
+	    return true;
+    }
+    
+    
+    function removeRow(button, event) {
+        var i = 0;
+        var removed = 0;
+        
+        while (i < idealDataStore.getCount()){
+            
+            //if 'row i' in grid2 is selected (highlighted)
+            if(grid2.selModel.isSelected(i)){
+                idealDataStore.removeAt(i);
+                removed = removed +1; //preventing error message of no row selected
+            }
+            else{
+                i = i +1;
+            }
+        }
+        if (removed == 0) {
+            Ext.Msg.alert('Error: No row selected');
+        }
+    };
     
     // ****************** START - Defining grid button functions ****************** 
     function calctwotheta (button, event) { 
@@ -407,7 +489,7 @@ Ext.onReady(function () {
             var record = store.getAt(row);
             if (record.data['h'] != 0 || record.data['k'] != 0 || record.data['l'] != 0){   
                 record.set('twotheta', twothetas[c]['twotheta']);
-                c++;
+                c = c + 1;
             }
         }
 
@@ -547,9 +629,11 @@ Ext.onReady(function () {
             }); 
 
             for (var j = 0; j < idealDataStore.getCount(); j++){
-                //gets all the data from the Desired Data table
+                //gets all the data from the Desired Data table except (0,0,0) vectors
                 var record = idealDataStore.getAt(j);
-                params['data'].push(record.data);
+                if (record.data['h'] != 0 || record.data['k'] != 0 || record.data['l'] != 0){
+                    params['data'].push(record.data);
+                }
             }  
                 
             conn.request({
@@ -586,7 +670,9 @@ Ext.onReady(function () {
 
             for (var j = 0; j < idealDataStore.getCount(); j++){
                 var record = idealDataStore.getAt(j)
-                params['data'].push(record.data);
+                if (record.data['h'] != 0 || record.data['k'] != 0 || record.data['l'] != 0){
+                    params['data'].push(record.data);
+                }
             }
 
             conn.request({
@@ -616,7 +702,9 @@ Ext.onReady(function () {
             
             for (var j = 0; j < idealDataStore.getCount(); j++){
                 var record = idealDataStore.getAt(j);
-                params['data'].push(record.data);
+                if (record.data['h'] != 0 || record.data['k'] != 0 || record.data['l'] != 0){
+                    params['data'].push(record.data);
+                }
             }
 
             conn.request({
@@ -636,24 +724,31 @@ Ext.onReady(function () {
     
     function successFunction(responseObject) {
         idealdata = Ext.decode(responseObject.responseText);
-        
+
         //Updating desired data table
+        var counter = 0;
         changes = ['twotheta', 'theta', 'omega', 'chi', 'phi'];
         for (var i = 0; i < idealDataStore.getCount(); i++){
-            record = idealDataStore.getAt(i); 
-            if (idealdata[i] == 'Error') {
-                //setting up the error message
-                record.set('twotheta', 'Invalid');
-                record.set('theta', 'Vector!');
-                record.set('omega', 'Not in');
-                record.set('chi', 'Scattering');
-                record.set('phi', 'Plane.');
-            }
-            else{
-                for (var c in changes) {
-                    fieldName = changes[c];
-                    record.set(fieldName, idealdata[i][fieldName]);
+            record = idealDataStore.getAt(i);
+
+            if (record.data['h'] != 0 || record.data['k'] != 0 || record.data['l'] != 0){
+                //if it's not a (0,0,0) vector, update its calculated angles
+                if (idealdata[counter] === 'Error') {
+                    //setting up the error message
+                    record.set('twotheta', 'Invalid');
+                    record.set('theta', 'Vector!');
+                    record.set('omega', 'Not in');
+                    record.set('chi', 'Scattering');
+                    record.set('phi', 'Plane.');
                 }
+                else{
+                    for (var c in changes) {
+                        fieldName = changes[c];
+                        record.set(fieldName, idealdata[counter][fieldName]);
+                    }
+                   
+                }
+                counter = counter+1;
             }
         }
         
@@ -695,6 +790,9 @@ Ext.onReady(function () {
         grid2.startEditing(idealDataStore.getCount()-1, 0); //starts editing for first cell of new row
     };
     
+    //TODO COME HERE
+    
+    
     function getLattice() {
         //With a calculated UB matrix, the lattice parameters can be calculated
         
@@ -712,9 +810,7 @@ Ext.onReady(function () {
     };
     
     function displayLattice (responseObject){
-        //console.log(responseObject);
         lattice = Ext.decode(responseObject.responseText);
-        //console.log(lattice);
         
         aField.setValue(lattice['a']);
         bField.setValue(lattice['b']);
@@ -1409,7 +1505,6 @@ Ext.onReady(function () {
 
     var TopPanel = new Ext.Panel({
         layout: 'table',
-        //title: 'Known Data',
         width: 790,
         layoutConfig: {
             columns: 2
@@ -1419,7 +1514,6 @@ Ext.onReady(function () {
 
     var BottomPanel = new Ext.Panel({
         layout: 'table',
-        //title: 'Desired Data',
         width: 790,
         layoutConfig: {
             columns: 2
@@ -1534,18 +1628,13 @@ Ext.onReady(function () {
                     '#End desired' + '<br/><br/></P>' +
                     //END OF FILE
                     'In terms of usability, the desired h,k,l may be input with 0 for their angle values (as shown in the last line of the desired input). These angles can then be computed by loading in your data file and using the calculator.' 
-                    
+                            
             }
         ]
-        //plugins: new Ext.ux.TabCloseMenu()
     });
 
 // ************************** END - Setting up the tabs  **************************
     
     myTabs.render('tabs');
-        
-    //TopPanel.render('data-grid');
-    //BottomPanel.render('result-grid');
-
     
 });
