@@ -22,12 +22,12 @@ TEMPLATE_DEBUG = False  #was DEBUG, turned off for deployment
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
     #The following people/emails recieve the ERROR ALERTS:
-    ('Alex Yee', 'yeealex93@gmail.com),
+    ('Alex Yee', 'yeealex93@gmail.com'),
 )
 
 MANAGERS = (
     #The following people/emails recieve the BROKEN LINK ALERTS:
-    ('Alex Yee', 'yeealex93@gmail.com),
+    ('Alex Yee', 'yeealex93@gmail.com'),
 )
 
 DATABASE_ENGINE = 'sqlite3'

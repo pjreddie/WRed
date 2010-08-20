@@ -1,18 +1,14 @@
 /*
  * Author: Alex Yee
  *
- * Edit History:
- * 7/12/2010: Created and completed. Created layout, columns, and data sending/receiving/updating. 
- *             Not entirely beautified yet.
- * 7/13/2010: Restructured to give each numberfield (of input) a separate variable so I could
- *             send their given values to the backend for calculations.
+ * This is the frontend for the UB matrix calculator web-app.
  */
 
 Ext.onReady(function () {
     var conn = new Ext.data.Connection();
     var isUBcalculated = 'no';     //Tells whether UB matrix has been calculated
                                    //either: 'no', 'yes', or 'refined'
-                                   
+                         
 // ********* START - Defining and assigning variables for the numberfield inputs  *********
     var aField = new Ext.form.NumberField({
         fieldLabel: 'a',
@@ -151,14 +147,14 @@ Ext.onReady(function () {
     
     // ********* END - Defining and assigning variables for the numberfield inputs  *********  
                                    
-    myUBmatrix = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] //The variable that will hold the calculated UB matrix
+    myUBmatrix = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]] //The variable that will hold the calculated UB matrix
 
     var baseData = [
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     ];
     var baseIdealData = [
-        [0.0, 0.0, 0.0, '0.0', '0.0', '0.0', '0.0', '0.0'],
+        [0.0, 0.0, 0.0, '0', '0', '0', '0', '0'],
     ];
 
     // create the Data Store
@@ -327,12 +323,17 @@ Ext.onReady(function () {
         }, 
         '-', //Shorthand for Ext.Tollbar.Separator (the " | " between buttons)
         {
-            text: 'Calculate UB Matrix',
+            text: 'Calculate 2θ',
+            handler: calctwotheta
+        },
+        '-',
+        {
+            text: 'Calculate UB',
             handler: submitData
         },
         '-',
         {
-            text: 'Refine UB Matrix',
+            text: 'Refine UB',
             handler: RefineSubmitData
         },
         '-',
@@ -364,6 +365,55 @@ Ext.onReady(function () {
     });
     
     // ****************** START - Defining grid button functions ****************** 
+    function calctwotheta (button, event) { 
+        //Calculates and stores the B and UB matricies when the button 'Calculate UB Matrix' is pressed
+        params = {'data': [] };
+        
+        params['data'].push({
+            'a': aField.getValue(),
+            'b': bField.getValue(),
+            'c': cField.getValue(),
+            'alpha': alphaField.getValue(),
+            'beta': betaField.getValue(),
+            'gamma': gammaField.getValue(),
+            'wavelength': wavelengthField.getValue()
+        });
+        
+        //only sends the observations that aren't (0,0,0)
+        for (var i = 0; i < store.getCount(); i++) {
+            var record = store.getAt(i)
+            if (record.data['h'] != 0 || record.data['k'] != 0 || record.data['l'] != 0){   
+                params['data'].push(record.data); 
+            }
+        };
+        
+        conn.request({
+            url: '/WRed/files/calcTheta/',
+            method: 'POST',
+            params: Ext.encode(params),
+            success: thetasuccess,
+            failure: function () {
+                Ext.Msg.alert('Error: Failed to calculate 2θ with current lattice parameters');
+            }
+        });
+
+    };
+    
+    function thetasuccess (responseObject) {
+        twothetas = Ext.decode(responseObject.responseText);
+
+        var c = 0;
+        for (var row = 0; row < store.getCount(); row++){
+            var record = store.getAt(row);
+            if (record.data['h'] != 0 || record.data['k'] != 0 || record.data['l'] != 0){   
+                record.set('twotheta', twothetas[c]['twotheta']);
+                c++;
+            }
+        }
+
+        store.commitChanges(); //removes red mark in corner of cell that indicates an uncommited edit
+    };
+    
     function submitData(button, event) { 
         //Calculates and stores the B and UB matricies when the button 'Calculate UB Matrix' is pressed
         params = {'data': [] };
@@ -426,21 +476,23 @@ Ext.onReady(function () {
     
     function ubsuccess (responseObject) {
         stringUBmatrix = responseObject.responseText; //Receives UBmatrix as a String w/ elements separated by a ', '
-        myUBmatrix = stringUBmatrix.split(', '); //Makes a 1D array of the 9 UBmatrix values, each as a String
-        for (i = 0; i < 9 ; i++){
-            myUBmatrix[i] = parseFloat(myUBmatrix[i]); //Converts each String into a Float
+        theUBmatrix = stringUBmatrix.split(', '); //Makes a 1D array of the 9 UBmatrix values, each as a String
+        for (i = 0; i < 3 ; i++){
+            myUBmatrix[i][0] = parseFloat(theUBmatrix[3*i]); //Converts each String into a Float
+            myUBmatrix[i][1] = parseFloat(theUBmatrix[3*i+1]);
+            myUBmatrix[i][2] = parseFloat(theUBmatrix[3*i+2]);
         }
         
         //displaying UB matrix values
-        UB11Field.setValue(myUBmatrix[0]);
-        UB12Field.setValue(myUBmatrix[1]);
-        UB13Field.setValue(myUBmatrix[2]);
-        UB21Field.setValue(myUBmatrix[3]);
-        UB22Field.setValue(myUBmatrix[4]);
-        UB23Field.setValue(myUBmatrix[5]);
-        UB31Field.setValue(myUBmatrix[6]);
-        UB32Field.setValue(myUBmatrix[7]);
-        UB33Field.setValue(myUBmatrix[8]);
+        UB11Field.setValue(myUBmatrix[0][0]);
+        UB12Field.setValue(myUBmatrix[0][1]);
+        UB13Field.setValue(myUBmatrix[0][2]);
+        UB21Field.setValue(myUBmatrix[1][0]);
+        UB22Field.setValue(myUBmatrix[1][1]);
+        UB23Field.setValue(myUBmatrix[1][2]);
+        UB31Field.setValue(myUBmatrix[2][0]);
+        UB32Field.setValue(myUBmatrix[2][1]);
+        UB33Field.setValue(myUBmatrix[2][2]);
 
         isUBcalculated = 'yes';
         store.commitChanges(); //removes red mark in corner of cell that indicates an uncommited edit
@@ -451,21 +503,24 @@ Ext.onReady(function () {
         //TODO may need to add in calculated lattice parameters
     
         stringUBmatrix = responseObject.responseText; //Receives UBmatrix as a String w/ elements separated by a ', '
-        myUBmatrix = stringUBmatrix.split(', '); //Makes a 1D array of the 9 UBmatrix values, each as a String
-        for (i = 0; i < 9 ; i++){
-            myUBmatrix[i] = parseFloat(myUBmatrix[i]); //Converts each String into a Float
+        theUBmatrix = stringUBmatrix.split(', '); //Makes a 1D array of the 9 UBmatrix values, each as a String
+
+        for (i = 0; i < 3 ; i++){
+            myUBmatrix[i][0] = parseFloat(theUBmatrix[3*i]); //Converts each String into a Float
+            myUBmatrix[i][1] = parseFloat(theUBmatrix[3*i+1]);
+            myUBmatrix[i][2] = parseFloat(theUBmatrix[3*i+2]);
         }
         
         //displaying UB matrix values
-        UB11Field.setValue(myUBmatrix[0]);
-        UB12Field.setValue(myUBmatrix[1]);
-        UB13Field.setValue(myUBmatrix[2]);
-        UB21Field.setValue(myUBmatrix[3]);
-        UB22Field.setValue(myUBmatrix[4]);
-        UB23Field.setValue(myUBmatrix[5]);
-        UB31Field.setValue(myUBmatrix[6]);
-        UB32Field.setValue(myUBmatrix[7]);
-        UB33Field.setValue(myUBmatrix[8]);
+        UB11Field.setValue(myUBmatrix[0][0]);
+        UB12Field.setValue(myUBmatrix[0][1]);
+        UB13Field.setValue(myUBmatrix[0][2]);
+        UB21Field.setValue(myUBmatrix[1][0]);
+        UB22Field.setValue(myUBmatrix[1][1]);
+        UB23Field.setValue(myUBmatrix[1][2]);
+        UB31Field.setValue(myUBmatrix[2][0]);
+        UB32Field.setValue(myUBmatrix[2][1]);
+        UB33Field.setValue(myUBmatrix[2][2]);
 
         isUBcalculated = 'refined';
         store.commitChanges(); 
@@ -526,7 +581,7 @@ Ext.onReady(function () {
                 'h2'        : h2Field.getValue(),
                 'k2'        : k2Field.getValue(),
                 'l2'        : l2Field.getValue(),
-                'UBmatrix'  : UBmatrix
+                'UBmatrix'  : myUBmatrix
             });
 
             for (var j = 0; j < idealDataStore.getCount(); j++){
@@ -556,7 +611,7 @@ Ext.onReady(function () {
                 'gamma'     : gammaField.getValue(),
                 'wavelength': wavelengthField.getValue(),
                 'phi'       : phiField.getValue(),
-                'UBmatrix'  : UBmatrix
+                'UBmatrix'  : myUBmatrix
             });
             
             for (var j = 0; j < idealDataStore.getCount(); j++){
@@ -1195,7 +1250,7 @@ Ext.onReady(function () {
                     newData.push(tempData);
                 }
                 else {
-                    tempIdealData = [data[i]['h'], data[i]['k'], data[i]['l'], data[i]['twotheta'], data[i]     ['theta'], data[i]['omega'], data[i]['chi'], data[i]['phi']];
+                    tempIdealData = [data[i]['h'], data[i]['k'], data[i]['l'], data[i]['twotheta'], data[i]['theta'], data[i]['omega'], data[i]['chi'], data[i]['phi']];
                     
                     newIdealData.push(tempIdealData);
                 }
@@ -1205,19 +1260,24 @@ Ext.onReady(function () {
             idealDataStore.loadData(newIdealData);
             
             isUBcalculated = data[0]['isUBcalculated'];
-            myUBmatrix = data[0]['UBmatrix']
-
-            UB11Field.setValue(myUBmatrix[0]);
-            UB12Field.setValue(myUBmatrix[1]);
-            UB13Field.setValue(myUBmatrix[2]);
-            UB21Field.setValue(myUBmatrix[3]);
-            UB22Field.setValue(myUBmatrix[4]);
-            UB23Field.setValue(myUBmatrix[5]);
-            UB31Field.setValue(myUBmatrix[6]);
-            UB32Field.setValue(myUBmatrix[7]);
-            UB33Field.setValue(myUBmatrix[8]);
+            theUBmatrix = data[0]['UBmatrix'];
+            for (i = 0; i < 3 ; i++){
+                myUBmatrix[i][0] = parseFloat(theUBmatrix[3*i]); //Converts each String into a Float
+                myUBmatrix[i][1] = parseFloat(theUBmatrix[3*i+1]);
+                myUBmatrix[i][2] = parseFloat(theUBmatrix[3*i+2]);
+            }
             
-            console.log(isUBcalculated);
+            //displaying UB matrix values
+            UB11Field.setValue(myUBmatrix[0][0]);
+            UB12Field.setValue(myUBmatrix[0][1]);
+            UB13Field.setValue(myUBmatrix[0][2]);
+            UB21Field.setValue(myUBmatrix[1][0]);
+            UB22Field.setValue(myUBmatrix[1][1]);
+            UB23Field.setValue(myUBmatrix[1][2]);
+            UB31Field.setValue(myUBmatrix[2][0]);
+            UB32Field.setValue(myUBmatrix[2][1]);
+            UB33Field.setValue(myUBmatrix[2][2]);
+                
         }
     };
 
@@ -1292,7 +1352,6 @@ Ext.onReady(function () {
         }
         else{
             //Does nothing...
-            console.log('else');
             //Ext.Msg.alert('Error: Could not save');
         }
     };
@@ -1350,7 +1409,7 @@ Ext.onReady(function () {
 
     var TopPanel = new Ext.Panel({
         layout: 'table',
-        title: 'Known Data',
+        //title: 'Known Data',
         width: 790,
         layoutConfig: {
             columns: 2
@@ -1367,8 +1426,71 @@ Ext.onReady(function () {
         },
         items: [UBFieldset, grid2]
     });
+    
+// ************************** START - Setting up the tabs  **************************
 
-    TopPanel.render('data-grid');
-    BottomPanel.render('result-grid');
+    var myTabs = new Ext.TabPanel({
+        resizeTabs: true, // turn on tab resizing
+        minTabWidth: 115,
+        tabWidth: 135,
+        enableTabScroll: true,
+        width: 793,
+        height: 524,
+        activeItem: 'calcTab', //Making the calculator tab selected first
+        defaults: {autoScroll:true},
+        items: [
+            {
+                title: 'UB Calculator',
+                id: 'calcTab',
+                iconCls: '/media/icons/silk/calculator.png',
+                items: [TopPanel, BottomPanel]
+            }, {
+                title: 'Help Manual',
+                id: 'helpManualTab',
+                padding: 5,
+                iconCls: '/media/icons/silk/help.png',    
+                html: '<br/><h1>' +
+                    'UB Matrix Calculator for 3- and 4-circle Neutron and X-ray Diffractometers' + '</h1> <br/><br/> <h3>' +
+                    'Performing Calculations' + '</h3> <br/> <P>' +
+                    '&nbsp; **Note: if you need an additional row for a table, click on its "Add New Row" button.' + '<br/><br/>' + 
+                    '1) Enter in your observed reflections in the Observations table. For help observing reflections:' + '<br/>' +
+                    '&nbsp;&nbsp; a) Input the lattice parameters' + '<br/>' +
+                    '&nbsp;&nbsp; b) Input the (h, k, l) indices in the Observations table' + '<br/>' +
+                    '&nbsp;&nbsp; c) Click on "Calculate 2θ" to compute the 2θ values for those indices' + '<br/><br/>' +
+                    '2) If you only have two observations:' + '<br/>' +
+                    '&nbsp;&nbsp; a) Input the lattice parameters (if not already entered)' + '<br/>' +
+                    '&nbsp;&nbsp; b) Click the "Calculate UB" to calculate the UB matrix' + '<br/><br/>' +
+                    '3) If you have more than two observations:' + '<br/>' +
+                    '&nbsp;&nbsp; a) Click on "Refine UB" to calculate the refined UB matrix' + '<br/>' +
+                    '&nbsp;&nbsp; b) Click on "Evaluate Lattice" to compute the lattice parameters' + '<br/><br/>' +
+                    '4) Input the (h, k, l) indices of the reflections that you want calculated in Desired Results table' + '<br/>' +
+                    '5) Select the mode for your calculation from the drop-down menu. To obtain a solution, one of the following must be selected:' + '<br/>' + 
+                    '&nbsp;&nbsp; a) Bisecting (Omega=0)' + '<br/>' + 
+                    '&nbsp;&nbsp; b) Phi Fixed' + '<br/>' +
+                    '&nbsp;&nbsp; c) Scattering Plane' + '<br/><br/>' +
+                    '6) Depending on your mode selection, additional input may be required' + '<br/>' +
+                    '7) If you selected Phi Fixed mode, input the fixed phi value' + '<br/>' +
+                    '8) If you selected Scattering Plane mode, enter the (h, k, l) indices for the two vectors that define the Scattering Plane' + '<br/>' +
+                    '9) Click on the "*** Calculate Results ***" button to calculate the angles for the desired indices' + '<br/>' +
+                    '10) You may change values and repeat the calculations as frequently as desired' + '<br/><br/><br/> </P> <h3>' +
+                    'Saving Data' + '</h3> <br/> <P>' +
+                    'To save your data, you must download a textfile of your data by clicking the "Save & Download Data" button. This file will be downloaded to your designated download directory, or will prompt you for a download location, depending on browser settings.' + '<br/><br/>' +
+                    'WARNING: Editing the saved file may result in a loss of data or failure to upload.' + '<br/><br/><br/></P> <h3>' +    
+                    'Loading Data' + '</h3> <br/> <P>' +
+                    '1) Click the "Browse" button' + '<br/>' +
+                    '2) Select your data file' + '<br/>' + 
+                    '3) Click the "Load Data" button' + '<br/><br/> </P>'        
+            }
+        ]
+        //plugins: new Ext.ux.TabCloseMenu()
+    });
+
+// ************************** END - Setting up the tabs  **************************
+    
+    myTabs.render('tabs');
+        
+    //TopPanel.render('data-grid');
+    //BottomPanel.render('result-grid');
+
     
 });

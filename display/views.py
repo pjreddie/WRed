@@ -186,7 +186,7 @@ def upload_file_angleCalc(request):
 def download_file_angleCalc(request):
     if request.method == 'GET':
         
-        data = file('angleCalculatorData.txt')
+        data = file('/tmp/angleCalculatorData.txt')
         response = HttpResponse(data, mimetype='application/force-download')
         response['Content-Disposition'] = 'attachment; filename= angleCalculatorData.txt'
         return response

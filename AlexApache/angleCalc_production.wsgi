@@ -10,8 +10,8 @@ import sys
 #sys.path.append('C:\\yml\\_myScript_\\dj_things\\web_development\\svn_views\\django_src\\trunk')
 #sys.path.append('C:\\yml\\_myScript_\\dj_things\\web_development\\svn_views\\django-registration')
 
-sys.path.append('/home/alex/Desktop/WRed')
-sys.path.append('/home/alex/Desktop')
+sys.path.append('/home/yeealex/UBmatrixCalculator')
+sys.path.append('/home/yeealex')
 
 #change below to 'settings_production' for deployment, 'settings' for testing
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings_production'

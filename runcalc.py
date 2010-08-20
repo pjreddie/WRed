@@ -19,6 +19,20 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from Alex.ubmatrix import *
 
+def runcalcTheta(request):
+    requestObject = simplejson.loads(request.POST.keys()[0])
+    data = requestObject['data']
+    
+    astar, bstar, cstar, alphastar, betastar, gammastar = star(data[0]['a'], data[0]['b'], data[0]['c'], data[0]['alpha'], data[0]['beta'], data[0]['gamma'])
+    stars = {'astar': astar, 'bstar': bstar, 'cstar': cstar, 'alphastar': alphastar, 'betastar': betastar, 'gammastar': gammastar}
+    twothetaarr = []
+    
+    for i in range(1, len(data)):
+        twotheta = calcTwoTheta([data[i]['h'], data[i]['k'], data[i]['l']], stars, data[0]['wavelength'])
+        twothetaarr.append({'twotheta': twotheta})
+        
+    return HttpResponse(simplejson.dumps(twothetaarr))
+    
 
 def runcalc1(request):
     "Calculations for Bisecting mode."
@@ -31,13 +45,6 @@ def runcalc1(request):
     #CALCULATING THE B MATRIX AND STARS DICTIONARY
     Bmatrix, stars = calculateBStar(float(data[0]['a']), float(data[0]['b']), float(data[0]['c']), float(data[0]['alpha']), float(data[0]['beta']), float(data[0]['gamma']))
     UBmatrix = data[0]['UBmatrix']
-    
-    #UBmatrix = [[-7.8482945, -2.36452161464, 4.27609208916],
-    #            [-2.36452161464,2.3884179, 12.3436137561],
-    #            [4.27609208916, 12.3436137561, 4.5555376]]
-    #[[-7.8482945, -2.36452161464, 4.27609208916], [-2.36452161464,2.3884179, 12.3436137561],[4.27609208916, 12.3436137561, 4.5555376]]
-    #[[-0.136978579681,-0.04126868741,0.0746318860743],[-0.04126868741,0.0416857556556,0.215436701639],[0.0746318860743,0.215436701639, 0.0795091311514]]
-    #[[-0.135210153654,0.137608011145,-0.167996915619],[-0.112847383488,0.124557744782,0.19284996746],[0.185537117585,0.176039909628,-0.00513162303185]]
     
     response = []
     
@@ -180,7 +187,8 @@ def refineUB(request):
 def getLatticeParameters (request):
     requestObject = simplejson.loads(request.POST.keys()[0]) 
     UBmatrix = requestObject['UBmatrix']
-    UBmatrix = N.array(UBmatrix).reshape((3,3)) #converting into 3x3
+    UBmatrix = N.array(UBmatrix)
+    #UBmatrix = N.array(UBmatrix).reshape((3,3)) #converting into 3x3 no longer necessary
     paramsDict = calculateLatticeParameters(UBmatrix)
     return HttpResponse([paramsDict])
     
@@ -200,7 +208,7 @@ def makeSaveFile (request):
     #http://docs.python.org/tutorial/inputoutput.html - section 7.2 has information on opening files;
     # open ('filename', 'letter') where letter = 'w' (overwrite), 'r' (read), 'r+' (read and write), 'a' (append, not overwrite)
     #dataWriter = csv.writer(open(datafile, 'w'), delimiter= ',', escapechar ='', quoting=csv.QUOTE_NONE)
-    dataWriter = csv.writer(open('angleCalculatorData.txt', 'w'), delimiter= ',', escapechar ='', quoting=csv.QUOTE_NONE)
+    dataWriter = csv.writer(open('/tmp/angleCalculatorData.txt', 'w'), delimiter= ',', escapechar ='', quoting=csv.QUOTE_NONE)
     
     dataWriter.writerow(['#Data input file for angleCalculator.'])
     #dataWriter.writerow(['#File downloaded from angleCalculator: '])
@@ -217,14 +225,14 @@ def makeSaveFile (request):
     dataWriter.writerow([' '])
     
     dataWriter.writerow(['#Observations h k l twotheta theta chi phi'])
-    for i in range(1, data[0]['numrows']):
+    for i in range(1, data[0]['numrows']+1):
         dataWriter.writerow([data[i]['h'], data[i]['k'], data[i]['l'], data[i]['twotheta'], data[i]['theta'], data[i]['chi'], data[i]['phi']])
     dataWriter.writerow(['#End observations'])
     dataWriter.writerow([' '])
     
     dataWriter.writerow(['#UBmatrix'])
-    dataWriter.writerow([data[0]['ub'][0], data[0]['ub'][1], data[0]['ub'][2], data[0]['ub'][3], data[0]['ub'][4], data[0]['ub'][5], data[0]['ub'][6], data[0]['ub'][7], data[0]['ub'][8]])
     dataWriter.writerow([data[0]['isUBcalculated']])
+    dataWriter.writerow([data[0]['ub'][0][0], data[0]['ub'][0][1], data[0]['ub'][0][2], data[0]['ub'][1][0], data[0]['ub'][1][1], data[0]['ub'][1][2], data[0]['ub'][2][0], data[0]['ub'][2][1], data[0]['ub'][2][2]])
     dataWriter.writerow([' '])
     
     dataWriter.writerow(['#Scattering Plane Vectors h k l'])
@@ -314,9 +322,9 @@ def uploadInputFile (fid):
             theidealdata = [] #going to be re-filled for each new row of data
             
             for x in idealarr:
-                theidealdata.append(float(x))
+                theidealdata.append(x)
             
-            desiredresponses = {'h': theidealdata[0], 'k': theidealdata[1], 'l': theidealdata[2], 'twotheta': theidealdata[3], 'theta': theidealdata[4], 'omega': theidealdata[5], 'chi': theidealdata[6], 'phi': theidealdata[7]}
+            desiredresponses = {'h': float(theidealdata[0]), 'k': float(theidealdata[1]), 'l': float(theidealdata[2]),  'twotheta': theidealdata[3], 'theta': theidealdata[4], 'omega': theidealdata[5], 'chi': theidealdata[6], 'phi': theidealdata[7]}
             response.append(desiredresponses)
         
         return response

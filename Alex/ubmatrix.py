@@ -223,6 +223,12 @@ def calculateLatticeParameters(UBmatrix):
     return latticeParameters
 # **************************** END - METHOD FOR OBTAINING LATTICE PARAMETERS FROM UB ****************************
 
+def calcTwoTheta(h, stars, wavelength):
+    "Calculates the twotheta value for a vector h with lattice parameters given. Useful for finding observed reflections."
+    q = calcq (h[0], h[1], h[2], stars)
+    twotheta = N.degrees(2 * N.arcsin(wavelength * q / 4 / N.pi))
+    return twotheta
+    
 
 # *********************************** START - calculations for bisecting mode  *********************************** 
 
